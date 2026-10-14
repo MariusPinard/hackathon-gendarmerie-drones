@@ -71,7 +71,9 @@ export function MissionMap(props: MapProps) {
     props.pilots?.forEach((pilot, index) => {
       const marker = L.marker(latLng(pilot.pilotPosition), { draggable: props.editable ?? false,
         icon: L.divIcon({ className: 'pilot-marker', html: `<span>T${index + 1}</span>`, iconSize: [28, 28], iconAnchor: [40, -6] }) }).addTo(layers);
-      marker.bindTooltip(document.createTextNode(pilot.name).textContent ?? 'Télépilote');
+      const label = document.createElement('span');
+      label.textContent = pilot.name;
+      marker.bindTooltip(label);
       marker.on('click', () => callbacks.current.onSelect?.(`pilot:${pilot.id}`));
       marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMovePilot?.(pilot.id, [p.lng, p.lat]); });
     });

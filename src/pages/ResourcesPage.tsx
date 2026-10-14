@@ -8,6 +8,7 @@ import { MissionMap } from '../components/Map/MissionMap';
 import { MetricsPanel } from '../components/Panels/MetricsPanel';
 import type { DroneModelId } from '../types/drone';
 import type { PlanningResult } from '../types/planning';
+import { startMission, detectConflicts } from '../engines/operations';
 
 export function ResourcesPage({ onLaunch, onBack }: { onLaunch: () => void; onBack: () => void }) {
   const { mission, setMission } = useMission();
@@ -26,6 +27,7 @@ export function ResourcesPage({ onLaunch, onBack }: { onLaunch: () => void; onBa
     setMission(applyPlan(mission, plan)); setResult(plan); setPrepared(true); setError('');
   } catch (err) { setError(err instanceof Error ? err.message : 'Calcul impossible.'); } }
   const metrics = result ? computeCoverage(result) : null;
+  const conflicts = prepared ? detectConflicts(mission) : [];
   return <section><div className="page-title"><p className="eyebrow">02 / RESSOURCES RÉELLES</p><h1>Adapter les moyens disponibles</h1><p>{mission.metadata.name} · Une disponibilité inférieure à l’estimation autorise un calcul partiel.</p></div>
     {error && <p className="notice error" role="alert">{error}</p>}
     <div className="workspace"><aside className="panel">
@@ -44,7 +46,8 @@ export function ResourcesPage({ onLaunch, onBack }: { onLaunch: () => void; onBa
       drones={prepared ? mission.drones : []} pilots={prepared ? mission.pilots : []} uncoveredPoints={metrics?.uncoveredPoints ?? []} />
       <div className="panel">{metrics ? <MetricsPanel metrics={metrics} /> : <p className="notice">Recalculez le dispositif avec vos moyens pour activer le lancement.</p>}
         {result?.warnings.map((warning, i) => <p key={i} className="notice warning">{warning}</p>)}
+        {conflicts.map(conflict => <p className="notice error" key={conflict.id}>{conflict.message}</p>)}
         <div className="actions"><button onClick={() => { try { exportMission(mission); } catch (err) { setError(err instanceof Error ? err.message : 'Export impossible.'); } }}>Exporter la mission JSON</button>
-          <button className="primary" disabled={!prepared || !mission.drones.length} onClick={onLaunch}>Lancer l’opération simulée →</button></div>
+          <button className="primary" disabled={!prepared || !mission.drones.length || !!conflicts.length} onClick={() => { try { setMission(startMission(mission).mission); onLaunch(); } catch (err) { setError(err instanceof Error ? err.message : 'Lancement impossible.'); } }}>Lancer l’opération simulée →</button></div>
       </div></div></div></section>;
 }

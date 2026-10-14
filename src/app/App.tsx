@@ -17,7 +17,7 @@ function Application() {
     {page === 'import' && <ImportPage onImported={() => setPage('resources')} />}
     {page === 'planning' && <PlanningPage onPrepare={() => setPage('resources')} />}
     {page === 'resources' && <ResourcesPage onBack={() => setPage('planning')} onLaunch={() => setPage('operations')} />}
-    {page === 'operations' && <OperationsPage />}
+    {page === 'operations' && <OperationsPage onResources={() => setPage('resources')} />}
   </Layout>;
 }
 export function App() { return <AppProvider><Application /></AppProvider>; }
