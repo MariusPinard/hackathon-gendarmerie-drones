@@ -66,7 +66,7 @@ La météo est demandée automatiquement pour le lieu et le créneau choisis. Le
 
 Dans **Moyens**, comparer les quantités estimées aux quantités réellement disponibles, modifier les effectifs et recalculer le dispositif. Une couverture partielle est possible si les ressources ou les contraintes ne permettent pas de couvrir toute la zone.
 
-Le bouton **Drone**, placé à côté de **Moyens** dans les commandes de la carte, ouvre le catalogue de la mission. Il affiche tous les modèles enregistrés, même ceux dont la quantité disponible est nulle, avec leurs valeurs :
+Le bouton **Drone**, disponible dans la planification et à côté de **Moyens** dans les ressources, ouvre le catalogue de la mission. Il affiche tous les modèles enregistrés, même ceux dont la quantité disponible est nulle, avec leurs valeurs :
 
 | Caractéristique | Affichage |
 | --- | --- |
