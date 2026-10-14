@@ -34,6 +34,13 @@ const invalidCases = [
   ['coverage detached from drone', m => { m.drones[0].coverage.center = [0, 0]; }],
   ['non-finite altitude', m => { m.drones[0].altitudeMetersAgl = Infinity; }],
   ['separation below business rule', m => { m.constraints.minimumVerticalSeparationMeters = 9; }],
+  ['calendar overflow', m => { m.scheduledAt = '2026-02-30T12:00:00Z'; }],
+  ['self intersecting polygon', m => { m.operationZone.geometry.coordinates = [[[-1.7,48.1],[-1.6,48.2],[-1.7,48.2],[-1.6,48.1],[-1.7,48.1]]]; }],
+  ['too many drones', m => { m.drones = Array(33).fill(m.drones[0]); }],
+  ['excessive domain', m => { m.operationZone.geometry.coordinates = [[[0,0],[2,0],[2,2],[0,2],[0,0]]]; }],
+  ['unknown scenario setting', m => { m.constraints.capabilityId = 'future'; }],
+  ['unavailable weather treated as dry', m => { m.weather.rainDetected = false; }],
+  ['availability above bound', m => { m.availableResources.dronesByModel['dji-mini-5'] = 101; }],
 ];
 
 for (const [name, mutate] of invalidCases) {
@@ -49,7 +56,11 @@ test('rejects malformed JSON and null root', () => {
   assert.throws(() => parseMission('null'), /Mission JSON invalide/);
 });
 
-test('weather placeholder preserves unknown rain and day/night', async () => {
+test('oversized mission file is rejected before reading', async () => {
+  await assert.rejects(() => importMission(new Blob([' '.repeat(2000001)])), /volumineux/);
+});
+
+test('unavailable forecast preserves unknown rain and day/night', async () => {
   const weather = await getWeather(48.1173, -1.6778, '2099-01-01T12:00:00Z');
   assert.deepEqual(weather.location, example.location);
   assert.equal(weather.status, 'unavailable');
