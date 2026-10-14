@@ -96,3 +96,15 @@ test('working angles above 330° become a full 360° circle (planning, manual ed
   const kept = adjustPlanningCoverage(source, plan, drone.id, { headingDegrees: 10, workingAngleDegrees: 300, radiusMeters: drone.coverage.radiusMeters });
   assert.equal(kept.drones[0].coverage.workingAngleDegrees, 300);
 });
+
+test('floors: at least 85 % overall and 92 % on critical zones, even with a strict trade-off', async () => {
+  const { MIN_TOTAL_COVERAGE, MIN_PRIORITY_COVERAGE } = await import('../../src/engines/planning/index.ts');
+  const source = input(rect(6000, 5000), { capabilityId: 'tp1-out-of-sight', minimumGainPerDronePercent: 50 });
+  source.priorityZones = [{ type: 'Feature', properties: { kind: 'priority', id: 'p', name: 'P' }, geometry: { type: 'Polygon', coordinates: [[m(4500, 3500), m(5800, 3500), m(5800, 4800), m(4500, 4800), m(4500, 3500)]] } }];
+  const metrics = computeCoverage(generatePlan(source));
+  assert.ok(metrics.totalCoveragePercent >= MIN_TOTAL_COVERAGE, `${metrics.totalCoveragePercent}`);
+  assert.ok(metrics.priorityCoveragePercent >= MIN_PRIORITY_COVERAGE, `${metrics.priorityCoveragePercent}`);
+  const scarce = { ...source, availableResources: { dronesByModel: Object.fromEntries(DRONE_CATALOG.map(model => [model.id, 0])) } };
+  scarce.availableResources.dronesByModel[DRONE_CATALOG[0].id] = 1;
+  assert.ok(generatePlan(scarce).warnings.some(w => w.startsWith('Plancher non atteint')));
+});

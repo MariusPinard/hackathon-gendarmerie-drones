@@ -7,6 +7,9 @@ import { inspectAuthorization } from './authorization.ts';
 const PRIORITY_WEIGHT = 4;
 /** Default minimum coverage gain (points of %) for an extra drone to be worth it. */
 export const MIN_GAIN_PER_DRONE = 3;
+/** Coverage floors (%) always reached when means allow: whole area and priority (critical) zones. */
+export const MIN_TOTAL_COVERAGE = 85;
+export const MIN_PRIORITY_COVERAGE = 92;
 /** Drone counts up to which every layout is fully refined (local search, k-centres). */
 const REFINED_DRONES = 12;
 const RAD = Math.PI / 180;
@@ -353,6 +356,8 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   const minimumGain = input.minimumGainPerDronePercent ?? Math.min(MIN_GAIN_PER_DRONE, idealGain / 4);
   interface Layout { drones: number; state: ReturnType<typeof snapshot>; quality: number[]; weighted: number; coverage: number; priority: number | null }
   const curve: Layout[] = [];
+  // Hard floors before any trade-off: total coverage and priority (critical) coverage.
+  const meetsFloors = (layout: Layout) => layout.coverage >= MIN_TOTAL_COVERAGE && (layout.priority === null || layout.priority >= MIN_PRIORITY_COVERAGE);
   const record = (): Layout => { const state = covered();
     return { drones: placed.length, state: snapshot(), quality: quality(), weighted: state.w / totalWeight * 100, coverage: state.n / total * 100,
       priority: priorityCount ? state.p / priorityCount * 100 : null }; };
@@ -376,7 +381,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
     curve.push(best);
     const gains = curve.slice(-3).map((layout, i, list) => i ? layout.weighted - list[i - 1]!.weighted : Infinity);
     // Stop when (almost) everything is covered or the last two drones each brought little.
-    if (best.coverage >= 99.9 || (gains.length === 3 && gains[1]! < minimumGain && gains[2]! < minimumGain)) break;
+    if (best.coverage >= 99.9 || (meetsFloors(best) && gains.length === 3 && gains[1]! < minimumGain && gains[2]! < minimumGain)) break;
   }
   // Hexagonal lattices (the densest disk covering of a plane), clipped to the area, for each
   // geometric profile and a few offsets: on large areas they beat any incremental layout.
@@ -416,7 +421,9 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   for (const layout of byCount) if (!front.length || layout.weighted > front.at(-1)!.weighted + 1e-9) {
     if (front.length && front.at(-1)!.drones === layout.drones) front[front.length - 1] = layout; else front.push(layout);
   }
-  let chosen = 0;
+  // Start from the first layout meeting the floors (else the best available), then trade off.
+  let chosen = front.findIndex(meetsFloors);
+  if (chosen < 0) chosen = Math.max(0, front.length - 1);
   for (;;) {
     let next = -1, bestRate = -Infinity;
     for (let j = chosen + 1; j < front.length; j++) {
@@ -476,6 +483,8 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   result.estimate.pilotCount = result.drones.length;
   result.warnings.push(...assignAltitudes(result.drones.filter(hasCoverage), input.catalog, input));
   const metrics = computeCoverage(result);
+  if (metrics.totalCoveragePercent < MIN_TOTAL_COVERAGE) result.warnings.push(`Plancher non atteint : ${metrics.totalCoveragePercent.toFixed(1)} % < ${MIN_TOTAL_COVERAGE} % de couverture (stock, autorisation ou chevauchement insuffisants).`);
+  if (metrics.priorityCoveragePercent !== null && metrics.priorityCoveragePercent < MIN_PRIORITY_COVERAGE) result.warnings.push(`Zones critiques sous le plancher : ${metrics.priorityCoveragePercent.toFixed(1)} % < ${MIN_PRIORITY_COVERAGE} %.`);
   const nextStep = result.tradeoff?.find((_, index, list) => index > 0 && list[index - 1]!.chosen);
   if (metrics.totalCoveragePercent < 98) result.warnings.push(nextStep
     ? `Compromis retenu : ${metrics.totalCoveragePercent.toFixed(1)} % avec ${result.drones.length} drone(s) ; ${nextStep.drones} drones donneraient ${nextStep.coveragePercent} %.`
