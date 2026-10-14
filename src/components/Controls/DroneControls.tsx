@@ -34,6 +34,6 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
     <button className="primary wide" disabled={!enabled || !validSector} onClick={() => onChange({ type: 'set_coverage', droneId: drone.id, headingDegrees: Number(heading), workingAngleDegrees: Number(angle) })}>Appliquer le cap et l’angle</button>
     <p className="muted">360° : disque · angle réduit : secteur orienté.</p>
     <button className="wide" disabled={!active || !['active', 'ready', 'unavailable', 'reserve'].includes(drone.status)} onClick={() => onChange({ type: 'set_availability', droneId: drone.id, status: ['unavailable', 'reserve'].includes(drone.status) ? 'active' : 'unavailable' })}>
-      {drone.status === 'reserve' ? 'Engager ce drone supplémentaire' : drone.status === 'unavailable' ? 'Rendre le drone disponible' : 'Marquer le drone indisponible'}</button>
+      {drone.status === 'reserve' ? 'Engager ce drone supplémentaire' : drone.status === 'unavailable' ? 'Déployer le drone' : 'Mettre le drone en réserve'}</button>
   </div>;
 }
