@@ -27,7 +27,7 @@ export function PlanningPage({ onPrepare }: { onPrepare: () => void }) {
   const [center, setCenter] = useState<Coordinates>(mission?.location ?? [-1.6778, 48.1173]);
   const [when, setWhen] = useState(localInput(new Date(mission?.scheduledAt ?? Date.now() + 3600000)));
   const [environment, setEnvironment] = useState<Environment>(mission?.constraints.environment ?? 'urban');
-  const [capabilityId, setCapabilityId] = useState(mission?.drones[0]?.capabilityId ?? 'tp1-out-of-sight');
+  const [capabilityId, setCapabilityId] = useState(mission?.constraints.capabilityId ?? mission?.drones[0]?.capabilityId ?? 'tp1-out-of-sight');
   const [operationZone, setOperationZone] = useState<OperationZone | null>(mission?.operationZone ?? null);
   const [priorityZones, setPriorityZones] = useState<PriorityZone[]>(mission?.priorityZones ?? []);
   const [drawing, setDrawing] = useState<'operation' | 'priority' | null>(null);
@@ -87,7 +87,7 @@ export function PlanningPage({ onPrepare }: { onPrepare: () => void }) {
       if (!operationZone) throw new Error('Dessinez et terminez la zone d’opération.');
       const actualWeather: WeatherInfo = weather ?? { status: 'unavailable', location, dateTime: scheduledAt, rainDetected: null, dayNight: 'unknown', source: null };
       const input: PlanningInput = { missionId: missionId.current, location, scheduledAt, operationZone, priorityZones,
-        weather: actualWeather, constraints: { environment, minimumVerticalSeparationMeters: 10, defaultWorkingAngleDegrees: 360 },
+        weather: actualWeather, constraints: { environment, minimumVerticalSeparationMeters: 10, defaultWorkingAngleDegrees: 360, capabilityId },
         catalog: DRONE_CATALOG, capabilityId, availableResources: { dronesByModel: { 'dji-matrice-4t': 0, 'dji-mavic-3-enterprise': 0, 'dji-mini-5': 0 } } };
       const estimate = estimateResources(input);
       const proposed = generatePlan({ ...input, availableResources: { dronesByModel: estimate.dronesByModel } });

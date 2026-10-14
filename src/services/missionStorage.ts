@@ -1,5 +1,7 @@
 import { DRONE_CATALOG } from '../data/droneCatalog.ts';
 import type { Mission } from '../types/mission';
+import { samplePolygon, validatePolygon } from '../engines/geometry/index.ts';
+import type { Polygon } from '../types/geo';
 
 type JsonObject = Record<string, unknown>;
 
@@ -52,15 +54,18 @@ function zone(value: unknown, kind: 'operation' | 'priority', path: string): str
   const geometry = object(feature.geometry, `${path}.geometry`);
   requireValid(geometry.type === 'Polygon', `${path}.geometry.type`);
   const rings = array(geometry.coordinates, `${path}.geometry.coordinates`);
-  requireValid(rings.length > 0, `${path}.geometry.coordinates`);
+  requireValid(rings.length > 0 && rings.length <= 20, `${path}.geometry.coordinates`);
   for (const [index, value] of rings.entries()) {
     const ringPath = `${path}.geometry.coordinates[${index}]`;
     const ring = array(value, ringPath);
-    requireValid(ring.length >= 4, ringPath);
+    requireValid(ring.length >= 4 && ring.length <= 301, ringPath);
     for (const point of ring) coordinates(point, ringPath);
     requireValid(JSON.stringify(ring[0]) === JSON.stringify(ring.at(-1)), `${ringPath} (anneau fermé)`);
     requireValid(new Set(ring.slice(0, -1).map(point => JSON.stringify(point))).size >= 3,
       `${ringPath} (trois sommets distincts)`);
+  }
+  try { validatePolygon(geometry as unknown as Polygon); } catch (error) {
+    throw new Error(`Mission JSON invalide : ${path} — ${error instanceof Error ? error.message : 'géométrie invalide'}`);
   }
   return properties.id;
 }
@@ -69,7 +74,7 @@ function resourceCounts(value: unknown, path: string): void {
   const counts = object(value, path);
   requireValid(Object.keys(counts).length === DRONE_CATALOG.length, path);
   for (const model of DRONE_CATALOG) {
-    number(counts[model.id], `${path}.${model.id}`);
+    number(counts[model.id], `${path}.${model.id}`, 0, 100);
     requireValid(Number.isSafeInteger(counts[model.id]), `${path}.${model.id}`);
   }
 }
@@ -86,7 +91,9 @@ export function validateMission(value: unknown): asserts value is Mission {
   dateTime(mission.scheduledAt, 'scheduledAt');
   coordinates(mission.location, 'location');
   const zoneIds = new Set([zone(mission.operationZone, 'operation', 'operationZone')]);
-  for (const [index, priority] of array(mission.priorityZones, 'priorityZones').entries()) {
+  const priorities = array(mission.priorityZones, 'priorityZones');
+  requireValid(priorities.length <= 20, 'priorityZones (maximum 20)');
+  for (const [index, priority] of priorities.entries()) {
     const id = zone(priority, 'priority', `priorityZones[${index}]`);
     requireValid(!zoneIds.has(id), 'priorityZones (identifiants uniques)');
     zoneIds.add(id);
@@ -98,10 +105,14 @@ export function validateMission(value: unknown): asserts value is Mission {
   requireValid(typeof weather.rainDetected === 'boolean' || weather.rainDetected === null, 'weather.rainDetected');
   oneOf(weather.dayNight, ['day', 'night', 'unknown'], 'weather.dayNight');
   requireValid(weather.source === null || typeof weather.source === 'string', 'weather.source');
+  requireValid(weather.status !== 'unavailable' || weather.rainDetected === null, 'weather (pluie inconnue si indisponible)');
+  requireValid(weather.status !== 'available' || (typeof weather.rainDetected === 'boolean' && typeof weather.source === 'string' && weather.source.length > 0), 'weather (source/prévision requises)');
   const constraints = object(mission.constraints, 'constraints');
   oneOf(constraints.environment, ['rural', 'urban'], 'constraints.environment');
   number(constraints.minimumVerticalSeparationMeters, 'constraints.minimumVerticalSeparationMeters', 10);
   number(constraints.defaultWorkingAngleDegrees, 'constraints.defaultWorkingAngleDegrees', Number.MIN_VALUE, 360);
+  if (constraints.capabilityId !== undefined) oneOf(constraints.capabilityId,
+    ['tp1-in-sight', 'tp1-out-of-sight', 'tp2-out-of-sight'], 'constraints.capabilityId');
   if (mission.estimate !== null) {
     const estimate = object(mission.estimate, 'estimate');
     resourceCounts(estimate.dronesByModel, 'estimate.dronesByModel');
@@ -111,7 +122,9 @@ export function validateMission(value: unknown): asserts value is Mission {
   }
   resourceCounts(object(mission.availableResources, 'availableResources').dronesByModel, 'availableResources.dronesByModel');
   const pilotIds = new Set<string>();
-  for (const value of array(mission.pilots, 'pilots')) {
+  const pilots = array(mission.pilots, 'pilots');
+  requireValid(pilots.length <= 100, 'pilots (maximum 100)');
+  for (const value of pilots) {
     const pilot = object(value, 'pilots[]');
     text(pilot.id, 'pilot.id');
     requireValid(!pilotIds.has(pilot.id), 'pilots (identifiants uniques)');
@@ -121,7 +134,9 @@ export function validateMission(value: unknown): asserts value is Mission {
     coordinates(pilot.pilotPosition, 'pilot.pilotPosition');
   }
   const droneIds = new Set<string>();
-  for (const value of array(mission.drones, 'drones')) {
+  const drones = array(mission.drones, 'drones');
+  requireValid(drones.length <= 32, 'drones (maximum 32)');
+  for (const value of drones) {
     const drone = object(value, 'drones[]');
     text(drone.id, 'drone.id');
     requireValid(!droneIds.has(drone.id), 'drones (identifiants uniques)');
@@ -143,6 +158,8 @@ export function validateMission(value: unknown): asserts value is Mission {
     number(coverage.workingAngleDegrees, 'drone.coverage.workingAngleDegrees', Number.MIN_VALUE, 360);
   }
   oneOf(mission.status, ['draft', 'planned', 'ready', 'active', 'emergency', 'returning', 'completed'], 'status');
+  try { samplePolygon((mission.operationZone as Mission['operationZone']).geometry); }
+  catch (error) { throw new Error(`Mission JSON invalide : ${error instanceof Error ? error.message : 'zone invalide'}`); }
 }
 
 export function serializeMission(mission: Mission): string {
@@ -157,6 +174,7 @@ export function parseMission(json: string): Mission {
 }
 
 export async function importMission(file: Blob): Promise<Mission> {
+  if (file.size > 2000000) throw new Error('Fichier trop volumineux (maximum 2 Mo).');
   return parseMission(await file.text());
 }
 

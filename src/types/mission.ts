@@ -9,6 +9,8 @@ export interface MissionConstraints {
   environment: Environment;
   minimumVerticalSeparationMeters: number;
   defaultWorkingAngleDegrees: number;
+  /** Optional for backwards-compatible 1.0 missions; old files infer from drones. */
+  capabilityId?: string;
 }
 
 export const DEFAULT_MISSION_CONSTRAINTS: Readonly<MissionConstraints> = Object.freeze({
