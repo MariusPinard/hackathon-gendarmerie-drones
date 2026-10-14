@@ -77,14 +77,14 @@ export function MissionMap(props: MapProps) {
     const layers = layersRef.current;
     if (!layers) return;
     layers.clearLayers();
-    if (props.operationZone) L.polygon(rings(props.operationZone.geometry.coordinates), { color: '#174d80', weight: 3, fillOpacity: 0.07, interactive: false }).addTo(layers);
-    props.priorityZones.forEach(z => L.polygon(rings(z.geometry.coordinates), { color: '#ba720c', weight: 2, fillColor: '#efa642', fillOpacity: 0.28, interactive: false }).addTo(layers));
-    props.uncoveredPoints?.forEach(p => L.circleMarker(latLng(p), { radius: 2, color: '#a3273c', weight: 0, fillOpacity: 0.6, interactive: false }).addTo(layers));
+    if (props.operationZone) L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-operation)', weight: 3, fillOpacity: 0.07, interactive: false }).addTo(layers);
+    props.priorityZones.forEach(z => L.polygon(rings(z.geometry.coordinates), { color: 'var(--map-priority)', weight: 2, fillColor: 'var(--map-priority-fill)', fillOpacity: 0.28, interactive: false }).addTo(layers));
+    props.uncoveredPoints?.forEach(p => L.circleMarker(latLng(p), { radius: 2, color: 'var(--map-lost)', weight: 0, fillOpacity: 0.6, interactive: false }).addTo(layers));
     const vertices = props.vertices ?? [];
     if (vertices.length) {
-      L.polyline(vertices.map(latLng), { color: '#246fc0', weight: 3, interactive: false }).addTo(layers);
-      if (vertices.length >= 3) L.polyline([latLng(vertices.at(-1)!), latLng(vertices[0]!)], { color: '#246fc0', dashArray: '5 7', weight: 2, interactive: false }).addTo(layers);
-      vertices.slice(1).forEach(p => L.circleMarker(latLng(p), { radius: 5, color: '#174d80', fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(layers));
+      L.polyline(vertices.map(latLng), { color: 'var(--map-selected)', weight: 3, interactive: false }).addTo(layers);
+      if (vertices.length >= 3) L.polyline([latLng(vertices.at(-1)!), latLng(vertices[0]!)], { color: 'var(--map-selected)', dashArray: '5 7', weight: 2, interactive: false }).addTo(layers);
+      vertices.slice(1).forEach(p => L.circleMarker(latLng(p), { radius: 5, color: 'var(--map-operation)', fillColor: 'var(--surface)', fillOpacity: 1, interactive: false }).addTo(layers));
       const first = L.marker(latLng(vertices[0]!), { title: 'Fermer le polygone', bubblingMouseEvents: false,
         icon: L.divIcon({ className: `draw-first-node ${vertices.length >= 3 ? 'closable' : ''}`, html: '<span>1</span>', iconSize: [24, 24], iconAnchor: [12, 12] }) }).addTo(layers);
       first.bindTooltip('Cliquer ici pour fermer la zone');
@@ -102,7 +102,7 @@ export function MissionMap(props: MapProps) {
     props.drones?.forEach((drone, index) => {
       const conflict = props.conflictDroneIds?.includes(drone.id);
       const selected = props.selected === `drone:${drone.id}`;
-      const color = conflict ? '#b4233a' : selected ? '#e59817' : '#236bb1';
+      const color = conflict ? 'var(--map-conflict)' : selected ? 'var(--map-selected)' : 'var(--map-coverage)';
       if (hasCoverage(drone)) {
         if (drone.coverage.workingAngleDegrees === 360) L.circle(latLng(drone.dronePosition), { radius: drone.coverage.radiusMeters, color, weight: selected ? 3 : 1.5, fillOpacity: selected ? 0.2 : 0.1, interactive: false }).addTo(layers);
         else L.polygon(rings(coveragePolygon(drone.coverage).coordinates), { color, weight: selected ? 3 : 1.5, fillOpacity: 0.2, interactive: false }).addTo(layers);
