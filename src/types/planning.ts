@@ -15,6 +15,8 @@ export interface PlanningInput {
   availableResources: AvailableResources;
   /** Mixed TP1/TP2 by default for new plans; old missions retain their scenario. */
   capabilityId?: string;
+  /** Minimum coverage gain (points of %) for an extra drone; default MIN_GAIN_PER_DRONE. */
+  minimumGainPerDronePercent?: number;
 }
 
 export type { ResourceEstimate } from './drone';
@@ -42,4 +44,6 @@ export interface PlanningResult {
   operationZone: OperationZone;
   priorityZones: PriorityZone[];
   warnings: string[];
+  /** Best coverage found for each number of drones; `chosen` marks the retained trade-off. */
+  tradeoff?: { drones: number; coveragePercent: number; priorityCoveragePercent: number | null; chosen: boolean }[];
 }

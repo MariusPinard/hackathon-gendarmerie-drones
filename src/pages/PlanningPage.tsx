@@ -6,6 +6,7 @@ import { LocationSearch } from '../components/Controls/LocationSearch';
 import { Notification } from '../components/Controls/Notification';
 import type { Notice } from '../components/Controls/Notification';
 import { MetricsPanel } from '../components/Panels/MetricsPanel';
+import { TradeoffPanel } from '../components/Panels/TradeoffPanel';
 import { FleetPanel } from '../components/Panels/FleetPanel';
 import { WeatherBadge } from '../components/Panels/WeatherBadge';
 import { FrenchDateTime } from '../components/Controls/FrenchDateTime';
@@ -13,7 +14,7 @@ import { ExportDialog } from '../components/Controls/ExportDialog';
 import { PlanningDroneEditor } from '../components/Controls/PlanningDroneEditor';
 import { DEFAULT_LOCATION } from '../data/defaultLocation';
 import { DRONE_CATALOG } from '../data/droneCatalog';
-import { estimateResources, generatePlan, computeCoverage, adjustPlanningCoverage } from '../engines/planning';
+import { estimateResources, generatePlan, computeCoverage, adjustPlanningCoverage, MIN_GAIN_PER_DRONE } from '../engines/planning';
 import { distanceMeters, pointInPolygon, hasCoverage } from '../engines/geometry';
 import { closeDrawnPolygon } from '../engines/geometry/drawing';
 import { getWeather } from '../services/weather';
@@ -84,13 +85,15 @@ export function PlanningPage({ onPrepare, onSettings }: { onPrepare: () => void;
     if (!name.trim()) throw new Error('Renseignez le nom de la mission.');
     return { location: [...center] as Coordinates, scheduledAt: date.toISOString() };
   }
-  function planningInput(): PlanningInput {
+  // Coverage/drones trade-off: minimum coverage gain (points) for each extra drone.
+  const [minGain, setMinGain] = useState(MIN_GAIN_PER_DRONE);
+  function planningInput(gain = minGain): PlanningInput {
     const { location, scheduledAt } = configuration();
     if (!operationZone) throw new Error('Terminez d’abord le dessin de la zone d’opération.');
     return { missionId: missionId.current, location, scheduledAt, operationZone, priorityZones,
       weather: weather ?? { status: 'unavailable', location, dateTime: scheduledAt, rainDetected: null, dayNight: getDayNight(location[1], location[0], scheduledAt), source: null },
       constraints: { environment, minimumVerticalSeparationMeters: separation, maximumOverlapPercent: overlap, defaultWorkingAngleDegrees: 360, capabilityId, ...(authorization ? { authorization } : {}) }, catalog: models, capabilityId,
-      availableResources: { dronesByModel: Object.fromEntries(models.map(m => [m.id, 0])) } };
+      availableResources: { dronesByModel: Object.fromEntries(models.map(m => [m.id, 0])) }, minimumGainPerDronePercent: gain };
   }
   function savePlan(proposed: PlanningResult, input: PlanningInput, preserveResources = false) {
     const now = new Date().toISOString();
@@ -121,16 +124,16 @@ export function PlanningPage({ onPrepare, onSettings }: { onPrepare: () => void;
       notify('success', drawing === 'operation' ? 'Zone d’opération validée. Ajoutez une priorité ou calculez.' : 'Zone prioritaire validée.');
     } catch (error) { notify('error', `${message(error)} Vous pouvez continuer ou annuler le dessin.`); }
   }
-  function calculate() {
+  function calculate(gain = minGain) {
     if (drawing) return;
-    try { const input = planningInput(); const estimate = estimateResources(input); const proposed = generatePlan({ ...input, availableResources: { dronesByModel: estimate.dronesByModel } }); savePlan(proposed, input); setPanel(null); setResultOpen(true); setFleetOpen(false); notify(proposed.drones.length ? 'success' : 'warning', `${proposed.drones.length} drone(s) proposé(s). Consultez l’estimation à droite.`); }
+    try { const input = planningInput(gain); const estimate = estimateResources(input); const proposed = generatePlan({ ...input, availableResources: { dronesByModel: estimate.dronesByModel } }); savePlan(proposed, input); setPanel(null); setResultOpen(true); setFleetOpen(false); notify(proposed.drones.length ? 'success' : 'warning', `${proposed.drones.length} drone(s) proposé(s). Consultez l’estimation à droite.`); }
     catch (error) { notify('error', message(error)); }
   }
   const metrics = result ? computeCoverage(result) : null, drone = result?.drones.find(d => `drone:${d.id}` === selected), model = models.find(m => m.id === drone?.modelId);
   const tp1 = result?.pilots.filter(p => p.qualification === 'TP1' && result.drones.some(d => d.pilotId === p.id && hasCoverage(d))).length ?? 0, tp2 = result?.pilots.filter(p => p.qualification === 'TP2' && result.drones.some(d => d.pilotId === p.id && hasCoverage(d))).length ?? 0;
   return <MapWorkspace tools={[{ id: 'configuration', label: 'Mission', icon: '⚙' }, { id: 'zones', label: 'Zones', icon: '◇' }, { id: 'settings', label: 'Paramètres', icon: '⚙' }, { id: 'export', label: 'Export JSON', icon: '↥', disabled: !result || !mission, onActivate: () => setExportOpen(true) }]} panel={panel} onPanel={next => { if (next === 'settings') { onSettings(); return; } setPanel(next); if (window.matchMedia('(max-width: 1100px)').matches) setResultOpen(false); }} title={panel === 'configuration' ? 'Configuration mission' : panel === 'drone' ? 'Zone de travail du drone' : 'Zones cartographiques'} locked={!!drawing}
     fleetOpen={fleetOpen} onFleet={() => { setResultOpen(false); setFleetOpen(open => !open); }} fleet={<FleetPanel drones={result?.drones ?? []} catalog={models} selected={selected} onSelect={id => { setSelected(id); setPanel('drone'); setResultOpen(false); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); }} onClose={() => setFleetOpen(false)} />}
-    rightPanel={resultOpen && result && metrics ? <><MetricsPanel metrics={metrics} /><p className="proposal-summary">{tp1} TP1 · {tp2} TP2 · séparation {separation} m</p><div className="proposal-counts">{models.map(m => <div key={m.id}><span>{m.name}</span><strong>{result.estimate.dronesByModel[m.id] ?? 0}</strong></div>)}</div>{result.warnings.map((w, i) => <p key={i} className="notice warning">{w}</p>)}<details><summary>Comprendre la proposition</summary><ul>{result.estimate.assumptions.map(a => <li key={a}>{a}</li>)}</ul></details><div className="proposal-actions"><button onClick={() => setExportOpen(true)}>Exporter la mission JSON</button><button className="primary" disabled={loadingWeather} onClick={onPrepare}>Préparer l’opération →</button></div></> : undefined} rightPanelTitle="Estimation du dispositif" onRightPanelClose={() => setResultOpen(false)}
+    rightPanel={resultOpen && result && metrics ? <><MetricsPanel metrics={metrics} /><TradeoffPanel tradeoff={result.tradeoff} minimumGain={minGain} disabled={loadingWeather} onMinimumGain={value => { setMinGain(value); calculate(value); }} /><p className="proposal-summary">{tp1} TP1 · {tp2} TP2 · séparation {separation} m</p><div className="proposal-counts">{models.map(m => <div key={m.id}><span>{m.name}</span><strong>{result.estimate.dronesByModel[m.id] ?? 0}</strong></div>)}</div>{result.warnings.map((w, i) => <p key={i} className="notice warning">{w}</p>)}<details><summary>Comprendre la proposition</summary><ul>{result.estimate.assumptions.map(a => <li key={a}>{a}</li>)}</ul></details><div className="proposal-actions"><button onClick={() => setExportOpen(true)}>Exporter la mission JSON</button><button className="primary" disabled={loadingWeather} onClick={onPrepare}>Préparer l’opération →</button></div></> : undefined} rightPanelTitle="Estimation du dispositif" onRightPanelClose={() => setResultOpen(false)}
     status={<><strong>{name}</strong><span>01 · Planification</span><WeatherBadge weather={weather} loading={loadingWeather} /></>}
     panelContent={<>
       {panel === 'configuration' && <><label>Nom de mission<input value={name} onChange={e => { setName(e.target.value); invalidate(); }} maxLength={120} /></label><p className="location-label">⌖ {locationLabel}</p><p className="muted">{center[1].toFixed(5)}, {center[0].toFixed(5)}</p><FrenchDateTime value={when} onChange={next => { setWhen(next); invalidate(); }} /><p className="muted">Heure locale : {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
@@ -140,7 +143,7 @@ export function PlanningPage({ onPrepare, onSettings }: { onPrepare: () => void;
       {panel === 'drone' && drone && model && result && <PlanningDroneEditor key={drone.id} drone={drone} model={model} maxRangeMeters={capabilityId === 'tp1-in-sight' ? 500 : capabilityId.startsWith('tp1') ? 1000 : 2000} onChange={change => { try { const input = planningInput(); const next = adjustPlanningCoverage(input, result, drone.id, change); savePlan(next, input, true); } catch (error) { notify('error', message(error)); } }} />}
     </>}
     floating={<><LocationSearch center={center} disabled={!!drawing} onError={text => notify('error', text)} onLocate={(point, label) => { if (drawing) return; if (point[0] !== center[0] || point[1] !== center[1]) invalidate(); setCenter(point); setRecenterKey(n => n + 1); setLocationLabel(label); notify('success', `Carte centrée sur ${label}.`); }} />
-      {drawing ? <div className="drawing-bar" role="region" aria-label="Dessin en cours"><div><strong>{drawing === 'operation' ? 'Zone d’opération' : 'Zone prioritaire'}</strong><span>Premier point ou Terminer pour fermer</span></div><button className="primary" onClick={finishDrawing}>✓ Terminer</button><button onClick={cancelDrawing}>Annuler</button></div> : <div className="map-actionbar"><button className="primary" disabled={!operationZone || loadingWeather} onClick={calculate}>{result ? 'Recalculer l’estimation' : 'Calculer l’estimation'}</button><button disabled={!result || loadingWeather} onClick={onPrepare}>Préparer l’opération →</button>{result && <button onClick={() => { setResultOpen(true); setFleetOpen(false); }}>Voir l’estimation</button>}</div>}
+      {drawing ? <div className="drawing-bar" role="region" aria-label="Dessin en cours"><div><strong>{drawing === 'operation' ? 'Zone d’opération' : 'Zone prioritaire'}</strong><span>Premier point ou Terminer pour fermer</span></div><button className="primary" onClick={finishDrawing}>✓ Terminer</button><button onClick={cancelDrawing}>Annuler</button></div> : <div className="map-actionbar"><button className="primary" disabled={!operationZone || loadingWeather} onClick={() => calculate()}>{result ? 'Recalculer l’estimation' : 'Calculer l’estimation'}</button><button disabled={!result || loadingWeather} onClick={onPrepare}>Préparer l’opération →</button>{result && <button onClick={() => { setResultOpen(true); setFleetOpen(false); }}>Voir l’estimation</button>}</div>}
       <Notification notice={notice} onClose={() => setNotice(null)} />{exportOpen && mission && <ExportDialog defaultName={mission.metadata.name} onCancel={() => setExportOpen(false)} onConfirm={filename => { try { exportMission(mission, filename); setExportOpen(false); notify('success', `Fichier ${filename} exporté.`); } catch (error) { notify('error', message(error)); } }} />}</> }>
     <MissionMap center={center} recenterKey={recenterKey} operationZone={operationZone} priorityZones={priorityZones} drawing={!!drawing} vertices={vertices} onVertex={addVertex} onFinish={finishDrawing} uncoveredPoints={metrics?.uncoveredPoints ?? []} drones={result?.drones ?? []} pilots={result?.pilots ?? []} selected={selected} onSelect={id => { setSelected(id); if (id.startsWith('drone:')) { setPanel('drone'); setResultOpen(false); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); } }} />
   </MapWorkspace>;
