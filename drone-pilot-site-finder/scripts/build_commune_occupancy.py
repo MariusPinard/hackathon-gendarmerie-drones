@@ -36,7 +36,7 @@ from drone_site_finder.geospatial.surfaces import geodesic_area_m2, polygon_part
 from drone_site_finder.providers.http import PublicHTTP, SourceUnavailable
 from drone_site_finder.providers.models import DataBundle
 from drone_site_finder.providers.rasters import fetch_imagery, fetch_terrain
-from drone_site_finder.providers.vectors import IGN_LAYERS, RPG_LAYER, ign_layer, osm
+from drone_site_finder.providers.vectors import IGN_LAYERS, ign_layer, osm
 from drone_site_finder.schemas.sites import OccupancyMap, OccupancyZone, SearchRequest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,15 +60,12 @@ async def acquire_vectors(http, bounds, block_m, to_wgs84):
     """OSM in one query (retried), IGN BD TOPO per block to stay under the 3000-feature cap."""
     west, south, east, north = to_wgs84(box(*bounds)).bounds
     records, reports = [], []
-    for attempt in range(2):
+    for _attempt in range(3):
         osm_records, report = await osm(http, (west, south, east, north))
         if report.status != "unavailable":
             break
-        print(f"  OSM indisponible ({report.detail})", flush=True)
-        if attempt == 0:
-            await asyncio.sleep(10)
-    if report.status == "unavailable":
-        print("  Poursuite sans OSM : IGN BD TOPO et RPG seuls (voir sources).", flush=True)
+        print(f"  OSM indisponible ({report.detail}), nouvel essai dans 30 s…", flush=True)
+        await asyncio.sleep(30)
     records += osm_records
     reports.append(report)
     x0, y0, x1, y1 = bounds
@@ -77,13 +74,12 @@ async def acquire_vectors(http, bounds, block_m, to_wgs84):
         for x in _steps(x0, x1, block_m)
         for y in _steps(y0, y1, block_m)
     ]
-    layers = [(layer, None, None) for layer in IGN_LAYERS] + [(RPG_LAYER, "farmland", "ign:rpg")]
-    for layer, kind, layer_id in layers:
+    for layer in IGN_LAYERS:
         layer_records, unavailable, partial, queried = [], 0, 0, 0
         pending = [(block, 0) for block in blocks]
         while pending:
             block, depth = pending.pop()
-            found, report = await ign_layer(http, block, layer, kind=kind, id=layer_id)
+            found, report = await ign_layer(http, block, layer)
             queried += 1
             if report.status == "partial" and depth < 3:
                 # WFS 3000-feature cap reached: split the block in four and query again.
@@ -307,25 +303,6 @@ async def run(args):
     path = Path(args.out or ROOT / f"frontend/public/occupancy/commune-{args.insee}.json")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(output, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    # Manifest read by the map clients: every precomputed commune of this folder.
-    manifest_path = path.parent / "index.json"
-    manifest = (
-        json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else []
-    )
-    manifest = [item for item in manifest if item["insee"] != properties["code"]]
-    manifest.append(
-        {
-            "insee": properties["code"],
-            "name": properties["nom"],
-            "file": path.name,
-            "generated_at": output["generated_at"],
-            "bbox": [round(v, 6) for v in commune.bounds],
-        }
-    )
-    manifest_path.write_text(
-        json.dumps(sorted(manifest, key=lambda item: item["name"]), ensure_ascii=False, indent=1),
-        encoding="utf-8",
-    )
     print(
         f"Écrit {path} ({path.stat().st_size / 1e6:.1f} Mo) en {output['elapsed_seconds']} s · "
         + ", ".join(f"{k} {v / total:.1%}" for k, v in areas.items()),

@@ -1,4 +1,3 @@
-import asyncio
 from datetime import UTC, datetime
 
 import numpy as np
@@ -37,8 +36,7 @@ async def fetch_imagery(http, context, enabled):
     width = min(1024, max(64, int(1024 * width_m / max(width_m, height_m))))
     height = min(1024, max(64, int(1024 * height_m / max(width_m, height_m))))
     try:
-        raw = await _request_with_retry(
-            http,
+        raw = await http.request(
             WMS,
             params={
                 "service": "WMS",
@@ -67,17 +65,6 @@ async def fetch_imagery(http, context, enabled):
         )
     except (SourceUnavailable, ValueError, OSError) as exc:
         return None, report("ign:ortho", "BD ORTHO", "unavailable", str(exc))
-
-
-async def _request_with_retry(http, url, *, params, attempts=2):
-    """Imagery tiles fail transiently under load: one retry before reporting unavailable."""
-    for attempt in range(attempts):
-        try:
-            return await http.request(url, params=params)
-        except SourceUnavailable:
-            if attempt == attempts - 1:
-                raise
-            await asyncio.sleep(1.5)
 
 
 def elevation_value(value):

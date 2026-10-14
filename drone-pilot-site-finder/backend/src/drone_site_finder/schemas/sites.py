@@ -201,7 +201,6 @@ class CandidateFeature(BaseModel):
 OccupancyStatus = Literal[
     "free",
     "free_unconfirmed",
-    "light_vegetation",
     "limited_range",
     "no_access",
     "masked",
@@ -225,8 +224,6 @@ class OccupancyZone(BaseModel):
     label: str
     reason_label: str | None = None
     takeoff: Literal["possible", "conditional", "impossible"]
-    # A ≥ 70, B 45–70, C < 45 on the continuous takeoff quality score (free cells only).
-    quality: Literal["A", "B", "C"] | None = None
     area_m2: float = Field(ge=0)
     geometry: OccupancyGeometry
 

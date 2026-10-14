@@ -4,7 +4,6 @@ import type { OccupancyStatus, TakeoffVerdict } from './types'
 export const occupancyStyles: Record<OccupancyStatus, { label: string; color: string; hint: string }> = {
   free: { label: 'Libre', color: '#2f9e5f', hint: 'Surface ouverte cartographiée, sans occupation connue, à portée.' },
   free_unconfirmed: { label: 'Libre non confirmé', color: '#a6cf86', hint: 'Aucune occupation connue, mais pas de surface ouverte cartographiée.' },
-  light_vegetation: { label: 'Végétation basse', color: '#c9a227', hint: 'Haie, lande, verger ou vigne : décoller à côté, pas dessus.' },
   limited_range: { label: 'Portée partielle', color: '#e2c23b', hint: 'Atteint moins de la moitié de ce que couvrent les meilleurs points.' },
   no_access: { label: 'Accès éloigné', color: '#8195b8', hint: 'Trop loin d’une voie ou d’un chemin accessible.' },
   masked: { label: 'Vue masquée', color: '#e8862e', hint: 'Relief ou sursol masquent la majorité des cibles de la zone.' },
@@ -15,7 +14,7 @@ export const occupancyStyles: Record<OccupancyStatus, { label: string; color: st
 }
 
 /** Display order: takeoff possible first, then conditional, then impossible. */
-export const occupancyOrder: OccupancyStatus[] = ['free', 'free_unconfirmed', 'light_vegetation', 'limited_range', 'no_access', 'masked', 'out_of_range', 'steep', 'obstacle_buffer', 'occupied']
+export const occupancyOrder: OccupancyStatus[] = ['free', 'free_unconfirmed', 'limited_range', 'no_access', 'masked', 'out_of_range', 'steep', 'obstacle_buffer', 'occupied']
 
 export const takeoffStyles: Record<TakeoffVerdict, { label: string; color: string }> = {
   possible: { label: 'Décollage possible', color: '#2f9e5f' },
@@ -24,7 +23,7 @@ export const takeoffStyles: Record<TakeoffVerdict, { label: string; color: strin
 }
 
 export const takeoffOf: Record<OccupancyStatus, TakeoffVerdict> = {
-  free: 'possible', free_unconfirmed: 'conditional', light_vegetation: 'conditional', limited_range: 'conditional', no_access: 'conditional',
+  free: 'possible', free_unconfirmed: 'conditional', limited_range: 'conditional', no_access: 'conditional',
   masked: 'conditional', out_of_range: 'impossible', steep: 'impossible', obstacle_buffer: 'impossible', occupied: 'impossible',
 }
 

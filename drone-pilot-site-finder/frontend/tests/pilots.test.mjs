@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { autoPlace, coverage, distanceM, nearestFreeSite, operationTargets, siteAt } from '../src/pilots.ts'
+import { autoPlace, coverage, nearestFreeSite, operationTargets, siteAt } from '../src/pilots.ts'
 
 const commune = JSON.parse(readFileSync(new URL('../public/occupancy/commune-09194.json', import.meta.url), 'utf-8'))
 const occupancy = commune.occupancy
@@ -31,15 +31,4 @@ test('automatic placement only uses free cells and covers the bourg', () => {
   console.log(`  ${result.placed.length} TP1, couverture ${(result.coverage * 100).toFixed(1)} %, ${result.candidates} candidats, ${elapsed.toFixed(0)} ms`)
   const tp2 = autoPlace(bourg, occupancy, [], 'TP2', 10)
   assert.ok(tp2.placed.length <= result.placed.length)
-})
-
-test('mixed placement keeps 50 m between pilots, prefers TP1 and prunes redundant pilots', () => {
-  const large = { type: 'Polygon', coordinates: [[[1.83, 43.07], [1.92, 43.07], [1.92, 43.15], [1.83, 43.15], [1.83, 43.07]]] }
-  const tp1 = autoPlace(large, occupancy, [], 'TP1', 30)
-  const mixed = autoPlace(large, occupancy, [], 'mixed', 30)
-  assert.ok(mixed.placed.length <= tp1.placed.length, `${mixed.placed.length} vs ${tp1.placed.length}`)
-  assert.ok(mixed.placed.some(p => p.qualification === 'TP1'))
-  for (const a of mixed.placed) for (const b of mixed.placed) if (a !== b) assert.ok(distanceM(a.position, b.position) >= 50)
-  assert.ok(mixed.coverage >= tp1.coverage - 0.02)
-  console.log(`  grande zone : TP1 seuls ${tp1.placed.length} (${(tp1.coverage * 100).toFixed(0)} %), mixte ${mixed.placed.length} dont ${mixed.placed.filter(p => p.qualification === 'TP2').length} TP2 (${(mixed.coverage * 100).toFixed(0)} %), ${tp1.pruned + mixed.pruned} retirés`)
 })

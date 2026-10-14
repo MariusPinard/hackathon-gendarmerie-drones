@@ -81,10 +81,7 @@ def test_each_cause_is_classified_with_its_reason():
     takeoff = {zone.status: zone.takeoff for zone in occupancy.zones}
     assert takeoff["free"] == "possible" and takeoff["occupied"] == "impossible"
     assert takeoff["out_of_range"] == "impossible" and takeoff["masked"] == "conditional"
-    assert {key for key, value in occupancy.assessed.items() if not value} == {
-        "imagery",
-        "farmland",
-    }
+    assert {key for key, value in occupancy.assessed.items() if not value} == {"imagery"}
 
 
 def test_zones_partition_the_search_area_without_overlap():
@@ -164,54 +161,3 @@ def test_occupancy_tile_endpoint_returns_the_clipped_tile(client):
         client.post("/api/v1/occupancy/tile", json={"bbox": [2.36, 48.85, 2.35, 48.86]}).status_code
         == 422
     )
-
-
-def test_new_rules_vegetation_farmland_islands_access_and_quality():
-    context, bundle, options = scenario(terrain=False)
-    op = context.operation.bounds
-    a, b, c, d = context.search.bounds
-    bundle.records = [r for r in bundle.records if r.kind != "open"]
-    road_y = op[3] + 40  # accessible road of the scenario
-    band = (road_y - 100, road_y - 10)  # south of the road, 10–100 m away
-    records = [
-        (box(op[0] - 200, *band[:1], op[0] - 180, band[1]), "vegetation", {"nature": "Haie"}),
-        (box(op[0] - 170, band[0], op[0] - 60, band[1]), "farmland", {"cat_cult_p": "PP"}),
-        (box(op[2] + 120, band[0], op[2] + 220, band[1]), "farmland", {"cat_cult_p": "TA"}),
-        (box(op[2] + 30, road_y - 40, op[2] + 38, road_y - 32), "open", {}),
-        (box(a, road_y + 20, c, road_y + 35), "water", {}),
-    ]
-    bundle.records += [GeoRecord(context.to_wgs84(g), k, "test", p) for g, k, p in records]
-    occupancy = build_occupancy(context, bundle, options, relative_to_operation=False)
-    y = road_y - 50
-    assert status_at(occupancy, context, op[0] - 190, y) == (
-        "light_vegetation",
-        "Haie, lande, verger ou vigne",
-    )
-    assert status_at(occupancy, context, op[0] - 115, y)[0] == "free"
-    assert status_at(occupancy, context, op[2] + 170, y) == (
-        "free_unconfirmed",
-        "Parcelle cultivée : selon la saison",
-    )
-    assert status_at(occupancy, context, op[2] + 34, road_y - 36) == (
-        "free_unconfirmed",
-        "Îlot libre trop petit (< 30 m)",
-    )
-    # 60 m north of the road as the crow flies, but the river cuts the walking path.
-    assert status_at(occupancy, context, (op[0] + op[2]) / 2, road_y + 60) == (
-        "no_access",
-        "Accès coupé par l’eau ou le bâti : long détour",
-    )
-    free = [zone for zone in occupancy.zones if zone.status == "free"]
-    assert free and all(zone.quality in {"A", "B", "C"} for zone in free)
-    assert occupancy.assessed["farmland"] is True
-
-
-def test_takeoff_feedback_is_recorded_and_listed(client, tmp_path, monkeypatch):
-    monkeypatch.setenv("DRONE_FEEDBACK_FILE", str(tmp_path / "feedback.jsonl"))
-    body = {"position": [1.87, 43.08], "verdict": "impossible", "comment": "Clôture neuve"}
-    assert client.post("/api/v1/occupancy/feedback", json=body).status_code == 201
-    listed = client.get("/api/v1/occupancy/feedback").json()
-    assert listed["features"][0]["properties"]["verdict"] == "impossible"
-    assert listed["features"][0]["geometry"]["coordinates"] == [1.87, 43.08]
-    bad = {"position": [1.87, 43.08], "verdict": "peut-être"}
-    assert client.post("/api/v1/occupancy/feedback", json=bad).status_code == 422

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { OccupancyMap, PolygonGeometry } from '../types'
 import { takeoffStyles } from '../occupancy'
-import { RANGE_M, autoPlace, coverage, nearestFreeSite, operationTargets, siteAt, type PilotPlacement, type PlacementMode, type Qualification } from '../pilots'
+import { RANGE_M, autoPlace, coverage, nearestFreeSite, operationTargets, siteAt, type PilotPlacement, type Qualification } from '../pilots'
 
 const percent = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 })
 const coordinate = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 5, maximumFractionDigits: 5 })
@@ -15,18 +15,16 @@ export default function PilotPanel({ occupancy, area, pilots, onChange, placing,
   disabled: boolean
 }) {
   const [maxPilots, setMaxPilots] = useState(6)
-  const [autoMode, setAutoMode] = useState<PlacementMode>('mixed')
   const [message, setMessage] = useState('')
   const covered = area ? coverage(operationTargets(area), pilots) : null
   const update = (id: string, change: Partial<PilotPlacement>) => onChange(pilots.map(p => p.id === id ? { ...p, ...change } : p))
 
   function runAuto() {
     if (!area || !occupancy) return
-    const result = autoPlace(area, occupancy, pilots, autoMode, maxPilots)
+    const result = autoPlace(area, occupancy, pilots, qualification, maxPilots)
     onChange([...pilots, ...result.placed])
-    const tp1 = result.placed.filter(p => p.qualification === 'TP1').length
     setMessage(result.placed.length
-      ? `${tp1} TP1 + ${result.placed.length - tp1} TP2 placé(s) sur des cellules libres, au moins 50 m d’écart${result.pruned ? `, ${result.pruned} redondant(s) retiré(s)` : ''} · zone couverte à ${percent.format(result.coverage)}.`
+      ? `${result.placed.length} ${qualification} placé(s) sur des cellules libres · zone couverte à ${percent.format(result.coverage)}.`
       : result.coverage >= 0.98 ? 'La zone est déjà couverte.' : 'Aucune cellule libre n’apporte de couverture dans la portée.')
   }
 
@@ -59,9 +57,6 @@ export default function PilotPanel({ occupancy, area, pilots, onChange, placing,
       <button className={placing ? 'chosen' : ''} disabled={disabled || !occupancy} onClick={() => onPlacing(!placing)}>{placing ? 'Terminer le placement' : '+ Placer sur la carte'}</button>
     </div>
     {placing && <p className="pilot-hint">Cliquez sur la carte pour poser un {qualification}. Glissez un marqueur pour le déplacer.</p>}
-    <div className="pilot-controls">
-      <label>Mode auto<select value={autoMode} disabled={disabled} onChange={e => setAutoMode(e.target.value as PlacementMode)}><option value="mixed">TP1 puis TP2 si utile</option><option value="TP1">TP1 seulement</option><option value="TP2">TP2 seulement</option></select></label>
-    </div>
     <div className="pilot-controls">
       <label>Maximum<input type="number" min="1" max="30" value={maxPilots} disabled={disabled} onChange={e => setMaxPilots(Math.max(1, Math.min(30, Number(e.target.value) || 1)))} /></label>
       <button disabled={disabled || !occupancy || !area} title={area ? '' : 'Dessinez d’abord la zone d’opération'} onClick={runAuto}>Placement automatique</button>

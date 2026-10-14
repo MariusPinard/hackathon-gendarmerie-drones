@@ -1,8 +1,5 @@
 import asyncio
-import json
-import os
-from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
@@ -33,24 +30,6 @@ def get_tile_provider():
 
 Longitude = Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
 Latitude = Annotated[float, Field(ge=-85, le=85, allow_inf_nan=False)]
-
-
-class TakeoffFeedback(BaseModel):
-    """Field check of a takeoff spot, recorded to calibrate the occupancy map."""
-
-    model_config = ConfigDict(extra="forbid")
-    position: tuple[Longitude, Latitude]
-    verdict: Literal["ok", "impossible"]
-    comment: Annotated[str, Field(max_length=200)] = ""
-
-
-def _feedback_file():
-    from pathlib import Path
-
-    default = Path(__file__).resolve().parents[3] / ".data" / "takeoff-feedback.jsonl"
-    path = Path(os.getenv("DRONE_FEEDBACK_FILE", default))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
 
 
 class OccupancyTileRequest(BaseModel):
@@ -122,36 +101,3 @@ async def occupancy_tile_route(
         raise AnalysisError("Emprise de tuile invalide.", "invalid_tile", 422)
     async with _TILE_LOCK:
         return await occupancy_tile(request.bbox, request.cell_m, provider)
-
-
-@router.post("/occupancy/feedback", tags=["occupancy"], status_code=201)
-async def add_takeoff_feedback(feedback: TakeoffFeedback) -> dict:
-    """Record a field check (« vérifié OK » / « impossible en vrai ») for later calibration."""
-    entry = {
-        **feedback.model_dump(),
-        "recorded_at": datetime.now(UTC).isoformat(timespec="seconds"),
-    }
-    with _feedback_file().open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    return entry
-
-
-@router.get("/occupancy/feedback", tags=["occupancy"])
-async def list_takeoff_feedback() -> dict:
-    """All recorded field checks as a GeoJSON FeatureCollection."""
-    path = _feedback_file()
-    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
-    features = []
-    for line in lines[-2000:]:
-        try:
-            item = json.loads(line)
-        except ValueError:
-            continue
-        features.append(
-            {
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": item["position"]},
-                "properties": {k: v for k, v in item.items() if k != "position"},
-            }
-        )
-    return {"type": "FeatureCollection", "features": features}

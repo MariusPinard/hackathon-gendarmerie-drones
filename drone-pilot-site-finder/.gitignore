@@ -25,5 +25,3 @@ artifacts/
 Thumbs.db
 .idea/
 .vscode/
-.cache/
-.data/

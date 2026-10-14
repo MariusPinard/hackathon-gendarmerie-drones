@@ -83,10 +83,7 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
         layers: 'ORTHOIMAGERY.ORTHOPHOTOS', format: 'image/jpeg', version: '1.3.0',
         attribution: '© IGN · BD ORTHO · Licence Ouverte 2.0', maxZoom: 19,
       }).on('tileerror', () => callbacks.current.onTileError())
-      const restrictions = L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=TRANSPORTS.DRONES.RESTRICTIONS&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM_3_15&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', {
-        maxNativeZoom: 15, maxZoom: 19, opacity: 0.75, attribution: '&copy; IGN / DGAC · restrictions UAS',
-      }).addTo(map)
-      L.control.layers({'OpenStreetMap': base, 'BD ORTHO · IGN': ortho}, {'Restrictions drones (Géoportail)': restrictions}, {position: 'bottomright'}).addTo(map)
+      L.control.layers({'OpenStreetMap': base, 'BD ORTHO · IGN': ortho}, {}, {position: 'bottomright'}).addTo(map)
     }
     // Occupancy sits under candidate surfaces and the operation outline.
     map.createPane('occupancy').style.zIndex = '350'
@@ -213,7 +210,7 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
       badge.style.backgroundColor = verdict.color
       badge.textContent = verdict.label
       const reason = document.createElement('p')
-      reason.textContent = (zone.quality ? `Qualité ${zone.quality} · ` : '') + (zone.reason_label || style.hint)
+      reason.textContent = zone.reason_label || style.hint
       const area = document.createElement('small')
       area.textContent = `${formatHectares(zone.area_m2)} pour ce statut · cellules de ${props.occupancy?.cell_size_m} m`
       popup.append(title, badge, reason, area)
