@@ -1,3 +1,4 @@
 import type { Coordinates } from '../types/geo';
 
-export const DEFAULT_LOCATION: Coordinates = [1.444, 43.6045];
+/** Mirepoix, Ariège (09500). */
+export const DEFAULT_LOCATION: Coordinates = [1.874194, 43.088407];

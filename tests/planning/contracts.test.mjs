@@ -5,14 +5,15 @@ import { estimateResources, generatePlan, computeCoverage } from '../../src/engi
 import { readFileSync } from 'node:fs';
 import { coveragesOverlap } from '../../src/engines/geometry/index.ts';
 
-test('catalog exposes only the hackathon capabilities and Mini rain restriction', () => {
+test('catalog exposes hackathon capabilities and the explicit Matrice-only rain/night policy', () => {
   assert.equal(DRONE_CATALOG.length, 3);
-  assert.equal(DRONE_CAPABILITIES[0].rangeMeters, null);
-  assert.deepEqual(DRONE_CAPABILITIES.map(c => c.rangeMeters), [null, 1000, 2000]);
+  assert.equal(DRONE_CAPABILITIES[0].rangeMeters, 500);
+  assert.deepEqual(DRONE_CAPABILITIES.map(c => c.rangeMeters), [500, 1000, 2000]);
   assert.deepEqual(DRONE_CAPABILITIES.map(c => c.maxAltitudeMetersAgl), [
     { rural: 120, urban: 120 }, { rural: 50, urban: 80 }, { rural: 120, urban: 120 },
   ]);
-  assert.deepEqual(DRONE_CATALOG.filter(m => m.incompatibleWithRain).map(m => m.id), ['dji-mini-5']);
+  assert.deepEqual(DRONE_CATALOG.filter(m => m.incompatibleWithRain).map(m => m.id), ['dji-mavic-3-enterprise', 'dji-mini-5']);
+  assert.deepEqual(DRONE_CATALOG.filter(m => m.nightCapable).map(m => m.id), ['dji-matrice-4t']);
 });
 
 const mission = JSON.parse(readFileSync(new URL('../../src/data/exampleMission.json', import.meta.url)));
@@ -54,12 +55,19 @@ test('zero resources produces an explicit empty partial plan', () => {
   assert.equal(result.drones.length, 0);
   assert.equal(computeCoverage(result).totalCoveragePercent, 0);
 });
-test('rain excludes Mini; in-sight refuses an invented radius; TP2 uses 2km', () => {
+test('rain excludes Mavic and Mini; requested in-sight uses 500m while historical null remains unavailable; legacy TP2 uses 2km', () => {
   const source = input();
   source.weather.rainDetected = true;
-  assert.ok(generatePlan(source).drones.every(d => d.modelId !== 'dji-mini-5'));
+  assert.ok(generatePlan(source).drones.every(d => d.modelId === 'dji-matrice-4t'));
   source.capabilityId = 'tp1-in-sight';
+  const visible = generatePlan(source);
+  assert.ok(visible.drones.length > 0);
+  assert.ok(visible.drones.every(drone => drone.coverage.radiusMeters === 500 && drone.altitudeMetersAgl <= 120));
+  assert.ok(visible.pilots.every(pilot => pilot.qualification === 'TP1'));
+  source.catalog = DRONE_CATALOG.map(model => ({ ...model, capabilities: model.capabilities.map(capability =>
+    capability.id === 'tp1-in-sight' ? { ...capability, rangeMeters: null } : capability) }));
   assert.throws(() => generatePlan(source), /portée/);
+  source.catalog = DRONE_CATALOG;
   source.capabilityId = 'tp2-out-of-sight';
   assert.ok(generatePlan(source).drones.every(d => d.coverage.radiusMeters === 2000 && d.altitudeMetersAgl <= 120));
 });

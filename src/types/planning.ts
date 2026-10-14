@@ -13,7 +13,7 @@ export interface PlanningInput {
   constraints: MissionConstraints;
   catalog: readonly DroneModel[];
   availableResources: AvailableResources;
-  /** Defaults to TP1 out of sight. In-sight has no computable radius yet. */
+  /** Mixed TP1/TP2 by default for new plans; old missions retain their scenario. */
   capabilityId?: string;
 }
 

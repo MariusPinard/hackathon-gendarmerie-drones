@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Coordinates, OperationZone, PriorityZone } from '../../types/geo';
 import type { DroneInstance, Pilot } from '../../types/drone';
-import { coveragePolygon, hasCoverage } from '../../engines/geometry/index.ts';
+import { coveragePolygon, coveragePolygons, hasCoverage, unproject } from '../../engines/geometry/index.ts';
 import { MAP_SOURCES } from './mapSources';
 
 interface MapProps {
@@ -14,6 +14,7 @@ interface MapProps {
   drones?: DroneInstance[];
   pilots?: Pilot[];
   uncoveredPoints?: Coordinates[];
+  uncoveredCellSizeMeters?: number | undefined;
   drawing?: boolean;
   vertices?: Coordinates[];
   onVertex?: (point: Coordinates) => void;
@@ -37,6 +38,7 @@ export function MissionMap(props: MapProps) {
   callbacks.current = props;
   const [tileError, setTileError] = useState(false);
   const [layer, setLayer] = useState<'plan' | 'satellite'>('plan');
+  const overlayId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const geometryKey = JSON.stringify(props.operationZone?.geometry ?? null);
   const [longitude, latitude] = props.center;
   useEffect(() => {
@@ -75,11 +77,42 @@ export function MissionMap(props: MapProps) {
   }, [props.drawing, layer]);
   useEffect(() => {
     const layers = layersRef.current;
-    if (!layers) return;
+    const map = mapRef.current;
+    if (!layers || !map) return;
     layers.clearLayers();
-    if (props.operationZone) L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-operation)', weight: 3, fillOpacity: 0.07, interactive: false }).addTo(layers);
+    if (props.operationZone) L.polygon(rings(props.operationZone.geometry.coordinates), { stroke: false, fillColor: 'var(--map-operation)', fillOpacity: 0.07, interactive: false }).addTo(layers);
     props.priorityZones.forEach(z => L.polygon(rings(z.geometry.coordinates), { color: 'var(--map-priority)', weight: 2, fillColor: 'var(--map-priority-fill)', fillOpacity: 0.28, interactive: false }).addTo(layers));
-    props.uncoveredPoints?.forEach(p => L.circleMarker(latLng(p), { radius: 2, color: 'var(--map-lost)', weight: 0, fillOpacity: 0.6, interactive: false }).addTo(layers));
+    const uncoveredLayers: L.Polygon[] = [];
+    props.uncoveredPoints?.forEach(p => {
+      const half = Math.max(1, props.uncoveredCellSizeMeters ?? 20) / 2;
+      const cell: Coordinates[] = [[-half, -half], [half, -half], [half, half], [-half, half]].map(offset => unproject(offset as [number, number], p));
+      uncoveredLayers.push(L.polygon(cell.map(latLng), { color: 'var(--map-lost)', weight: 0, fillColor: `url(#uncovered-hatch-${overlayId})`, fillOpacity: 1, interactive: false }).addTo(layers));
+    });
+    // The raster is an estimate from the engine's sample grid, clipped at the exact operation outline.
+    const firstCellElement = uncoveredLayers[0]?.getElement();
+    const svg = firstCellElement instanceof SVGElement ? firstCellElement.ownerSVGElement : null;
+    let defs: SVGDefsElement | undefined;
+    let updateClip: (() => void) | undefined;
+    if (svg) {
+      const ns = 'http://www.w3.org/2000/svg';
+      defs = document.createElementNS(ns, 'defs');
+      const pattern = document.createElementNS(ns, 'pattern');
+      pattern.id = `uncovered-hatch-${overlayId}`; pattern.setAttribute('patternUnits', 'userSpaceOnUse'); pattern.setAttribute('width', '9'); pattern.setAttribute('height', '9');
+      const background = document.createElementNS(ns, 'rect'); background.setAttribute('width', '9'); background.setAttribute('height', '9'); background.setAttribute('fill', 'var(--map-lost)'); background.setAttribute('fill-opacity', '.3');
+      const hatch = document.createElementNS(ns, 'path'); hatch.setAttribute('d', 'M-2 2L2-2M0 9L9 0M7 11L11 7'); hatch.setAttribute('stroke', 'var(--map-lost)'); hatch.setAttribute('stroke-width', '2'); hatch.setAttribute('stroke-opacity', '.8');
+      pattern.append(background, hatch); defs.append(pattern);
+      if (props.operationZone) {
+        const clip = document.createElementNS(ns, 'clipPath'); clip.id = `uncovered-clip-${overlayId}`; clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+        const path = document.createElementNS(ns, 'path'); path.setAttribute('clip-rule', 'evenodd'); clip.append(path); defs.append(clip);
+        const geometry = props.operationZone.geometry;
+        updateClip = () => path.setAttribute('d', geometry.coordinates.map(ring => ring.map((point, index) => {
+          const xy = map.latLngToLayerPoint(latLng(point)); return `${index ? 'L' : 'M'}${xy.x} ${xy.y}`;
+        }).join(' ') + 'Z').join(' '));
+        updateClip(); map.on('moveend zoomend viewreset', updateClip);
+        uncoveredLayers.forEach(cell => cell.getElement()?.setAttribute('clip-path', `url(#${clip.id})`));
+      }
+      svg.prepend(defs);
+    }
     const vertices = props.vertices ?? [];
     if (vertices.length) {
       L.polyline(vertices.map(latLng), { color: 'var(--map-selected)', weight: 3, interactive: false }).addTo(layers);
@@ -104,8 +137,13 @@ export function MissionMap(props: MapProps) {
       const selected = props.selected === `drone:${drone.id}`;
       const color = conflict ? 'var(--map-conflict)' : selected ? 'var(--map-selected)' : 'var(--map-coverage)';
       if (hasCoverage(drone)) {
-        if (drone.coverage.workingAngleDegrees === 360) L.circle(latLng(drone.dronePosition), { radius: drone.coverage.radiusMeters, color, weight: selected ? 3 : 1.5, fillOpacity: selected ? 0.2 : 0.1, interactive: false }).addTo(layers);
-        else L.polygon(rings(coveragePolygon(drone.coverage).coordinates), { color, weight: selected ? 3 : 1.5, fillOpacity: 0.2, interactive: false }).addTo(layers);
+        const coverage = props.operationZone && drone.coverage.clipPolygon !== props.operationZone.geometry ? { ...drone.coverage, clipPolygon: props.operationZone.geometry } : drone.coverage;
+        coveragePolygons(coverage).forEach(polygon => {
+          const shape = rings(polygon.coordinates);
+          L.polygon(shape, { color: 'var(--map-contrast-dark)', weight: selected ? 7 : 6, opacity: .85, fill: false, interactive: false }).addTo(layers);
+          L.polygon(shape, { color: 'var(--map-contrast-light)', weight: selected ? 5 : 4, opacity: .95, fill: false, interactive: false }).addTo(layers);
+          L.polygon(shape, { color, weight: selected ? 3 : 2, fillOpacity: selected ? .24 : .13, interactive: false }).addTo(layers);
+        });
         if (selected) {
           const arc = coveragePolygon({ ...drone.coverage, workingAngleDegrees: 1 }).coordinates[0]!;
           const tip = arc[2]!;
@@ -120,11 +158,20 @@ export function MissionMap(props: MapProps) {
       marker.on('click', () => { if (!callbacks.current.drawing && !callbacks.current.placingDroneId) callbacks.current.onSelect?.(`drone:${drone.id}`); });
       marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMoveDrone?.(drone.id, [p.lng, p.lat]); });
     });
+    // Keep the operation outline identifiable where a clipped drone area shares its boundary.
+    if (props.operationZone) {
+      L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-contrast-light)', weight: 7, fill: false, opacity: 0.95, interactive: false }).addTo(layers);
+      L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-operation)', weight: 3.5, fill: false, interactive: false }).addTo(layers);
+    }
+    return () => { if (updateClip) map.off('moveend zoomend viewreset', updateClip); defs?.remove(); };
   }, [props]);
   return <div className={`map-wrap ${layer === 'satellite' ? 'satellite-map' : ''} ${props.drawing ? 'draw-lock' : ''}`}>
+    <button className="map-center square-tool" disabled={props.drawing || !!props.placingDroneId || !props.operationZone} onClick={() => {
+      if (props.operationZone) mapRef.current?.fitBounds(L.latLngBounds(props.operationZone.geometry.coordinates[0]!.map(latLng)), { padding: [100, 70], maxZoom: 15 });
+    }} aria-label="Centrer la carte sur la zone d’opération" title="Centrer sur la zone d’opération"><span className="tool-icon" aria-hidden="true">⌖</span><span>Centrer la carte</span></button>
     <div className="map-toolbar" aria-label="Fond cartographique"><button aria-pressed={layer === 'plan'} disabled={props.drawing} onClick={() => setLayer('plan')}>Plan</button><button aria-pressed={layer === 'satellite'} disabled={props.drawing} onClick={() => setLayer('satellite')}>Satellite</button></div>
     {tileError && <div className="tile-notice" role="status">{layer === 'satellite' ? 'Imagerie IGN indisponible sur ce secteur.' : 'Fond cartographique indisponible.'} Les zones restent accessibles.{layer === 'satellite' && <button disabled={props.drawing} onClick={() => setLayer('plan')}>Revenir au plan</button>}</div>}
     <div ref={container} className={`mission-map ${props.drawing || props.placingDroneId ? 'drawing' : ''}`} role="region" aria-label="Carte de mission" />
-    <div className="map-legend"><span>● Zone opération</span><span className="priority-legend">● Priorité</span><span>D Drone / T Télépilote</span><span className="lost-legend">● Non couvert</span></div>
+    <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span className="lost-legend"><i className="legend-swatch lost-swatch" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>
   </div>;
 }

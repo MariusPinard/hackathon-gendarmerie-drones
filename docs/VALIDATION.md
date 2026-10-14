@@ -50,3 +50,17 @@ En conduite : flotte avec batteries fictives dans les trois couleurs et hauteurs
 Derniers contrôles : ouverture réciproque Informations/Flotte sur mobile fermant l’autre panneau, confirmation de retour jusqu’à Terminée (toutes les hauteurs à 0 m), nouveau dispositif lancé à nouveau. Aucune erreur ou alerte console. Revue statique : 137 imports résolus, graphe sans cycle, moteurs indépendants du navigateur. `git diff --check` réussi ; lockfile inchangé.
 
 À largeur <= 1100 px, les panneaux sont ouverts un à la fois pour préserver la carte ; choix d’un drone vérifié à la largeur réelle 903 px, flotte fermée et secteur 90°/90° visible.
+
+## Itération operational-planning — 14 octobre 2026
+
+Les sections précédentes décrivent les versions historiques. Cette itération traite la liste des changements puis les règles compatibles : mix TP1/TP2, zones non circulaires, jour/nuit, séparation30m, TP1en vue500m et autorisation déclarée facultative. Elle n’implémente pas les suggestions de patrouilles, machine de vol complète, découpage de puissance, StreetView, journal ou nouvelles démonstrations.
+
+Branche `codex/operational-planning` depuis `main` `5f6d220`. Aucune nouvelle dépendance ; sources constructeur dans DRONE_SPECS et format1.0 rétrocompatible dans FORMAT_JSON. Moteurs/algorithmes détaillés dans ALGORITHMES.
+
+Automatisation : **122 tests réussis**, build TypeScript/Vite et diffcheck réussis. Nouveaux tests : intersections concaves et trous, morceaux disjoints et contact frontière, secteurs, préférence TP1/promotion-conversion, ressources insuffisantes, grille étroite, séparation/plafonds, limite de chevauchement, pluie/nuit/customcatalog, autorisation/période/max0, soleil contre cas de référence NOAA/NREL, calendrier/offsets invalides, catalogue portable, préférences corrompues, URLs/pollutionprototype, exportnommé et anciennes missions.
+
+Essais UI réels en preview production : date française, 31février refusé puis correction, Nuit affichée automatiquement même horshorizon ; estimation nocturne4Matrice et0Mavic/Mini, 99,7%total/12,5%chevauchement. Fin dessinrouvreZones. Satellite IGN chargé18/18 ; contours contrastés et couvertures découpées strictement au rectangle. Édition45°/900m produit conversionTP1 et pertes hachurées ; retourResources/recalcul conserve le réglage manuel. Exportrefusechemin puis télécharge un nomaccentué exact ; Escapeferme le dialogue. Flotte affiche état/hauteur sans batterie. Formats métriquesfr-FR.
+
+Responsive1280×720,1024×768,390×844 : document cartographique égal auviewport, workspace sans défilement après autofocus, panneaux défilants seuls ; commandes/résultats/légende/notifications séparés. Les preuves sont conservées horsduGit. Aucun secret, artefactexporté ou nouvelle bibliothèque versionné.
+
+Contrôles finaux après reprise : ajout UI d’un modèle nocturne personnalisé (vent10m/s, zoomoptique3×), quantité1 réellement utilisée ; export avec nom accentué puis réimport restituant les quatre caractéristiques. Période d’autorisation excluant la mission : conflit explicite et bouton de lancement désactivé. Catalogue des imports historiques séparé des modèles par défaut locaux ; autorisation de brouillon remise à celle du fichier importé. Bilan restauré depuis Resources affichant les effectifs réellement placés.

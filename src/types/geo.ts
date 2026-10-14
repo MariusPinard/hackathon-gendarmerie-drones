@@ -24,10 +24,12 @@ export interface PriorityZone {
   properties: ZoneProperties & { kind: 'priority' };
 }
 
-/** Coverage descriptor; derived disk/sector geometry is not persisted. */
+/** Coverage descriptor; the optional operation mask is part of the simulation. */
 export interface CoverageArea {
   center: Coordinates;
   radiusMeters: number;
   headingDegrees: number;
   workingAngleDegrees: number;
+  /** Coverage is restricted to this polygon, including its holes. Legacy files may omit it. */
+  clipPolygon?: Polygon;
 }

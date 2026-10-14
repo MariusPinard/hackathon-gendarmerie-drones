@@ -4,7 +4,8 @@ import type { MissionChange } from '../../types/operations';
 import { DRONE_CATALOG } from '../../data/droneCatalog';
 
 type CoverageChange = Extract<MissionChange, { type: 'set_coverage' }>;
-export function DroneControls({ drone, maxAltitude, active, onChange, onPreview, onPlace }: {
+export function DroneControls({ drone, maxAltitude, active, onChange, onPreview, onPlace, modelName, separation = 30 }: {
+  modelName?: string; separation?: number;
   drone: DroneInstance; maxAltitude: number; active: boolean; onChange: (change: MissionChange) => void;
   onPreview: (change: CoverageChange | null) => void; onPlace: () => void;
 }) {
@@ -18,12 +19,12 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
     if (!nextHeading.trim() || !nextAngle.trim() || !Number.isFinite(Number(nextHeading)) || !Number.isFinite(Number(nextAngle)) || Number(nextHeading) < 0 || Number(nextHeading) > 359 || Number(nextAngle) < 1 || Number(nextAngle) > 360) { onPreview(null); return; }
     onPreview({ type: 'set_coverage', droneId: drone.id, headingDegrees: Number(nextHeading), workingAngleDegrees: Number(nextAngle) });
   }
-  return <div className="drone-controls"><h3>{drone.id} · {DRONE_CATALOG.find(m => m.id === drone.modelId)?.name}</h3>
+  return <div className="drone-controls"><h3>{drone.id} · {modelName ?? DRONE_CATALOG.find(m => m.id === drone.modelId)?.name}</h3>
     <p className="muted">{drone.pilotId} · Rayon {drone.coverage.radiusMeters} m · {drone.capabilityId}</p>
     <button className="wide" disabled={!enabled} onClick={onPlace}>⌖ Déplacer le drone sur la carte</button><p className="muted">Glisser-déposer le marqueur D, ou cliquer ce bouton puis sa nouvelle position.</p>
     <label>Altitude (m/sol)<input type="number" min={0} max={maxAltitude} step={1} disabled={!enabled} value={altitude} onChange={e => setAltitude(e.target.value)} /></label>
     <button disabled={!enabled || !altitude.trim() || !Number.isFinite(Number(altitude)) || Number(altitude) < 0 || Number(altitude) > maxAltitude} onClick={() => onChange({ type: 'set_altitude', droneId: drone.id, altitudeMetersAgl: Number(altitude) })}>Appliquer l’altitude</button>
-    <p className="muted">Plafond : {maxAltitude} m · séparation minimale : 10 m.</p>
+    <p className="muted">Plafond : {maxAltitude} m · séparation minimale : {separation} m.</p>
     <div className="field-row"><label>Cap (°)<input type="number" min={0} max={359} step={1} disabled={!enabled} value={heading} onInput={e => { setHeading(e.currentTarget.value); preview(e.currentTarget.value, angle); }} /></label>
       <label>Angle de travail (°)<input type="number" min={1} max={360} step={1} disabled={!enabled} value={angle} onInput={e => { setAngle(e.currentTarget.value); preview(heading, e.currentTarget.value); }} /></label></div>
     <label className="range-label">Cap en direct <span>{heading || '—'}°</span></label><input type="range" aria-label="Curseur du cap" min={0} max={359} disabled={!enabled} value={Number.isFinite(Number(heading)) ? Math.max(0, Math.min(359, Number(heading))) : 0} onInput={e => { setHeading(e.currentTarget.value); preview(e.currentTarget.value, angle); }} />

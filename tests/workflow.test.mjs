@@ -43,3 +43,23 @@ test('infeasible altitude assignment is explicit and prevents launching the conf
   assert.ok(detectConflicts(mission).some(c => c.type === 'vertical_separation'));
   assert.throws(() => startMission(mission), /conflits/);
 });
+
+test('requested TP1 in-sight 500m scenario survives planning, file round-trip and launch under its 120m ceiling', () => {
+  const source = JSON.parse(readFileSync(new URL('../src/data/exampleMission.json', import.meta.url)));
+  source.constraints = { ...source.constraints, capabilityId: 'tp1-in-sight', minimumVerticalSeparationMeters: 30 };
+  source.estimate = estimateResources(missionPlanningInput(source));
+  source.availableResources.dronesByModel = { ...source.estimate.dronesByModel };
+  const proposed = generatePlan(missionPlanningInput(source));
+  assert.ok(proposed.drones.length > 0);
+  assert.ok(proposed.drones.every(drone => drone.coverage.radiusMeters === 500 && drone.altitudeMetersAgl <= 120));
+  const prepared = parseMission(serializeMission(applyPlan(source, proposed))), active = startMission(prepared).mission;
+  assert.ok(active.drones.every(drone => drone.status === 'active' && drone.capabilityId === 'tp1-in-sight'));
+  const raised = recalculateMission(active, { type: 'set_altitude', droneId: active.drones[0].id, altitudeMetersAgl: 120 });
+  assert.equal(raised.mission.drones[0].altitudeMetersAgl, 120);
+  assert.throws(() => recalculateMission(active, { type: 'set_altitude', droneId: active.drones[0].id, altitudeMetersAgl: 121 }), /120/);
+  const legacy = structuredClone(prepared);
+  legacy.droneCatalog = DRONE_CATALOG.map(model => ({ ...model, capabilities: model.capabilities.map(capability =>
+    capability.id === 'tp1-in-sight' ? { ...capability, rangeMeters: null } : capability) }));
+  const importedLegacy = parseMission(serializeMission(legacy));
+  assert.throws(() => generatePlan(missionPlanningInput(importedLegacy)), /portée/);
+});

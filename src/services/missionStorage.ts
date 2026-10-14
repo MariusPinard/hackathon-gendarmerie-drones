@@ -1,4 +1,6 @@
 import { DRONE_CATALOG } from '../data/droneCatalog.ts';
+import { validateDroneCatalog, validateJsonData } from './catalogValidation.ts';
+import type { DroneModel } from '../types/drone';
 import type { Mission } from '../types/mission';
 import { samplePolygon, validatePolygon } from '../engines/geometry/index.ts';
 import type { Polygon } from '../types/geo';
@@ -36,7 +38,8 @@ function dateTime(value: unknown, path: string): void {
   requireValid(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
     && Number.isFinite(Date.parse(value)), path);
   const [year, month, day] = value.slice(0, 10).split('-').map(Number);
-  const calendar = new Date(Date.UTC(year!, month! - 1, day!));
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(year!, month! - 1, day!);
   requireValid(calendar.getUTCFullYear() === year && calendar.getUTCMonth() + 1 === month
     && calendar.getUTCDate() === day, `${path} (date calendaire invalide)`);
 }
@@ -74,10 +77,12 @@ function zone(value: unknown, kind: 'operation' | 'priority', path: string): str
   return properties.id;
 }
 
-function resourceCounts(value: unknown, path: string): void {
+function resourceCounts(value: unknown, path: string, catalog: readonly DroneModel[]): void {
   const counts = object(value, path);
-  requireValid(Object.keys(counts).length === DRONE_CATALOG.length, path);
-  for (const model of DRONE_CATALOG) {
+  const expectedIds = new Set(catalog.map(model => model.id));
+  requireValid(Object.keys(counts).length === catalog.length && Object.keys(counts).every(id => expectedIds.has(id)), path);
+  for (const model of catalog) {
+    requireValid(Object.hasOwn(counts, model.id), `${path}.${model.id}`);
     number(counts[model.id], `${path}.${model.id}`, 0, 100);
     requireValid(Number.isSafeInteger(counts[model.id]), `${path}.${model.id}`);
   }
@@ -85,8 +90,17 @@ function resourceCounts(value: unknown, path: string): void {
 
 /** Structural validation; topology, coverage and operational feasibility are engine work. */
 export function validateMission(value: unknown): asserts value is Mission {
+  try { validateJsonData(value); } catch (error) {
+    throw new Error(`Mission JSON invalide : ${error instanceof Error ? error.message : 'données invalides'}`);
+  }
   const mission = object(value, 'mission');
   requireValid(mission.schemaVersion === '1.0', 'schemaVersion (1.0 attendu)');
+  if (mission.droneCatalog !== undefined) {
+    try { validateDroneCatalog(mission.droneCatalog); } catch (error) {
+      throw new Error(`Mission JSON invalide : droneCatalog — ${error instanceof Error ? error.message : 'catalogue invalide'}`);
+    }
+  }
+  const catalog = mission.droneCatalog as DroneModel[] | undefined ?? DRONE_CATALOG;
   const metadata = object(mission.metadata, 'metadata');
   text(metadata.id, 'metadata.id');
   text(metadata.name, 'metadata.name');
@@ -116,15 +130,27 @@ export function validateMission(value: unknown): asserts value is Mission {
   number(constraints.minimumVerticalSeparationMeters, 'constraints.minimumVerticalSeparationMeters', 10);
   number(constraints.defaultWorkingAngleDegrees, 'constraints.defaultWorkingAngleDegrees', Number.MIN_VALUE, 360);
   if (constraints.capabilityId !== undefined) oneOf(constraints.capabilityId,
-    ['tp1-in-sight', 'tp1-out-of-sight', 'tp2-out-of-sight'], 'constraints.capabilityId');
+    ['mixed', 'tp1-in-sight', 'tp1-out-of-sight', 'tp2-out-of-sight'], 'constraints.capabilityId');
+  if (constraints.maximumOverlapPercent !== undefined) number(constraints.maximumOverlapPercent, 'constraints.maximumOverlapPercent', 0, 100);
+  if (constraints.authorization !== undefined) {
+    const authorization = object(constraints.authorization, 'constraints.authorization');
+    text(authorization.reference, 'constraints.authorization.reference');
+    requireValid(authorization.reference.length <= 120, 'constraints.authorization.reference (maximum 120 caractères)');
+    number(authorization.maximumDrones, 'constraints.authorization.maximumDrones', 0, 32);
+    requireValid(Number.isSafeInteger(authorization.maximumDrones), 'constraints.authorization.maximumDrones (entier attendu)');
+    dateTime(authorization.startAt, 'constraints.authorization.startAt');
+    dateTime(authorization.endAt, 'constraints.authorization.endAt');
+    requireValid(Date.parse(authorization.startAt as string) <= Date.parse(authorization.endAt as string),
+      'constraints.authorization (début après la fin)');
+  }
   if (mission.estimate !== null) {
     const estimate = object(mission.estimate, 'estimate');
-    resourceCounts(estimate.dronesByModel, 'estimate.dronesByModel');
+    resourceCounts(estimate.dronesByModel, 'estimate.dronesByModel', catalog);
     number(estimate.pilotCount, 'estimate.pilotCount');
     requireValid(Number.isSafeInteger(estimate.pilotCount), 'estimate.pilotCount');
     for (const assumption of array(estimate.assumptions, 'estimate.assumptions')) text(assumption, 'estimate.assumptions[]');
   }
-  resourceCounts(object(mission.availableResources, 'availableResources').dronesByModel, 'availableResources.dronesByModel');
+  resourceCounts(object(mission.availableResources, 'availableResources').dronesByModel, 'availableResources.dronesByModel', catalog);
   const pilotIds = new Set<string>();
   const pilots = array(mission.pilots, 'pilots');
   requireValid(pilots.length <= 100, 'pilots (maximum 100)');
@@ -145,7 +171,7 @@ export function validateMission(value: unknown): asserts value is Mission {
     text(drone.id, 'drone.id');
     requireValid(!droneIds.has(drone.id), 'drones (identifiants uniques)');
     droneIds.add(drone.id);
-    const model = DRONE_CATALOG.find(item => item.id === drone.modelId);
+    const model = catalog.find(item => item.id === drone.modelId);
     requireValid(model !== undefined, 'drone.modelId');
     requireValid(model.capabilities.some(item => item.id === drone.capabilityId), 'drone.capabilityId');
     text(drone.pilotId, 'drone.pilotId');
@@ -160,6 +186,7 @@ export function validateMission(value: unknown): asserts value is Mission {
     number(coverage.headingDegrees, 'drone.coverage.headingDegrees', 0, 360);
     requireValid(coverage.headingDegrees !== 360, 'drone.coverage.headingDegrees (< 360 attendu)');
     number(coverage.workingAngleDegrees, 'drone.coverage.workingAngleDegrees', Number.MIN_VALUE, 360);
+    if (coverage.clipPolygon !== undefined) requireValid(equalJson(coverage.clipPolygon, object(mission.operationZone, 'operationZone').geometry), 'drone.coverage.clipPolygon (zone opération attendue)');
   }
   oneOf(mission.status, ['draft', 'planned', 'ready', 'active', 'emergency', 'returning', 'completed'], 'status');
   try { samplePolygon((mission.operationZone as Mission['operationZone']).geometry); }
@@ -183,14 +210,41 @@ export async function importMission(file: Blob): Promise<Mission> {
   return parseMission(await file.text());
 }
 
+/** Exact structural equality, independent of JSON object property order. */
+function equalJson(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (!left || !right || typeof left !== 'object' || typeof right !== 'object') return false;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length
+      && left.every((value, index) => equalJson(value, right[index]));
+  }
+  const keys = Object.keys(left), rhs = right as JsonObject;
+  return keys.length === Object.keys(right).length && keys.every(key => Object.hasOwn(rhs, key) && equalJson((left as JsonObject)[key], rhs[key]));
+}
+
+/** A filename, never a path: preserve Unicode and limit the complete UTF-8 name to 240 bytes. */
+export function sanitizeMissionFilename(filename: string): string {
+  if (typeof filename !== 'string') throw new Error('Nom de fichier invalide.');
+  const normalized = filename.normalize('NFC').trim().replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '-');
+  const stem = normalized.replace(/\.json$/i, '').replace(/^\.+|\.+$/g, '').trim() || 'mission';
+  const chars = Array.from(stem).slice(0, 120);
+  const encoder = new TextEncoder();
+  while (encoder.encode(chars.join('')).length > 235) chars.pop();
+  let safeStem = chars.join('').trim() || 'mission';
+  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(safeStem)) safeStem = `mission-${safeStem}`;
+  // Reserved-name prefixes may add bytes; reserve room for the final suffix again.
+  const safeChars = Array.from(safeStem);
+  while (encoder.encode(safeChars.join('')).length > 235) safeChars.pop();
+  return `${safeChars.join('')}.json`;
+}
+
 /** Browser-only download; pure serialization and parsing also work outside the UI. */
-export function exportMission(mission: Mission): void {
+export function exportMission(mission: Mission, filename = 'mission.json'): void {
+  const safeName = sanitizeMissionFilename(filename);
   const url = URL.createObjectURL(new Blob([serializeMission(mission)], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'mission.json';
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  link.download = safeName;
+  try { document.body.append(link); link.click(); }
+  finally { link.remove(); setTimeout(() => URL.revokeObjectURL(url), 0); }
 }

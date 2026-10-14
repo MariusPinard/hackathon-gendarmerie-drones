@@ -44,6 +44,14 @@ Les règles métier sont celles du hackathon. Projection locale, portée utilis�
 
 ## Interactions cartographiques
 
-Toulouse est le centre initial de nouvelle planification. Un identifiant de recentrage permet de revenir au même résultat de recherche après déplacement de la carte. `closeDrawnPolygon` est pur : fermeture sans mutation, 3–300 sommets et validation topologique/domaine/surface par les moteurs existants. Les sommets sont aussi conservés dans une ref synchrone pour les clics rapides ; la navigation est verrouillée dans AppContext jusqu’à validation ou annulation.
+Mirepoix est le centre initial de nouvelle planification. Un identifiant de recentrage permet de revenir au même résultat de recherche après déplacement de la carte. `closeDrawnPolygon` est pur : fermeture sans mutation, 3–300 sommets et validation topologique/domaine/surface par les moteurs existants. Les sommets sont aussi conservés dans une ref synchrone pour les clics rapides ; la navigation est verrouillée dans AppContext jusqu’à validation ou annulation.
 
-Cap/angle construisent un résultat dérivé pour la carte, sans modifier la mission sauvegardée avant Appliquer. Le déplacement drag/drop ou clic de placement appelle le même moteur `recalculateMission`. Sur écran étroit, les boutons de panneaux ferment la flotte avant ouverture ; le choix d’un drone ouvre ses réglages. Les batteries de démonstration sont dérivées des IDs mission/drone dans FleetPanel et ne sont ni persistées ni utilisées par les moteurs.
+Cap/angle construisent un résultat dérivé pour la carte, sans modifier la mission sauvegardée avant Appliquer. Le déplacement drag/drop ou clic de placement appelle le même moteur `recalculateMission`. Sur écran étroit, les boutons de panneaux ferment la flotte avant ouverture ; le choix d’un drone ouvre ses réglages. FleetPanel affiche hauteur et état sans batterie. Le catalogue embarqué dans une mission est facultatif pour la compatibilité des anciens fichiers.
+
+## Planificateur opérationnel
+
+La météo est automatiquement recherchée après stabilisation du créneau/localisation ; solar calcule indépendamment jour/nuit. Un changement de compatibilité invalide l’estimation restaurée, et une réponse obsolète est annulée. Les contraintes viennent des préférences puis sont sauvegardées dans la mission. Les modèles ajoutés aux ressources appartiennent à la mission ; ceux ajoutés dans Paramètres servent de défauts aux nouvelles missions. Les paramètres de période d’autorisation ne sont pas persistés avec les défauts locaux.
+
+Geometry expose coveragePolygons pour l’intersection vectorielle du secteur avec l’opération, concavités et trous compris ; les moteurs utilisent clipPolygon dans les métriques/conflits. Planning ajuste cap/angle/rayon et mélangeTP1/TP2 ; adjustPlanningCoverage conserve les positions. Une proposition manuellement réglée est conservée dans Resources si l’inventaire/contraintes restent inchangés ; sinon recalcul explicite. Les composants se recentrent sur demande, pas sur chaque modification.
+
+Voir ALGORITHMES et FORMAT_JSON pour les contraintes, bornes de recherche et extensions du stockage. Les spécifications ne remplacent pas des limites opérationnelles constructeur ; la compatibilité pluie/nuit est une politique de simulation distincte.

@@ -1,0 +1,38 @@
+.map-actionbar { position: absolute; z-index: 15; left: 106px; bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; padding: 8px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.map-actionbar button, .proposal-actions button { min-height: 46px; padding: 12px 18px; font-size: 14px; }
+.proposal-counts { display: grid; gap: 10px; margin: 18px 0; }
+.proposal-counts > div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.proposal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.planning-weather { margin: 18px 0; padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.planning-weather .weather-badge { display: flex; flex-wrap: wrap; }
+.settings-dialog { width: min(560px,calc(100% - 28px)); max-height: 85dvh; overflow: auto; }
+.dialog-title { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.dialog-title h2 { margin: 0; }
+.dialog-title button { padding: 4px 10px; font-size: 20px; }
+.default-models { margin: 14px 0; padding-left: 20px; font-size: 13px; line-height: 1.9; }
+.custom-drone-form { margin: 18px 0; padding-top: 12px; border-top: 1px solid var(--border); }
+.drone-specifications { margin: 14px 0; }
+.drone-specifications summary { color: var(--primary-ink); }
+.drone-specifications dl { font-size: 12px; line-height: 1.5; }
+.drone-specifications dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
+.drone-specifications dd { text-align: right; margin: 0; max-width: 60%; }
+.planner-sector-note { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.proposal-summary { font-size: 13px; color: var(--text-muted); }
+
+.map-workspace:has(.map-actionbar) .workspace-status { bottom: 95px; left: 106px; }
+.map-workspace:has(.map-actionbar) .toast { bottom: 140px; left: 16px; }
+.map-workspace:has(.map-actionbar) .slide-panel { bottom: 140px; }
+@media (max-width: 650px) {
+  .map-actionbar { left: 8px; right: 8px; bottom: 20px; padding: 6px; gap: 6px; }
+  .map-actionbar button { font-size: 12px; padding: 10px; min-height: 46px; flex: 1; }
+  .map-workspace:has(.map-actionbar) .map-legend { bottom: 108px; }
+  .map-workspace:has(.map-actionbar) .workspace-status { left: 8px; right: 176px; bottom: 108px; }
+  .map-workspace:has(.map-actionbar) .slide-panel,
+  .map-workspace:has(.map-actionbar) .right-panel,
+  .map-workspace:has(.map-actionbar) .fleet-panel { bottom: 280px; max-height: none; }
+  .map-workspace:has(.map-actionbar) .toast { bottom: 184px; left: 8px; }
+}
+
+
+.checkbox-label { flex-direction: row; align-items: center; gap: 8px; line-height: 1.5; }
+.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; min-width: 16px; flex: 0 0 16px; padding: 0; border: 0; accent-color: var(--primary-ink); }

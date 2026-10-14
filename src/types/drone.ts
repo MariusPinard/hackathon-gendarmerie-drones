@@ -1,6 +1,6 @@
 import type { Coordinates, CoverageArea } from './geo';
 
-export type DroneModelId = 'dji-matrice-4t' | 'dji-mavic-3-enterprise' | 'dji-mini-5';
+export type DroneModelId = string;
 export type DroneStatus =
   | 'ready' | 'active' | 'unavailable' | 'returning'
   | 'emergency_landing' | 'completed';
@@ -19,6 +19,11 @@ export interface DroneModel {
   id: DroneModelId;
   name: string;
   incompatibleWithRain: boolean;
+  nightCapable?: boolean;
+  windResistanceMetersPerSecond?: number;
+  zoom?: string;
+  specificationSource?: string;
+  manufacturerRainProtection?: string;
   capabilities: readonly DroneCapability[];
 }
 
