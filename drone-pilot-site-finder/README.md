@@ -8,6 +8,50 @@ frontend is replaceable; there is no dependency on the future hackathon applicat
 estimate is never flight-safety validation, permission to enter land, a VLOS assessment or a
 radio-link guarantee. An operator must inspect the ground and choose the exact position.
 
+## Takeoff occupancy map (additive to V0.4)
+
+Every search returns, besides candidate surfaces, a cell-based **occupancy map** of the search
+area answering « where could a pilot take off, and why not? ». Each cell (default 10 m, enlarged
+to keep at most 90 000 cells) receives one primary status, in priority order:
+
+| Status | Takeoff | Meaning |
+| --- | --- | --- |
+| `occupied` | impossible | Building, carriageway, rail, water, power line/pylon/fence/mast, restricted access, mapped vegetation, measured raised surface > 2 m (MNS) or orthophoto obstruction; `reason` gives the cause |
+| `obstacle_buffer` | impossible | Within `obstacle_buffer_m` of a building, obstacle or railway |
+| `steep` | impossible | Measured slope above `max_slope_deg` |
+| `out_of_range` | impossible | Operation area farther than `pilot_range_m` (TP1 1 km, TP2 2 km, or custom) |
+| `masked` | conditional | Sampled rays from observer height to the operation targets mostly or all blocked |
+| `no_access` | conditional | Farther than `max_access_distance_m` from an accessible road or path |
+| `limited_range` | conditional | Reaches less than half of the operation area reached from the best cells |
+| `free_unconfirmed` | conditional | No known occupation, but no mapped open surface either |
+| `free` | possible | Mapped open surface with none of the above |
+
+Surfaces occupy a cell above one third of its area (3× supersampling); thin features occupy every
+cell they cross. Missing relief/MNS/imagery/access inputs are reported in `assessed` and `notes`,
+never converted into free or blocked cells. « Possible » remains screening, not permission.
+Options: `include_occupancy` (default true), `pilot_range_m` (50–5000, default 1000),
+`occupancy_cell_m` (2–50, default 10). Candidate surfaces entirely beyond `pilot_range_m` are
+dropped and each candidate justification states its distance to the operation area. In the UI,
+the panel shows takeoff shares, per-status/per-cause areas, visibility toggles and opacity; click
+a coloured cell on the map for its cause. Recorded V0.4 captures predate the map and show none.
+
+### Whole-commune map: Mirepoix
+
+A commune exceeds the 25 km² analysis limit (Mirepoix, Ariège, INSEE 09194: 47.7 km²), so its
+map is built offline by tiles and served as a static file the UI loads at startup:
+
+```powershell
+uv run python scripts/build_commune_occupancy.py --insee 09194
+```
+
+The contour comes from geo.api.gouv.fr. OSM is queried once, IGN BD TOPO by 3 km blocks
+(split again when the 3 000-feature cap is hit), relief and BD ORTHO per 800 m tile. Each tile
+uses the same `build_occupancy` in territory mode (no operation area: range and masking are not
+assessed), is clipped to the tile and commune, and merged into
+`frontend/public/occupancy/commune-09194.json`. A full run takes several minutes; failed tiles
+are listed in the file and the UI. Another commune: `--insee CODE`, then add it to
+`COMMUNE_MAPS` in `frontend/src/components/CommuneMaps.tsx`.
+
 ## V0.4: ground and rooftop review
 
 Candidates now carry `surface_type: ground | rooftop`, a separate `score_profile`, and measured
@@ -106,7 +150,7 @@ Open [the interface](http://127.0.0.1:5173), [Swagger](http://127.0.0.1:8000/api
 French; developer documentation is English. Vite proxies `/api` to port 8000. `npm run build`
 builds the frontend; `npm run preview` serves the build on port 4173 with the same API proxy.
 
-Load the arbitrary Fontainebleau example or draw a small operation area, inspect **Paramètres de
+Load the Mirepoix bourg example or draw a small operation area, inspect **Paramètres de
 recherche**, then search. A first analysis can take about 1–2 minutes. The UI permits up to three
 minutes and clears obsolete results after geometry/settings changes. Repeated requests may use
 the one-hour in-memory source cache. Use **Zoomer sur la zone** for small candidate surfaces.

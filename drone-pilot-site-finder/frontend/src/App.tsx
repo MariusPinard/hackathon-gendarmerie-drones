@@ -4,9 +4,14 @@ import MapView, { type DrawingMode, type MapHandle } from './components/MapView'
 import Icon from './components/Icon'
 import AnalysisSettings, { defaultOptions } from './components/AnalysisSettings'
 import ValidationCases from './components/ValidationCases'
+import OccupancyPanel from './components/OccupancyPanel'
+import CommuneMaps, { COMMUNE_MAPS, loadCommuneMap } from './components/CommuneMaps'
+import PilotPanel from './components/PilotPanel'
+import type { PilotPlacement, Qualification } from './pilots'
 import { approximateAreaKm2, demoArea } from './demoArea'
-import type { PolygonGeometry, SearchResponse } from './types'
+import type { CommuneOccupancy, OccupancyStatus, PolygonGeometry, SearchResponse } from './types'
 import { formatZoneArea, relevanceStyles } from './zones'
+import { occupancyOrder, occupancyStyles } from './occupancy'
 
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
 type Review = 'retained' | 'rejected'
@@ -24,6 +29,13 @@ export default function App() {
   const [options, setOptions] = useState(defaultOptions)
   const [snapshotLabel,setSnapshotLabel] = useState<string|null>(null)
   const [maxCandidates,setMaxCandidates] = useState(5)
+  const [hiddenStatuses, setHiddenStatuses] = useState<ReadonlySet<OccupancyStatus>>(new Set())
+  const [occupancyOpacity, setOccupancyOpacity] = useState(0.55)
+  const [communeMap, setCommuneMap] = useState<CommuneOccupancy | null>(null)
+  const [pilots, setPilots] = useState<PilotPlacement[]>([])
+  const [placing, setPlacing] = useState(false)
+  const [qualification, setQualification] = useState<Qualification>('TP1')
+  const [selectedPilot, setSelectedPilot] = useState<string | null>(null)
   const mapRef = useRef<MapHandle>(null)
   const requestRef = useRef<AbortController | null>(null)
 
@@ -32,6 +44,8 @@ export default function App() {
     checkHealth(controller.signal).then((ok) => {
       if (!controller.signal.aborted) setApiStatus(ok ? 'online' : 'offline')
     }).catch(() => { if (!controller.signal.aborted) setApiStatus('offline') })
+    // Mirepoix is the reference territory: show its precomputed occupancy map on arrival.
+    loadCommuneMap(COMMUNE_MAPS[0].insee, controller.signal).then(setCommuneMap).catch(() => undefined)
     return () => { controller.abort(); requestRef.current?.abort() }
   }, [])
 
@@ -53,7 +67,7 @@ export default function App() {
   }
 
   function changeDrawing(value: DrawingMode) {
-    if (value) clearResults()
+    if (value) { clearResults(); setPlacing(false) }
     setDrawing(value)
   }
 
@@ -102,6 +116,13 @@ export default function App() {
   }
 
   const candidates = result?.features || []
+  const activeOccupancy = result ? result.occupancy ?? null : communeMap?.occupancy ?? null
+  function placePilot(position: [number, number]) {
+    const next = Math.max(0, ...pilots.map(p => Number(p.name.slice(1)) || 0)) + 1
+    const pilot = { id: crypto.randomUUID(), name: `T${next}`, qualification, position }
+    setPilots(current => [...current, pilot])
+    setSelectedPilot(pilot.id)
+  }
   const vertices = area ? area.coordinates.reduce((sum, ring) => sum + ring.length - 1, 0) : 0
   const tilesEnabled = import.meta.env.VITE_TILES_ENABLED !== 'false'
 
@@ -131,12 +152,13 @@ export default function App() {
           <div className="sidebar-content">
             <section className="area-section">
               <div className="section-title"><span className="step-number">01</span><h2>Définir la zone</h2><span className={`status-pill ${area ? 'ready' : ''}`}>{area ? 'Prête' : 'À dessiner'}</span></div>
-              <p className="section-description">Délimitez votre zone sur la carte. Cliquez sur le premier sommet pour fermer le polygone.</p>
+              <p className="section-description">Délimitez votre zone sur la carte. Cliquez sur le premier sommet pour fermer le polygone. L’analyse produit une carte d’occupation (où décoller ou non) et des zones candidates.</p>
               <button className={`draw-button ${drawing ? 'drawing' : ''}`} disabled={drawing !== null && drawing !== 'draw'} onClick={() => drawing === 'draw' ? mapRef.current?.cancelDrawing() : mapRef.current?.startDrawing()}>
                 <Icon name={drawing === 'draw' ? 'close' : 'polygon'} />{drawing === 'draw' ? 'Annuler le dessin' : drawing ? 'Modification sur la carte' : area ? 'Dessiner une nouvelle zone' : 'Dessiner une zone'}<span className="key-hint">{drawing === 'draw' ? 'Esc' : drawing ? '' : '+'}</span>
               </button>
               <button className="example-button" disabled={!!drawing || loading} onClick={() => changeArea(structuredClone(demoArea))}>ou charger la zone d’exemple<Icon name="arrow" size={14} /></button>
               <ValidationCases disabled={loading||!!drawing} onPrepare={item=>{changeArea(item.request.operation_area);setOptions({...defaultOptions,...item.request.options});setMaxCandidates(item.request.max_candidates)}} onSnapshot={(item,data)=>{changeArea(item.request.operation_area);setOptions({...defaultOptions,...data.metadata.options});setMaxCandidates(item.request.max_candidates);setResult(data);setSelectedId(data.features[0]?.id||null);setSnapshotLabel(item.label)}} />
+              <CommuneMaps active={communeMap} disabled={loading || !!drawing} onLoad={setCommuneMap} onClear={() => setCommuneMap(null)} />
               {area && <div className="area-summary">
                 <div><span>SURFACE INDICATIVE</span><strong>{number.format(approximateAreaKm2(area))}<small> km²</small></strong></div>
                 <div><span>SOMMETS</span><strong>{vertices}<small> points</small></strong></div>
@@ -156,7 +178,16 @@ export default function App() {
               <div className="section-title"><span className="step-number">02</span><h2>Zones candidates</h2><span className="result-count">{candidates.length.toString().padStart(2, '0')}</span>
                 {result && <button className="icon-button" onClick={exportResults} aria-label="Exporter l’analyse en GeoJSON" title="Exporter l’analyse"><Icon name="download" size={16} /></button>}
               </div>
-              {!result && <div className="empty-results">
+              {!result && communeMap && <>
+                <p className="result-caption">Commune de {communeMap.commune.name} ({communeMap.commune.insee}) · territoire entier · dessinez une zone d’opération pour la portée et les zones candidates.</p>
+                <OccupancyPanel occupancy={communeMap.occupancy} hidden={hiddenStatuses} opacity={occupancyOpacity} onOpacity={setOccupancyOpacity}
+                  onToggle={status => setHiddenStatuses(current => { const next = new Set(current); if (next.has(status)) next.delete(status); else next.add(status); return next })} />
+                <details className="source-reports"><summary>Sources de la carte communale</summary>
+                  {communeMap.sources.map(source => <p key={source.id}><span className={`source-dot ${source.status}`} />{source.name} · {source.feature_count} · {source.detail}</p>)}
+                  {communeMap.tiles.failed.map(item => <p key={item.tile} className="missing-data">Tuile {item.tile + 1} non calculée : {item.error}</p>)}
+                </details>
+              </>}
+              {!result && !communeMap && <div className="empty-results">
                 <div className="empty-icon"><Icon name="polygon" size={27} /><span className="orbit-dot" /></div>
                 <h3>{loading ? 'Analyse des données réelles' : 'Votre exploration commence ici'}</h3>
                 <p>{loading ? 'Vecteurs, images, relief et masquages géométriques. Les données indisponibles seront signalées.' : 'Définissez un périmètre, puis lancez la recherche.'}</p>
@@ -165,6 +196,8 @@ export default function App() {
                 <p className="result-caption">{candidates.filter(c=>c.properties.surface_type==='ground').length} au sol · {candidates.filter(c=>c.properties.surface_type==='rooftop').length} en toiture · {number.format(result.metadata.elapsed_seconds)} s</p>
                 {snapshotLabel&&<p className="snapshot-note">Capture réelle : {snapshotLabel} · {result.metadata.sources.find(s=>s.fetched_at)?.fetched_at?.slice(0,10)}. Affichage enregistré, à examiner.</p>}
                 <p className="local-review-note">Profils sol/toiture distincts ; classement alterné. Version en attente de validation humaine.</p>
+                <OccupancyPanel occupancy={result.occupancy} hidden={hiddenStatuses} opacity={occupancyOpacity} onOpacity={setOccupancyOpacity}
+                  onToggle={status => setHiddenStatuses(current => { const next = new Set(current); if (next.has(status)) next.delete(status); else next.add(status); return next })} />
                 {!candidates.length && <p className="no-results">Aucune zone avec ces contraintes et ces données. Consultez les sources et les limites avant d’ajuster les paramètres.</p>}
                 {candidates.map((candidate, index) => {
                   const active = selectedId === candidate.id
@@ -220,20 +253,33 @@ export default function App() {
                 <p className="local-review-note">Les choix sont conservés en mémoire et dans l’export, sans validation opérationnelle.</p>
               </>}
             </section>
+
+            <section className="results-section pilots-section">
+              <div className="section-title"><span className="step-number">03</span><h2>Placer les télépilotes</h2><span className="result-count">{pilots.length.toString().padStart(2, '0')}</span></div>
+              <PilotPanel occupancy={activeOccupancy} area={area} pilots={pilots} onChange={setPilots} placing={placing} onPlacing={setPlacing}
+                qualification={qualification} onQualification={setQualification} selected={selectedPilot} onSelect={setSelectedPilot}
+                onFocus={pilot => mapRef.current?.focusPoint(pilot.position)} disabled={loading || !!drawing} />
+            </section>
           </div>
           <div className="sidebar-footer"><span className={`api-dot ${apiStatus}`} /><span>{apiStatus === 'online' ? 'API connectée' : apiStatus === 'offline' ? 'API indisponible · démarrez le backend' : 'Connexion à l’API…'}</span><span>GeoJSON</span></div>
         </aside>
 
         <section className="map-panel" aria-label="Espace cartographique">
-          <MapView ref={mapRef} area={area} searchArea={result?.metadata.search_area || null} candidates={candidates} selectedId={selectedId}
+          <MapView ref={mapRef} area={area} searchArea={result?.metadata.search_area || communeMap?.commune.geometry || null} candidates={candidates} selectedId={selectedId}
+            occupancy={activeOccupancy}
+            pilots={pilots} selectedPilot={selectedPilot} placing={placing} onPlacePilot={placePilot}
+            onMovePilot={(id, position) => setPilots(current => current.map(p => p.id === id ? { ...p, position, auto: false } : p))}
+            onSelectPilot={setSelectedPilot} hiddenStatuses={hiddenStatuses} occupancyOpacity={occupancyOpacity}
             onAreaChange={changeArea} onSelect={setSelectedId} onDrawingChange={changeDrawing}
             onTileError={() => setTileError(true)} />
           {!drawing && <div className="map-label"><Icon name="layers" size={16} /><span>{tilesEnabled ? 'Fonds OSM / IGN' : 'Fond de carte désactivé'}</span><span className="map-label-divider" />WGS 84</div>}
           <button className="recenter-button" onClick={() => mapRef.current?.fitArea()} title="Recentrer sur la zone" aria-label="Recentrer sur la zone"><Icon name="crosshair" size={19} /></button>
-          {!area && !drawing && <div className="map-hint"><span className="hint-icon"><Icon name="polygon" size={20} /></span><div><strong>Un périmètre pour commencer</strong><span>Dessinez votre zone ou chargez l’exemple.</span></div></div>}
+          {!area && !drawing && !communeMap && <div className="map-hint"><span className="hint-icon"><Icon name="polygon" size={20} /></span><div><strong>Un périmètre pour commencer</strong><span>Dessinez votre zone ou chargez l’exemple.</span></div></div>}
+          {placing && !drawing && <div className="drawing-hint" role="status"><span className="pulsing-dot" />Cliquez pour poser un {qualification} · glissez un marqueur pour le déplacer</div>}
           {drawing && <div className="drawing-hint" role="status"><span className="pulsing-dot" />{drawing === 'draw' ? 'Cliquez sur le premier sommet pour terminer' : 'Modification en cours · enregistrez pour appliquer'}</div>}
           {tileError && <div className="tile-warning" role="status">Erreur de chargement du fond de carte. Le dessin et la recherche restent utilisables.</div>}
-          <div className="map-legend"><span><i className="legend-operation" />Opération</span><span>Sol : trait plein · Toit : pointillé</span>{Object.entries(relevanceStyles).map(([level, style]) => <span key={level}><i className="legend-surface" style={{ backgroundColor: style.background, borderColor: style.color }} />{style.label}</span>)}</div>
+          <div className="map-legend"><span><i className="legend-operation" />Opération</span>
+            {(result ? result.occupancy : communeMap?.occupancy) && occupancyOrder.filter(status => (result ? result.occupancy : communeMap?.occupancy)?.area_by_status_m2[status] && !hiddenStatuses.has(status)).map(status => <span key={status}><i className="legend-surface" style={{ backgroundColor: occupancyStyles[status].color, borderColor: occupancyStyles[status].color }} />{occupancyStyles[status].label}</span>)}<span>Sol : trait plein · Toit : pointillé</span>{Object.entries(relevanceStyles).map(([level, style]) => <span key={level}><i className="legend-surface" style={{ backgroundColor: style.background, borderColor: style.color }} />{style.label}</span>)}</div>
           <a className="map-report" href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">Signaler une erreur de carte ↗</a>
         </section>
       </div>

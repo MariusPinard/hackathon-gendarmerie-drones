@@ -1,14 +1,17 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet-draw'
-import type { Candidate, PolygonGeometry } from '../types'
+import type { Candidate, OccupancyMap, OccupancyStatus, PolygonGeometry } from '../types'
 import { formatZoneArea, relevanceStyles } from '../zones'
+import { formatHectares, occupancyStyles, takeoffStyles } from '../occupancy'
+import { RANGE_M, siteAt, type LonLat, type PilotPlacement } from '../pilots'
 
 export interface MapHandle {
   startDrawing: () => void
   cancelDrawing: () => void
   fitArea: () => void
   focusZone: (id: string) => void
+  focusPoint: (position: LonLat) => void
 }
 
 export type DrawingMode = 'draw' | 'edit' | 'delete' | null
@@ -17,7 +20,16 @@ interface Props {
   area: PolygonGeometry | null
   searchArea: import('../types').SurfaceGeometry | null
   candidates: Candidate[]
+  occupancy: OccupancyMap | null
+  hiddenStatuses: ReadonlySet<OccupancyStatus>
+  occupancyOpacity: number
   selectedId: string | null
+  pilots: PilotPlacement[]
+  selectedPilot: string | null
+  placing: boolean
+  onPlacePilot: (position: LonLat) => void
+  onMovePilot: (id: string, position: LonLat) => void
+  onSelectPilot: (id: string) => void
   onAreaChange: (area: PolygonGeometry | null) => void
   onSelect: (id: string) => void
   onDrawingChange: (mode: DrawingMode) => void
@@ -32,6 +44,9 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
   const areaLayers = useRef<L.FeatureGroup | null>(null)
   const candidateLayers = useRef<L.LayerGroup | null>(null)
   const searchLayers = useRef<L.LayerGroup | null>(null)
+  const occupancyLayers = useRef<L.LayerGroup | null>(null)
+  const occupancyRenderer = useRef<L.Canvas | null>(null)
+  const pilotLayers = useRef<L.LayerGroup | null>(null)
   const candidateShapes = useRef(new Map<string, L.GeoJSON>())
   const drawRef = useRef<L.Draw.Polygon | null>(null)
   const callbacks = useRef(props)
@@ -44,16 +59,17 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
       const surface = candidateShapes.current.get(id)
       if (surface) mapRef.current?.fitBounds(surface.getBounds(), { padding: [80, 80], maxZoom: 19 })
     },
+    focusPoint: ([lon, lat]) => mapRef.current?.setView([lat, lon], Math.max(mapRef.current.getZoom(), 16)),
     fitArea: () => {
       const bounds = areaLayers.current?.getBounds()
       if (bounds?.isValid()) mapRef.current?.fitBounds(bounds, { padding: [65, 65], maxZoom: 15 })
-      else mapRef.current?.setView([48.412, 2.681], 13)
+      else mapRef.current?.setView([43.0876, 1.8745], 14)
     },
   }), [])
 
   useEffect(() => {
     if (!container.current) return
-    const map = L.map(container.current, { zoomControl: false }).setView([48.412, 2.681], 13)
+    const map = L.map(container.current, { zoomControl: false }).setView([43.0876, 1.8745], 14)
     mapRef.current = map
     L.control.zoom({ position: 'topright' }).addTo(map)
     L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map)
@@ -69,6 +85,16 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
       }).on('tileerror', () => callbacks.current.onTileError())
       L.control.layers({'OpenStreetMap': base, 'BD ORTHO · IGN': ortho}, {}, {position: 'bottomright'}).addTo(map)
     }
+    // Occupancy sits under candidate surfaces and the operation outline.
+    map.createPane('occupancy').style.zIndex = '350'
+    occupancyLayers.current = L.layerGroup([], { pane: 'occupancy' }).addTo(map)
+    // Commune-wide maps hold thousands of rings: canvas keeps panning fluid.
+    occupancyRenderer.current = L.canvas({ pane: 'occupancy', padding: 0.3 })
+    map.createPane('pilots').style.zIndex = '620'
+    pilotLayers.current = L.layerGroup().addTo(map)
+    map.on('click', event => {
+      if (callbacks.current.placing) callbacks.current.onPlacePilot([event.latlng.lng, event.latlng.lat])
+    })
     const areas = L.featureGroup().addTo(map)
     areaLayers.current = areas
     candidateLayers.current = L.layerGroup().addTo(map)
@@ -135,6 +161,8 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
       areaLayers.current = null
       candidateLayers.current = null
       searchLayers.current = null
+      occupancyLayers.current = null
+      pilotLayers.current = null
       candidateShapes.current.clear()
     }
   }, [])
@@ -159,6 +187,66 @@ export default forwardRef<MapHandle, Props>(function MapView(props, ref) {
       mapRef.current?.fitBounds(surface.getBounds(), { padding: [40, 60], maxZoom: 16 })
     }
   }, [props.searchArea])
+
+  useEffect(() => {
+    const layers = occupancyLayers.current
+    if (!layers) return
+    layers.clearLayers()
+    props.occupancy?.zones.forEach(zone => {
+      if (props.hiddenStatuses.has(zone.status)) return
+      const style = occupancyStyles[zone.status]
+      const verdict = takeoffStyles[zone.takeoff]
+      const layer = L.geoJSON(zone.geometry, { pane: 'occupancy', interactive: !props.placing, style: {
+        renderer: occupancyRenderer.current ?? undefined,
+        color: style.color, weight: 0, opacity: 0,
+        fillColor: style.color, fillOpacity: props.occupancyOpacity, className: 'occupancy-zone',
+      } })
+      const popup = document.createElement('div')
+      popup.className = 'occupancy-popup'
+      const title = document.createElement('strong')
+      title.textContent = style.label
+      const badge = document.createElement('span')
+      badge.className = 'occupancy-verdict'
+      badge.style.backgroundColor = verdict.color
+      badge.textContent = verdict.label
+      const reason = document.createElement('p')
+      reason.textContent = zone.reason_label || style.hint
+      const area = document.createElement('small')
+      area.textContent = `${formatHectares(zone.area_m2)} pour ce statut · cellules de ${props.occupancy?.cell_size_m} m`
+      popup.append(title, badge, reason, area)
+      layer.bindPopup(popup, { maxWidth: 260 })
+      layer.addTo(layers)
+    })
+  }, [props.occupancy, props.hiddenStatuses, props.occupancyOpacity, props.placing])
+
+  useEffect(() => {
+    const container = mapRef.current?.getContainer()
+    container?.classList.toggle('placing-pilot', props.placing)
+  }, [props.placing])
+
+  useEffect(() => {
+    const layers = pilotLayers.current
+    if (!layers) return
+    layers.clearLayers()
+    props.pilots.forEach(pilot => {
+      const site = siteAt(props.occupancy, pilot.position)
+      const selected = pilot.id === props.selectedPilot
+      const verdict = site.verdict === 'unknown' ? { label: 'Hors carte', color: '#6b7280' } : takeoffStyles[site.verdict]
+      const latLng: L.LatLngTuple = [pilot.position[1], pilot.position[0]]
+      L.circle(latLng, { radius: RANGE_M[pilot.qualification], pane: 'pilots', interactive: false,
+        color: pilot.qualification === 'TP2' ? '#1d4ed8' : '#0f766e', weight: selected ? 3 : 1.5, dashArray: '8 6',
+        fillColor: pilot.qualification === 'TP2' ? '#3b82f6' : '#14b8a6', fillOpacity: selected ? 0.1 : 0.05 }).addTo(layers)
+      const icon = L.divIcon({ className: `pilot-marker ${selected ? 'selected' : ''}`, iconSize: [34, 34], iconAnchor: [17, 17],
+        html: `<span style="background:${verdict.color}">${pilot.name}</span>` })
+      const marker = L.marker(latLng, { icon, draggable: true, pane: 'pilots', keyboard: true, title: `${pilot.name} · ${pilot.qualification} · ${verdict.label}` })
+      marker.on('click', () => callbacks.current.onSelectPilot(pilot.id))
+      marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMovePilot(pilot.id, [p.lng, p.lat]) })
+      const tooltip = document.createElement('span')
+      tooltip.textContent = `${pilot.name} · ${pilot.qualification} ${RANGE_M[pilot.qualification] / 1000} km · ${verdict.label}${site.zone?.reason_label ? ` (${site.zone.reason_label})` : ''}`
+      marker.bindTooltip(tooltip, { direction: 'top', offset: [0, -16] })
+      marker.addTo(layers)
+    })
+  }, [props.pilots, props.selectedPilot, props.occupancy])
 
   useEffect(() => {
     const layers = candidateLayers.current

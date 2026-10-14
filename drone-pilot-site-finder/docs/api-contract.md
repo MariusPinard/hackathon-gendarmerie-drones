@@ -1,3 +1,21 @@
+# Occupancy map — additive to 0.4
+
+`SearchResponse.occupancy` is a nullable object (`null` when `options.include_occupancy` is false;
+absent in older captures): `kind: "takeoff_occupancy"`, `cell_size_m`, `rows`, `cols`,
+`cells_evaluated`, `pilot_range_m`, `zones[]`, `area_by_status_m2`, `share_by_status`, `assessed`
+(terrain, surface_model, imagery, access, masking booleans) and `notes[]`. Each zone has `status`
+(`free | free_unconfirmed | limited_range | no_access | masked | out_of_range | steep |
+obstacle_buffer | occupied`), optional `reason` / `reason_label`, `takeoff`
+(`possible | conditional | impossible`), geodesic `area_m2` and a WGS84 `MultiPolygon` geometry
+(not bounded to 32 parts). Zones partition the search area without overlap. New options:
+`include_occupancy`, `pilot_range_m`, `occupancy_cell_m`. `contract_version` stays `"0.4"`.
+
+`POST /api/v1/occupancy/tile` (additive, for map clients such as the main app's « Occupation »
+mode) takes `{"bbox": [west, south, east, north], "cell_m": 10}` for one tile of 50 m to 2.5 km and
+returns the same `OccupancyMap`, in territory mode (`assessed.range` and `assessed.masking` false),
+clipped exactly to the tile so neighbouring tiles join without overlap. Tiles are queued one at a
+time server-side; errors use the `AnalysisFailureResponse` envelope (422 invalid tile, 503, 504).
+
 # V0.4 additive extension — pending human validation
 
 The request wrapper, FeatureCollection, surface geometry and six criterion keys remain stable.

@@ -7,6 +7,7 @@ export const defaultOptions: AnalysisOptions = {
   use_osm: true, use_ign: true, use_imagery: true, use_lidar: true, use_panoramax: true,
   include_ground:true, include_rooftops:true, roof_edge_setback_m:3, max_roof_slope_deg:8,
   roof_sample_spacing_m:3, roof_shortlist_limit:12,
+  include_occupancy: true, pilot_range_m: 1000, occupancy_cell_m: 10,
   weights: { accessibility: .2, area: .15, slope: .2, obstacles: .15, openness: .2, proximity: .1 },
 }
 
@@ -23,6 +24,17 @@ export default function AnalysisSettings({options, onChange, disabled}: {
   ]
   return <details className="analysis-settings"><summary>Paramètres de recherche</summary>
     <fieldset disabled={disabled}>
+      <div className="range-settings">
+        <label>Portée du télépilote
+          <select value={[1000, 2000].includes(options.pilot_range_m) ? String(options.pilot_range_m) : 'custom'}
+            onChange={event => event.target.value !== 'custom' && onChange({...options, pilot_range_m: Number(event.target.value)})}>
+            <option value="1000">TP1 · 1 km</option><option value="2000">TP2 · 2 km</option><option value="custom">Personnalisée</option>
+          </select>
+        </label>
+        <label>Portée (m)<input type="number" min="50" max="5000" step="50" value={options.pilot_range_m} onChange={event => onChange({...options, pilot_range_m: Number(event.target.value)})} /></label>
+      </div>
+      <label className="checkbox-label"><input type="checkbox" checked={options.include_occupancy} onChange={event => onChange({...options, include_occupancy: event.target.checked})} />Calculer la carte d’occupation au décollage</label>
+      <label>Taille des cellules d’occupation (m, agrandie si l’emprise l’exige)<input type="number" min="2" max="50" disabled={!options.include_occupancy} value={options.occupancy_cell_m} onChange={event => onChange({...options, occupancy_cell_m: Number(event.target.value)})} /></label>
       <div className="settings-grid">{fields.map(([key, label, min, max]) => <label key={key}>{label}
         <input type="number" min={min} max={max} step="1" value={options[key] as number}
           onChange={event => onChange({...options, [key]: Number(event.target.value)})} />

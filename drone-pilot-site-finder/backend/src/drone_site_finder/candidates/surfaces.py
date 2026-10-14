@@ -6,6 +6,42 @@ from shapely.ops import unary_union
 from drone_site_finder.geospatial.processing import grid_transform, mask_geometry
 from drone_site_finder.geospatial.surfaces import polygon_parts
 
+FOOTPATHS = {"footway", "path", "track", "pedestrian", "bridleway"}
+INACCESSIBLE_HIGHWAYS = {
+    "motorway",
+    "trunk",
+    "motorway_link",
+    "trunk_link",
+    "construction",
+    "proposed",
+}
+
+
+def road_width_m(properties):
+    """Mapped carriageway width (2–30 m), else 2 m for paths and 6 m for roads."""
+    footpath = properties.get("highway") in FOOTPATHS
+    try:
+        width = float(
+            properties.get("largeur_de_chaussee")
+            or properties.get("width")
+            or (2 if footpath else 6)
+        )
+        return min(30, max(2, width))
+    except (ValueError, TypeError):
+        return 2 if footpath else 6
+
+
+def road_is_accessible(properties):
+    """Road/path usable as an access proxy: not motorway, private, fictitious or forbidden."""
+    flags = {"true", "oui", "1"}
+    return (
+        properties.get("highway") not in INACCESSIBLE_HIGHWAYS
+        and str(properties.get("prive", "")).lower() not in flags
+        and str(properties.get("fictif", "")).lower() not in flags
+        and properties.get("acces_pieton") not in {"Interdit", "Restreint"}
+        and "autoroute" not in str(properties.get("cpx_classement_administratif", "")).lower()
+    )
+
 
 def extract_candidates(context, bundle, options):
     records = [(record, context.to_metric(record.geometry)) for record in bundle.records]
@@ -22,51 +58,8 @@ def extract_candidates(context, bundle, options):
             evidence.add(record.source_id)
         elif kind == "road":
             # Road carriageways are exclusions, not pilot areas. Path access remains a proxy.
-            footpath = record.properties.get("highway") in {
-                "footway",
-                "path",
-                "track",
-                "pedestrian",
-                "bridleway",
-            }
-            try:
-                width = float(
-                    record.properties.get("largeur_de_chaussee")
-                    or record.properties.get("width")
-                    or (2 if footpath else 6)
-                )
-                width = min(30, max(2, width))
-            except (ValueError, TypeError):
-                width = 2 if footpath else 6
-            exclusions.append(geom.buffer(width / 2))
-            accessible = record.properties.get("highway") not in {
-                "motorway",
-                "trunk",
-                "motorway_link",
-                "trunk_link",
-                "construction",
-                "proposed",
-            }
-            accessible = accessible and str(record.properties.get("prive", "")).lower() not in {
-                "true",
-                "oui",
-                "1",
-            }
-            accessible = accessible and str(record.properties.get("fictif", "")).lower() not in {
-                "true",
-                "oui",
-                "1",
-            }
-            accessible = accessible and record.properties.get("acces_pieton") not in {
-                "Interdit",
-                "Restreint",
-            }
-            accessible = (
-                accessible
-                and "autoroute"
-                not in str(record.properties.get("cpx_classement_administratif", "")).lower()
-            )
-            if accessible:
+            exclusions.append(geom.buffer(road_width_m(record.properties) / 2))
+            if road_is_accessible(record.properties):
                 roads.append(geom)
         elif kind in {"building", "obstacle", "rail"}:
             buffered = geom.buffer(options.obstacle_buffer_m)

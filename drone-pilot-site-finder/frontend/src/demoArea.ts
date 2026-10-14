@@ -1,11 +1,11 @@
 import type { PolygonGeometry } from './types'
 
-// An arbitrary example near Fontainebleau. It does not imply permission or suitability.
+// Example operation area: the bastide of Mirepoix (09) and its faubourgs, reference territory of
+// the hackathon. It does not imply permission or suitability.
 export const demoArea: PolygonGeometry = {
   type: 'Polygon',
   coordinates: [[
-    [2.672, 48.401], [2.693, 48.401], [2.701, 48.411],
-    [2.693, 48.423], [2.672, 48.420], [2.666, 48.410], [2.672, 48.401],
+    [1.8665, 43.0835], [1.8835, 43.0835], [1.8835, 43.0915], [1.8665, 43.0915], [1.8665, 43.0835],
   ]],
 }
 

@@ -4,11 +4,12 @@ import time
 from itertools import zip_longest
 
 import numpy as np
-from shapely.geometry import mapping, shape
+from shapely.geometry import Point, mapping, shape
 from shapely.ops import unary_union
 
 from drone_site_finder.candidates.surfaces import extract_candidates
 from drone_site_finder.geospatial.buildings import building_obstacles
+from drone_site_finder.geospatial.occupancy import build_occupancy
 from drone_site_finder.geospatial.processing import (
     AnalysisError,
     metric_context,
@@ -59,8 +60,18 @@ class SiteFinderEngine:
             raise AnalysisError("Altimétrie requise mais indisponible.", sources=bundle.sources)
         phases["acquisition"] = round(time.perf_counter() - started, 2)
         phase_start = time.perf_counter()
-        zones, roads, obstacles, excluded, evidence = await asyncio.to_thread(
-            extract_candidates, context, bundle, request.options
+
+        def timed_occupancy():
+            occupancy_start = time.perf_counter()
+            result = build_occupancy(context, bundle, request.options)
+            phases["occupancy"] = round(time.perf_counter() - occupancy_start, 2)
+            return result
+
+        (zones, roads, obstacles, excluded, evidence), occupancy = await asyncio.gather(
+            asyncio.to_thread(extract_candidates, context, bundle, request.options),
+            asyncio.to_thread(timed_occupancy)
+            if request.options.include_occupancy
+            else asyncio.sleep(0, None),
         )
         # Refine only a bounded shortlist; do not infer small-zone slope from a coarse region grid.
         zones = zones[: max(20, request.max_candidates * 5)]
@@ -133,6 +144,17 @@ class SiteFinderEngine:
                 )
             if request.options.require_terrain and "slope" in missing:
                 continue
+            nearest_m = zone.distance(context.operation)
+            if nearest_m > request.options.pilot_range_m:
+                # The pilot could not reach the operation area from here.
+                diagnostics["out_of_range_zones"] = (
+                    int(diagnostics.get("out_of_range_zones", 0)) + 1
+                )
+                continue
+            farthest_m = max(
+                zone.representative_point().distance(Point(xy))
+                for xy in context.operation.exterior.coords
+            )
             slope_value = next(item.value for item in criteria if item.key == "slope")
             if slope_value is not None and slope_value > (
                 request.options.max_roof_slope_deg if roof else request.options.max_slope_deg
@@ -205,6 +227,14 @@ class SiteFinderEngine:
                                 if roof
                                 else "Largeur, accès et obstacles connus filtrés."
                             ),
+                            f"Distance à la zone d’opération : {nearest_m:.0f} m (point le plus "
+                            f"proche) à ~{farthest_m:.0f} m (sommet le plus éloigné) ; portée "
+                            f"télépilote {request.options.pilot_range_m:.0f} m"
+                            + (
+                                " — portée partielle."
+                                if farthest_m > request.options.pilot_range_m
+                                else "."
+                            ),
                             f"Couverture pondérée : {coverage:.0%}. "
                             f"Critères manquants : {', '.join(missing) or 'aucun'}.",
                             (
@@ -274,6 +304,7 @@ class SiteFinderEngine:
         )
         return SearchResponse(
             features=features,
+            occupancy=occupancy,
             metadata=SearchMetadata(
                 count=len(features),
                 requested_count=request.max_candidates,

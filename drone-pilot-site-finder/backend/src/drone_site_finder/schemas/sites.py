@@ -49,6 +49,10 @@ class AnalysisOptions(BaseModel):
     max_roof_slope_deg: float = Field(default=8, ge=1, le=20)
     roof_sample_spacing_m: float = Field(default=3, ge=1, le=10)
     roof_shortlist_limit: int = Field(default=12, strict=True, ge=1, le=20)
+    # Takeoff occupancy map (additive in 0.4): pilot range toward the operation area.
+    include_occupancy: bool = True
+    pilot_range_m: float = Field(default=1000, ge=50, le=5000)
+    occupancy_cell_m: float = Field(default=10, ge=2, le=50)
     weights: dict[str, float] = Field(
         default_factory=lambda: {
             "accessibility": 0.20,
@@ -194,6 +198,52 @@ class CandidateFeature(BaseModel):
         return self
 
 
+OccupancyStatus = Literal[
+    "free",
+    "free_unconfirmed",
+    "limited_range",
+    "no_access",
+    "masked",
+    "out_of_range",
+    "steep",
+    "obstacle_buffer",
+    "occupied",
+]
+
+
+class OccupancyGeometry(BaseModel):
+    """Unbounded multipart transport for raster-derived occupancy surfaces (WGS84)."""
+
+    type: Literal["MultiPolygon"] = "MultiPolygon"
+    coordinates: list[list[list[tuple[float, float]]]]
+
+
+class OccupancyZone(BaseModel):
+    status: OccupancyStatus
+    reason: str | None = None
+    label: str
+    reason_label: str | None = None
+    takeoff: Literal["possible", "conditional", "impossible"]
+    area_m2: float = Field(ge=0)
+    geometry: OccupancyGeometry
+
+
+class OccupancyMap(BaseModel):
+    """Cell-based takeoff screening of the search area. Not a flight or access authorization."""
+
+    kind: Literal["takeoff_occupancy"] = "takeoff_occupancy"
+    cell_size_m: float = Field(gt=0)
+    rows: int = Field(ge=1)
+    cols: int = Field(ge=1)
+    cells_evaluated: int = Field(ge=0)
+    pilot_range_m: float = Field(gt=0)
+    zones: list[OccupancyZone]
+    area_by_status_m2: dict[str, float]
+    share_by_status: dict[str, float]
+    assessed: dict[str, bool]
+    notes: list[str]
+
+
 class SearchMetadata(BaseModel):
     contract_version: Literal["0.4"] = "0.4"
     candidate_kind: Literal["pilot_zone"] = "pilot_zone"
@@ -224,6 +274,7 @@ class SearchResponse(BaseModel):
     type: Literal["FeatureCollection"] = "FeatureCollection"
     features: list[CandidateFeature]
     metadata: SearchMetadata
+    occupancy: OccupancyMap | None = None
 
 
 class ErrorDetail(BaseModel):

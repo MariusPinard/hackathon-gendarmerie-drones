@@ -64,9 +64,51 @@ export interface Candidate {
   }
 }
 
+export type OccupancyStatus = 'free' | 'free_unconfirmed' | 'limited_range' | 'no_access' | 'masked' |
+  'out_of_range' | 'steep' | 'obstacle_buffer' | 'occupied'
+export type TakeoffVerdict = 'possible' | 'conditional' | 'impossible'
+
+export interface OccupancyZone {
+  status: OccupancyStatus
+  reason: string | null
+  label: string
+  reason_label: string | null
+  takeoff: TakeoffVerdict
+  area_m2: number
+  geometry: MultiPolygonGeometry
+}
+
+export interface OccupancyMap {
+  kind: 'takeoff_occupancy'
+  cell_size_m: number
+  rows: number
+  cols: number
+  cells_evaluated: number
+  pilot_range_m: number
+  zones: OccupancyZone[]
+  area_by_status_m2: Partial<Record<OccupancyStatus, number>>
+  share_by_status: Partial<Record<OccupancyStatus, number>>
+  assessed: Record<string, boolean>
+  notes: string[]
+}
+
+/** Static area-wide map produced by scripts/build_commune_occupancy.py. */
+export interface CommuneOccupancy {
+  kind: 'commune_takeoff_occupancy'
+  commune: { name: string; insee: string; department: string | null; area_m2: number; geometry: SurfaceGeometry }
+  generated_at: string
+  elapsed_seconds: number
+  tile_size_m: number
+  tiles: { total: number; failed: { tile: number; error: string }[] }
+  sources: SourceReport[]
+  occupancy: OccupancyMap
+}
+
 export interface SearchResponse {
   type: 'FeatureCollection'
   features: Candidate[]
+  /** Absent from captures recorded before the occupancy map. */
+  occupancy?: OccupancyMap | null
   metadata: {
     contract_version: '0.4'
     candidate_kind: 'pilot_zone'
@@ -109,6 +151,7 @@ export interface AnalysisOptions {
   include_ground: boolean; include_rooftops: boolean
   roof_edge_setback_m: number; max_roof_slope_deg: number; roof_sample_spacing_m: number
   roof_shortlist_limit: number
+  include_occupancy: boolean; pilot_range_m: number; occupancy_cell_m: number
   use_osm: boolean; use_ign: boolean; use_imagery: boolean; use_lidar: boolean; use_panoramax: boolean
   weights: Record<string, number>
 }
