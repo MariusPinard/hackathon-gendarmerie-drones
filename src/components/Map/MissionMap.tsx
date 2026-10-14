@@ -28,6 +28,8 @@ interface MapProps {
   onSelect?: (id: string) => void;
   onMoveDrone?: (id: string, point: Coordinates) => void;
   onMovePilot?: (id: string, point: Coordinates) => void;
+  /** Takeoff verdict of each pilot position on the occupancy map (colours the T markers). */
+  pilotTakeoff?: Record<string, string>;
 }
 const latLng = (p: Coordinates): L.LatLngTuple => [p[1], p[0]];
 const rings = (coordinates: Coordinates[][]): L.LatLngTuple[][] => coordinates.map(r => r.map(latLng));
@@ -132,9 +134,14 @@ export function MissionMap(props: MapProps) {
     const selectable = !props.drawing && !props.placingDroneId;
     const interactive = (props.editable ?? false) && selectable;
     props.pilots?.forEach((pilot, index) => {
+      const drone = props.drones?.find(item => item.pilotId === pilot.id);
+      const atCentre = !drone || (drone.dronePosition[0] === pilot.pilotPosition[0] && drone.dronePosition[1] === pilot.pilotPosition[1]);
+      // A pilot moved to a takeoff cell is linked to the centre of its drone's working area.
+      if (drone && !atCentre) L.polyline([latLng(pilot.pilotPosition), latLng(drone.dronePosition)], { color: 'var(--map-contrast-dark)', weight: 1.5, dashArray: '4 5', opacity: 0.8, interactive: false }).addTo(layers);
+      const takeoff = props.pilotTakeoff?.[pilot.id];
       const marker = L.marker(latLng(pilot.pilotPosition), { draggable: interactive, interactive: selectable, keyboard: selectable,
-        icon: L.divIcon({ className: 'pilot-marker', html: `<span>T${index + 1}</span>`, iconSize: [28, 28], iconAnchor: [40, -6] }) }).addTo(layers);
-      const label = document.createElement('span'); label.textContent = pilot.name; marker.bindTooltip(label);
+        icon: L.divIcon({ className: `pilot-marker ${takeoff ? `takeoff-${takeoff}` : ''}`, html: `<span>T${index + 1}</span>`, iconSize: [28, 28], iconAnchor: atCentre ? [40, -6] : [14, 14] }) }).addTo(layers);
+      const label = document.createElement('span'); label.textContent = pilot.name + (takeoff ? ` · ${({ possible: 'décollage possible', conditional: 'sous conditions', impossible: 'décollage impossible', unknown: 'hors carte d’occupation' } as Record<string, string>)[takeoff] ?? ''}` : ''); marker.bindTooltip(label);
       marker.on('click', () => { if (!callbacks.current.drawing && !callbacks.current.placingDroneId) callbacks.current.onSelect?.(`pilot:${pilot.id}`); });
       marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMovePilot?.(pilot.id, [p.lng, p.lat]); });
     });

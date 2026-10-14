@@ -24,6 +24,9 @@ import type { WeatherInfo } from '../types/weather';
 import type { PlanningResult, PlanningInput } from '../types/planning';
 import type { Environment, DroneModel } from '../types/drone';
 import type { Mission } from '../types/mission';
+import { MAX_SHIFT_M, occupancyAround, placePilots, type PilotSite } from '../services/pilotPlacement';
+import { PilotPlacementSummary } from '../components/Panels/PilotPlacementSummary';
+import type { OccupancyMap } from '../services/occupancy';
 
 function localInput(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -64,7 +67,10 @@ export function PlanningPage({ onPrepare }: { onPrepare: () => void }) {
   const authorizationKey = JSON.stringify(draftAuthorization), previousAuthorization = useRef(authorizationKey);
   const previousWeather = useRef<WeatherInfo | null>(mission?.weather ?? null);
   const notify = (kind: Notice['kind'], text: string) => setNotice({ kind, message: text, id: ++noticeId.current });
-  const invalidate = () => { setResult(null); setResultOpen(false); setMission(null); setSelected(null); };
+  // Pilots on takeoff cells of the occupancy map (after each calculation).
+  const [placement, setPlacement] = useState<{ state: 'idle' | 'running' | 'done' | 'error'; sites: PilotSite[]; missingData: boolean; message?: string }>({ state: 'idle', sites: [], missingData: false });
+  const placementAbort = useRef<AbortController | null>(null), placementMaps = useRef<OccupancyMap[] | null>(null), centredPlan = useRef<PlanningResult | null>(null);
+  const invalidate = () => { placementAbort.current?.abort(); setPlacement({ state: 'idle', sites: [], missingData: false }); setResult(null); setResultOpen(false); setMission(null); setSelected(null); };
   useEffect(() => () => setNavigationLocked(false), []);
   useEffect(() => { if (previousPrefs.current !== prefsKey) { previousPrefs.current = prefsKey; setSeparation(defaultConstraints.minimumVerticalSeparationMeters); setOverlap(defaultConstraints.maximumOverlapPercent ?? 20); if (previousCatalog.current !== JSON.stringify(catalog)) { previousCatalog.current = JSON.stringify(catalog); setModels(current => [...catalog, ...current.filter(model => !catalog.some(m => m.id === model.id))]); } invalidate(); } }, [prefsKey]);
   useEffect(() => { if (previousAuthorization.current !== authorizationKey) { previousAuthorization.current = authorizationKey; setAuthorization(draftAuthorization); invalidate(); } }, [authorizationKey]);
@@ -123,25 +129,49 @@ export function PlanningPage({ onPrepare }: { onPrepare: () => void }) {
   }
   function calculate() {
     if (drawing) return;
-    try { const input = planningInput(); const estimate = estimateResources(input); const proposed = generatePlan({ ...input, availableResources: { dronesByModel: estimate.dronesByModel } }); savePlan(proposed, input); setPanel(null); setResultOpen(true); setFleetOpen(false); notify(proposed.drones.length ? 'success' : 'warning', `${proposed.drones.length} drone(s) proposé(s). Consultez l’estimation à droite.`); }
+    try { const input = planningInput(); const estimate = estimateResources(input); const proposed = generatePlan({ ...input, availableResources: { dronesByModel: estimate.dronesByModel } }); savePlan(proposed, input); void placeOnOccupancy(proposed, input); setPanel(null); setResultOpen(true); setFleetOpen(false); notify(proposed.drones.length ? 'success' : 'warning', `${proposed.drones.length} drone(s) proposé(s). Consultez l’estimation à droite.`); }
+    catch (error) { notify('error', message(error)); }
+  }
+  /** Moves the pilots of a freshly computed plan onto takeoff cells (async: may compute tiles). */
+  async function placeOnOccupancy(plan: PlanningResult, input: PlanningInput) {
+    placementAbort.current?.abort();
+    const controller = new AbortController();
+    placementAbort.current = controller;
+    centredPlan.current = plan;
+    setPlacement({ state: 'running', sites: [], missingData: false });
+    try {
+      const { maps, missingData } = await occupancyAround(plan.drones.map(d => d.dronePosition), controller.signal);
+      if (controller.signal.aborted) return;
+      placementMaps.current = maps;
+      const { result: placed, sites } = placePilots(plan, maps, input.catalog);
+      savePlan(placed, input);
+      setPlacement({ state: 'done', sites, missingData });
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setPlacement({ state: 'error', sites: [], missingData: true, message: message(error) });
+    }
+  }
+  function resetPilotsToCentre() {
+    if (!centredPlan.current) return;
+    try { savePlan(centredPlan.current, planningInput()); setPlacement({ state: 'idle', sites: [], missingData: false }); notify('info', 'Télépilotes remis au centre des zones de travail.'); }
     catch (error) { notify('error', message(error)); }
   }
   const metrics = result ? computeCoverage(result) : null, drone = result?.drones.find(d => `drone:${d.id}` === selected), model = models.find(m => m.id === drone?.modelId);
   const tp1 = result?.pilots.filter(p => p.qualification === 'TP1').length ?? 0, tp2 = result?.pilots.filter(p => p.qualification === 'TP2').length ?? 0;
   return <MapWorkspace tools={[{ id: 'configuration', label: 'Mission', icon: '⚙' }, { id: 'zones', label: 'Zones', icon: '◇' }]} panel={panel} onPanel={next => { setPanel(next); if (window.matchMedia('(max-width: 1100px)').matches) setResultOpen(false); }} title={panel === 'configuration' ? 'Configuration mission' : panel === 'drone' ? 'Zone de travail du drone' : 'Zones cartographiques'} locked={!!drawing}
     fleetOpen={fleetOpen} onFleet={() => { setResultOpen(false); setFleetOpen(open => !open); }} fleet={<FleetPanel drones={result?.drones ?? []} catalog={models} selected={selected} onSelect={id => { setSelected(id); setPanel('drone'); setResultOpen(false); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); }} onClose={() => setFleetOpen(false)} />}
-    rightPanel={resultOpen && result && metrics ? <><MetricsPanel metrics={metrics} /><p className="proposal-summary">{tp1} TP1 · {tp2} TP2 · séparation {separation} m</p><div className="proposal-counts">{models.map(m => <div key={m.id}><span>{m.name}</span><strong>{result.estimate.dronesByModel[m.id] ?? 0}</strong></div>)}</div>{result.warnings.map((w, i) => <p key={i} className="notice warning">{w}</p>)}<details><summary>Comprendre la proposition</summary><ul>{result.estimate.assumptions.map(a => <li key={a}>{a}</li>)}</ul></details><div className="proposal-actions"><button onClick={() => setExportOpen(true)}>Exporter la mission JSON</button><button className="primary" disabled={loadingWeather} onClick={onPrepare}>Préparer l’opération →</button></div></> : undefined} rightPanelTitle="Estimation du dispositif" onRightPanelClose={() => setResultOpen(false)}
+    rightPanel={resultOpen && result && metrics ? <><MetricsPanel metrics={metrics} /><p className="proposal-summary">{tp1} TP1 · {tp2} TP2 · séparation {separation} m</p><div className="proposal-counts">{models.map(m => <div key={m.id}><span>{m.name}</span><strong>{result.estimate.dronesByModel[m.id] ?? 0}</strong></div>)}</div>{result.warnings.map((w, i) => <p key={i} className="notice warning">{w}</p>)}<PilotPlacementSummary placement={placement} pilots={result.pilots} maxShift={MAX_SHIFT_M} onRetry={() => { try { void placeOnOccupancy(centredPlan.current ?? result, planningInput()); } catch (error) { notify('error', message(error)); } }} onReset={resetPilotsToCentre} /><details><summary>Comprendre la proposition</summary><ul>{result.estimate.assumptions.map(a => <li key={a}>{a}</li>)}</ul></details><div className="proposal-actions"><button onClick={() => setExportOpen(true)}>Exporter la mission JSON</button><button className="primary" disabled={loadingWeather} onClick={onPrepare}>Préparer l’opération →</button></div></> : undefined} rightPanelTitle="Estimation du dispositif" onRightPanelClose={() => setResultOpen(false)}
     status={<><strong>{name}</strong><span>01 · Planification</span><WeatherBadge weather={weather} loading={loadingWeather} /></>}
     panelContent={<>
       {panel === 'configuration' && <><label>Nom de mission<input value={name} onChange={e => { setName(e.target.value); invalidate(); }} maxLength={120} /></label><p className="location-label">⌖ {locationLabel}</p><p className="muted">{center[1].toFixed(5)}, {center[0].toFixed(5)}</p><FrenchDateTime value={when} onChange={next => { setWhen(next); invalidate(); }} /><p className="muted">Heure locale : {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
         <div className="planning-weather"><WeatherBadge weather={weather} loading={loadingWeather} /><p className="muted">Prévision automatique à la date et au lieu choisis.</p>{(weather?.dayNight === 'night' || weather?.rainDetected === true) && <p className="notice warning">Nuit/pluie : seuls les modèles déclarés compatibles sont retenus ; Matrice 4T pour le catalogue standard.</p>}</div>
         <label>Environnement<select value={environment} onChange={e => { setEnvironment(e.target.value as Environment); invalidate(); }}><option value="urban">Urbain</option><option value="rural">Rural</option></select></label><label>Répartition télépilotes<select value={capabilityId} onChange={e => { setCapabilityId(e.target.value); invalidate(); }}><option value="mixed">Mix TP1 / TP2 · préférence TP1</option><option value="tp1-out-of-sight">TP1 seulement · 1 km max</option><option value="tp2-out-of-sight">TP2 seulement · 2 km max</option><option value="tp1-in-sight">TP1 en vue · 500 m max</option></select></label><p className="muted">Séparation {separation} m · chevauchement max {overlap} %. Modifiables dans Paramètres.</p><button className="primary wide" onClick={() => setPanel('zones')}>Définir les zones →</button></>}
       {panel === 'zones' && <><p className="muted">Posez les sommets, puis cliquez le premier point ou Terminer.</p><button className="wide" onClick={() => startDrawing('operation')}>Dessiner la zone d’opération</button><button className="wide" disabled={!operationZone} onClick={() => startDrawing('priority')}>Dessiner une zone prioritaire</button>{operationZone && <p className="notice success">✓ Zone validée · {operationZone.geometry.coordinates[0]!.length - 1} sommets</p>}{priorityZones.map(z => <div className="zone-row" key={z.properties.id}><span>{z.properties.name}</span><button onClick={() => { setPriorityZones(zones => zones.filter(p => p.properties.id !== z.properties.id)); invalidate(); }} aria-label={`Supprimer ${z.properties.name}`}>Supprimer</button></div>)}{operationZone && <button className="text-button" onClick={() => { setOperationZone(null); setPriorityZones([]); invalidate(); }}>Effacer toutes les zones</button>}<p className="muted">Utilisez le bouton en bas de la carte pour calculer l’estimation.</p></>}
-      {panel === 'drone' && drone && model && result && <PlanningDroneEditor key={drone.id} drone={drone} model={model} maxRangeMeters={capabilityId === 'tp1-in-sight' ? 500 : capabilityId.startsWith('tp1') ? 1000 : 2000} onChange={change => { try { const input = planningInput(); const next = adjustPlanningCoverage(input, result, drone.id, change); savePlan(next, input); } catch (error) { notify('error', message(error)); } }} />}
+      {panel === 'drone' && drone && model && result && <PlanningDroneEditor key={drone.id} drone={drone} model={model} maxRangeMeters={capabilityId === 'tp1-in-sight' ? 500 : capabilityId.startsWith('tp1') ? 1000 : 2000} onChange={change => { try { const input = planningInput(); const adjusted = adjustPlanningCoverage(input, result, drone.id, change); const next = placementMaps.current && placement.state === 'done' ? placePilots(adjusted, placementMaps.current, input.catalog).result : adjusted; savePlan(next, input); } catch (error) { notify('error', message(error)); } }} />}
     </>}
     floating={<><LocationSearch center={center} disabled={!!drawing} onError={text => notify('error', text)} onLocate={(point, label) => { if (drawing) return; if (point[0] !== center[0] || point[1] !== center[1]) invalidate(); setCenter(point); setRecenterKey(n => n + 1); setLocationLabel(label); notify('success', `Carte centrée sur ${label}.`); }} />
       {drawing ? <div className="drawing-bar" role="region" aria-label="Dessin en cours"><div><strong>{drawing === 'operation' ? 'Zone d’opération' : 'Zone prioritaire'}</strong><span>{vertices.length} sommets · Premier point ou Terminer pour fermer</span></div><button className="primary" onClick={finishDrawing}>✓ Terminer</button><button onClick={cancelDrawing}>Annuler</button></div> : <div className="map-actionbar"><button className="primary" disabled={!operationZone || loadingWeather} onClick={calculate}>{result ? 'Recalculer l’estimation' : 'Calculer l’estimation'}</button><button disabled={!result || loadingWeather} onClick={onPrepare}>Préparer l’opération →</button>{result && <button onClick={() => { setResultOpen(true); setFleetOpen(false); }}>Voir l’estimation</button>}</div>}
       <Notification notice={notice} onClose={() => setNotice(null)} />{exportOpen && mission && <ExportDialog defaultName={mission.metadata.name} onCancel={() => setExportOpen(false)} onConfirm={filename => { try { exportMission(mission, filename); setExportOpen(false); notify('success', `Fichier ${filename} exporté.`); } catch (error) { notify('error', message(error)); } }} />}</> }>
-    <MissionMap center={center} recenterKey={recenterKey} operationZone={operationZone} priorityZones={priorityZones} drawing={!!drawing} vertices={vertices} onVertex={addVertex} onFinish={finishDrawing} drones={result?.drones ?? []} pilots={result?.pilots ?? []} uncoveredPoints={metrics?.uncoveredPoints ?? []} uncoveredCellSizeMeters={metrics?.sampleSpacingMeters} selected={selected} onSelect={id => { setSelected(id); if (id.startsWith('drone:')) { setPanel('drone'); setResultOpen(false); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); } }} />
+    <MissionMap center={center} recenterKey={recenterKey} operationZone={operationZone} priorityZones={priorityZones} drawing={!!drawing} vertices={vertices} onVertex={addVertex} onFinish={finishDrawing} drones={result?.drones ?? []} pilots={result?.pilots ?? []} pilotTakeoff={Object.fromEntries(placement.sites.map(site => [site.pilotId, site.verdict]))} uncoveredPoints={metrics?.uncoveredPoints ?? []} uncoveredCellSizeMeters={metrics?.sampleSpacingMeters} selected={selected} onSelect={id => { setSelected(id); if (id.startsWith('drone:')) { setPanel('drone'); setResultOpen(false); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); } }} />
   </MapWorkspace>;
 }

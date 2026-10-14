@@ -102,6 +102,15 @@ export async function loadCommuneOccupancy(insee: string, signal?: AbortSignal):
   return data;
 }
 
+/** Session caches shared by the map overlay and the pilot placement. */
+export const occupancyTileCache = new Map<TileKey, OccupancyMap | Error>();
+let precomputedCommune: Promise<CommuneOccupancy | null> | null = null;
+
+export function getPrecomputedCommune(): Promise<CommuneOccupancy | null> {
+  precomputedCommune ??= Promise.all(PRECOMPUTED_COMMUNES.map(code => loadCommuneOccupancy(code).catch(() => null))).then(list => list.find(Boolean) ?? null);
+  return precomputedCommune;
+}
+
 export function occupancyApiUrl(): string | null {
   const configured = import.meta.env.VITE_OCCUPANCY_API_URL as string | undefined;
   if (configured !== undefined) return configured.trim().replace(/\/$/, '') || null;

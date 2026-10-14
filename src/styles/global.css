@@ -416,3 +416,13 @@ input[type="file"]::file-selector-button { font: inherit; padding: 8px 12px; mar
 @media (max-width: 650px) { .occupancy-status { top: 140px; right: 12px; left: 62px; max-width: none; } }
 .occupancy-status .occupancy-start { margin: 4px 0 2px; padding: 7px 12px; font-size: 11px; font-weight: 700; background: var(--primary); color: var(--on-primary); border: 1px solid var(--primary-ink); border-radius: var(--radius); cursor: pointer; align-self: flex-start; }
 .leaflet-occupancy-pane { opacity: .55; }
+/* Remote pilot takeoff placement */
+.pilot-placement { margin: 14px 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.pilot-placement ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.pilot-placement li { display: flex; gap: 8px; align-items: flex-start; }
+.pilot-placement li i { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; background: #6b7280; }
+.pilot-placement li.takeoff-possible i { background: #1f9d55; } .pilot-placement li.takeoff-conditional i { background: #e2a93b; } .pilot-placement li.takeoff-impossible i { background: #c0392b; }
+.pilot-placement li small { display: block; color: var(--text-muted); font-size: 11px; }
+.pilot-placement-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pilot-placement-actions button { padding: 6px 10px; font-size: 11px; }
+.pilot-marker.takeoff-possible { border-color: #1f9d55; box-shadow: 0 0 0 2px #1f9d55; } .pilot-marker.takeoff-conditional { border-color: #e2a93b; box-shadow: 0 0 0 2px #e2a93b; } .pilot-marker.takeoff-impossible { border-color: #c0392b; box-shadow: 0 0 0 2px #c0392b; }

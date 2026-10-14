@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import {
-  LIVE_CONCURRENCY, MAX_LIVE_TILES, OCCUPANCY_STYLES, PRECOMPUTED_COMMUNES, TAKEOFF_LABELS,
-  fetchOccupancyTile, loadCommuneOccupancy, occupancyApiUrl, tileCoveredBy, tilesFor,
+  LIVE_CONCURRENCY, MAX_LIVE_TILES, OCCUPANCY_STYLES, TAKEOFF_LABELS,
+  fetchOccupancyTile, getPrecomputedCommune, occupancyApiUrl, occupancyTileCache, tileCoveredBy, tilesFor,
   type CommuneOccupancy, type OccupancyMap, type Tile, type TileKey,
 } from '../../services/occupancy';
 
@@ -18,9 +18,8 @@ export interface OccupancyProgress {
   error: string | null;
 }
 
-// Session cache shared by every map instance: a tile is computed once per page load.
-const tileCache = new Map<TileKey, OccupancyMap | Error>();
-let communeCache: Promise<CommuneOccupancy | null> | null = null;
+// Session cache shared with the pilot placement: a tile is computed once per page load.
+const tileCache = occupancyTileCache;
 
 function render(data: OccupancyMap, renderer: L.Renderer, interactive: boolean): L.LayerGroup {
   const group = L.layerGroup();
@@ -133,8 +132,7 @@ export function useOccupancyOverlay(map: L.Map | null, active: boolean, interact
       pump();
     };
 
-    communeCache ??= Promise.all(PRECOMPUTED_COMMUNES.map(code => loadCommuneOccupancy(code).catch(() => null))).then(list => list.find(Boolean) ?? null);
-    void communeCache.then(data => {
+    void getPrecomputedCommune().then(data => {
       if (controller.signal.aborted) return;
       commune = data;
       if (data) { show('commune', data.occupancy); setProgress(p => ({ ...p, precomputed: data.commune.name })); }
