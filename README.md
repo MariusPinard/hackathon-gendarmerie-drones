@@ -1,92 +1,267 @@
-# Hackathon Gendarmerie — missions multi-drones
+# Division Drone — Gendarmerie
 
-Prototype web d’aide à la décision pour planifier puis conduire une opération multi-drones **simulée**. Aucune commande réelle, aucun SDK drone et aucun backend intégré ; le calcul d’occupation en direct utilise un service facultatif séparé.
+Application web du hackathon Gendarmerie pour préparer et conduire une mission multi-drones **simulée**. Elle permet de dessiner une zone d’opération, estimer les moyens nécessaires, adapter les ressources disponibles et suivre la couverture sur une carte.
 
+Le projet est un frontend autonome. Il ne commande aucun drone réel, n’intègre aucun SDK constructeur, aucune authentification et aucun backend métier. Le calcul d’occupation du terrain en direct repose sur un service externe facultatif. L’interface est destinée à un usage sur ordinateur.
 
-## Installation et lancement
+## Installation
 
-Node.js **22.18+** et npm dans le PATH (Node 24 LTS recommandé).
+Prérequis : **Node.js 22.18 ou plus récent**, npm et Git. Les tests importent directement les sources TypeScript avec Node.
 
 ```sh
-npm install
+git clone https://github.com/MariusPinard/hackathon-gendarmerie-drones.git
+cd hackathon-gendarmerie-drones
+npm ci
 npm run dev
-npm test
-npm run typecheck
+```
+
+Ouvrir l’adresse HTTP indiquée par Vite, généralement `http://localhost:5173`. Si le port est occupé, Vite peut en sélectionner un autre. Ne pas ouvrir `index.html` avec `file://` : les modules TypeScript doivent être servis par Vite.
+
+### Commandes disponibles
+
+| Commande | Usage |
+| --- | --- |
+| `npm ci` | Installer les dépendances à partir du lockfile |
+| `npm run dev` | Démarrer le serveur de développement |
+| `npm run typecheck` | Vérifier les types TypeScript |
+| `npm test` | Exécuter les tests natifs `node:test` |
+| `npm run build` | Vérifier les types puis générer le site statique dans `dist/` |
+| `npm run preview` | Servir localement le dernier build pour vérification |
+| `git diff --check` | Détecter les erreurs d’espacement dans les modifications |
+
+Pour vérifier une version de production :
+
+```sh
 npm run build
 npm run preview
 ```
 
-Ouvrir l’URL HTTP indiquée par Vite, normalement `http://localhost:5173`. **Ne pas ouvrir index.html directement avec file://** : les modules TypeScript sont servis par Vite. Le build statique est dans `dist/` (non versionné). `npm ci` utilise le lockfile versionné.
+Le serveur de prévisualisation utilise généralement le port 4173, sauf configuration ou occupation du port. Il sert le contenu de `dist/` ; il faut refaire le build après une modification des sources.
 
-## Fonctionnel
+## Parcours utilisateur
 
-- Accueil : nouvelle planification ou import direct d’une mission JSON.
-- Configuration : nom, adresse française ou coordonnées WGS84 (Mirepoix par défaut), date et heure en français (JJ/MM/AAAA, 24 h) avec conversion ISO, environnement rural/urbain et scénario TP1/TP2.
-- Carte Leaflet plein écran sans défilement de page, plan OSM et imagerie satellite IGN ; panneaux coulissants et flotte à droite. Dessin par clics, fermeture au premier sommet ou automatique via Terminer, annulation et suppression. Les autres actions sont bloquées pendant le dessin.
-- Météo automatique à chaque date/localisation, pluie Open-Meteo et calcul astronomique jour/nuit local. Badge compact et erreurs propres ; Matrice 4T exclusivement la nuit ou sous la pluie (y compris pour un catalogue personnalisé). Par temps sec de jour, les modèles standard sont répartis aussi équitablement que les effectifs entiers et les stocks le permettent.
-- Estimation dans un panneau à droite, placement déterministe avec mélange TP1/TP2, préférence TP1 à service équivalent, secteurs/rayons adaptés puis découpés à l’opération. Réglage du cap/angle/rayon dès la planification.
-- Quantités réellement disponibles par modèle, comparaison et recalcul ; couverture partielle acceptée.
-- Import fichier ou texte JSON 1.0, validation runtime et export nommé via le bouton « Export JSON » visible sur la carte en planning/ressources/conduite. Catalogue personnalisé et paramètres inclus si présents.
-- Conduite : drones/télépilotes distincts, glisser-déposer ou clic de placement avec recalcul, altitude, aperçu cap/angle en direct avant validation, conflits et indisponibilité.
-- Flotte : un drone par ligne, hauteur simulée et état. Aucune batterie ou télémétrie inventée.
-- Ressources : ajout de modèles (nom, pluie, nuit, vent, zoom), fiches DJI sourcées et quantités réelles.
-- Paramètres mémorisés : séparation verticale 30 m par défaut, chevauchement maximal 20 %, catalogue par défaut. Autorisation préfectorale facultative par mission (référence, effectif/période déclarés).
-- Réorganisation locale facultative : au plus un drone déplacé, sans aggravation du nombre de conflits.
-- Fin de mission avec confirmation et retour interpolé vers chaque télépilote ; urgence confirmée et atterrissage sur place.
+### 1. Accueil
 
-La mission fictive intégrée se charge depuis l’écran d’import pour une démonstration rapide. Pour un dispositif multi-drones plus étendu, dessiner un rectangle d’environ 4–6 km autour de Mirepoix et une priorité centrale. Voir [DEMO.md](docs/DEMO.md).
+L’accueil propose deux entrées : **Préparer une mission** et **Reprendre une mission**. Les logos Gendarmerie et Division Drone sont intégrés sur fond transparent. Un thème clair et un thème sombre sont disponibles.
 
-## Simplifications du prototype
+### 2. Planification
 
-Heuristique gloutonne, pas une optimisation exacte. Projection locale et surfaces estimées sur une grille bornée. Le rayon de travail est inférieur ou égal à la portée TP1 (1 km) / TP2 (2 km), sans représentation d’un capteur constructeur ; un TP2 de rayon ≤ 1 km est converti en TP1. Drones et télépilotes sont initialement à la même position, avec références distinctes ; les altitudes commencent à 10 m, séparées par défaut de 30 m lorsque les zones se chevauchent, sous le plafond.
+Le planificateur affiche une carte plein écran, avec des panneaux coulissants. La localisation initiale est **Mirepoix**. La recherche accepte une adresse française ou des coordonnées WGS84, dans l’ordre **longitude, latitude**.
 
-Le scénario TP1 « en vue » utilise 500 m et un plafond de 120 m selon la règle complémentaire du brief. Jour/nuit est calculé au seuil solaire −6°, indépendamment de l’horizon météo. La vue « Satellite » utilise les orthophotos IGN en France ; leur couverture et disponibilité dépendent du service. Aucune télémétrie réelle n’est disponible. Pas de Street View, relief, vent/température/visibilité, moteur physique ou contrôle aéronautique réel.
+Dans **Mission**, renseigner le nom, la date et l’heure locales, l’environnement rural ou urbain et le scénario de télépilotage. La date est saisie au format français, avec une heure sur 24 h ; elle est enregistrée en ISO avec conversion du fuseau local.
 
-Limites : zone locale <= 50 km de côté, centre de zone à latitude <= 75° en valeur absolue, 20 priorités, 300 sommets par anneau et fichiers <= 2 Mo. Aucune limite fixe d’effectif n’est imposée ; le calcul dépend des moyens, de la couverture utile et des éventuelles limites saisies par le chef de mission. Les secteurs très fins et les limites de couverture restent approximatifs. Les positions et résultats ne survivent pas à un rechargement sans export JSON. Une importation reprend par les ressources et reconstruit le dispositif : elle ne reprend pas une animation interrompue. Les mouvements d’urgence/retour durent quatre secondes de démonstration.
+Dans **Zones**, dessiner la zone d’opération, puis éventuellement des zones prioritaires :
 
-## Architecture et dépendances
+- Cliquer pour poser les sommets.
+- Recliquer le premier sommet ou choisir **Terminer** pour fermer le polygone.
+- **Terminer** relie automatiquement le dernier sommet au premier.
+- **Annuler** abandonne le dessin en cours.
+- Le dessin est validé avant enregistrement ; les autres actions sont bloquées pendant sa création.
 
-React + TypeScript strict + Vite + Leaflet direct. Aucune dépendance ajoutée depuis la fondation. Pas de routeur, wrapper Leaflet, bibliothèque de dessin/géométrie/UI/état/test. Tests natifs `node:test` en `.mjs` important les sources `.ts`.
+La météo est demandée automatiquement pour le lieu et le créneau choisis. Le calcul Jour/Nuit reste disponible même lorsque la prévision ne l’est pas. Une prévision absente reste inconnue et n’est pas assimilée à un temps sec.
 
-| Dossier | Responsabilité |
+**Calculer l’estimation** propose les positions, les modèles et les télépilotes, puis affiche les métriques et les avertissements. Les secteurs proposés peuvent être ajustés en cap, angle et rayon avant de préparer l’opération.
+
+### 3. Ressources et catalogue « Drone »
+
+Dans **Moyens**, comparer les quantités estimées aux quantités réellement disponibles, modifier les effectifs et recalculer le dispositif. Une couverture partielle est possible si les ressources ou les contraintes ne permettent pas de couvrir toute la zone.
+
+Le bouton **Drone**, placé à côté de **Moyens** dans les commandes de la carte, ouvre le catalogue de la mission. Il affiche tous les modèles enregistrés, même ceux dont la quantité disponible est nulle, avec leurs valeurs :
+
+| Caractéristique | Affichage |
 | --- | --- |
-| `src/app`, `src/pages`, `src/components`, `src/styles` | Contexte, parcours, rendu et horloge de simulation |
-| `src/types` | Contrats communs |
-| `src/engines/geometry` | Projection, validation, échantillonnage, disques/secteurs et métriques |
-| `src/engines/planning` | Estimation, placement glouton et altitudes initiales |
-| `src/engines/operations` | Conflits, recalcul ciblé, réorganisation locale et transitions simulées |
-| `src/services` | Adaptateurs météo et adresses, stockage JSON et conversion mission/plan |
-| `src/data` | Catalogue limité au brief et mission fictive |
-| `tests` | Géométrie et dessin, planning, conduite, stockage, météo, adresses et parcours métier complet |
+| Vol de nuit | Oui / Non |
+| Vol sous la pluie | Oui / Non |
+| Résistance au vent | Valeur en m/s, ou « Non renseignée » |
+| Zoom | Valeur déclarée, ou « Non renseigné » |
 
-Voir [architecture](docs/ARCHITECTURE.md), [exigences](docs/REQUIREMENTS.md), [contrats](docs/API_CONTRACT.md), [intégration](docs/INTEGRATION.md) et [validation](docs/VALIDATION.md), [algorithmes](docs/ALGORITHMES.md), [fiches constructeur](docs/DRONE_SPECS.md) et [format JSON](docs/FORMAT_JSON.md).
+Un modèle ajouté via **Ajouter un modèle de drone** dans Moyens apparaît immédiatement dans ce catalogue. Son ajout fournit une unité disponible dans la mission. Les modèles ajoutés dans **Paramètres → Ajouter un drone** sont enregistrés dans le catalogue par défaut et proposés aux nouvelles missions après sauvegarde des paramètres.
 
-## Git et contrôles
+Les capacités déclarées du catalogue sont distinctes de la règle opérationnelle : **la nuit ou sous la pluie, seuls les Matrice 4T sont retenus**, même si un modèle personnalisé déclare ces capacités. Les caractéristiques constructeur et leurs sources peuvent être consultées dans les fiches de Moyens et dans [DRONE_SPECS.md](docs/DRONE_SPECS.md).
 
-Branche de cette itération : `codex/operational-planning`, depuis `main` `5f6d220`. Commits par incréments, aucune fusion ni push automatique. Avant PR : `npm test`, `npm run build`, `git diff --check` et contrôle navigateur. Ne pas versionner `node_modules`, `dist`, `.env` ou secrets. Coordonner toute évolution des contrats et dépendances.
+Après recalcul, **Dispositif** ouvre son propre panneau depuis la carte : couverture, avertissements, conflits et lancement. Le lancement est bloqué si des conflits subsistent ou si aucun drone n’est prêt.
 
-## Services externes
+### 4. Flotte, réserve et placement
 
-La carte utilise les tuiles [OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/) avec attribution, sans téléchargement massif/hors ligne. Leur disponibilité réseau n’est pas garantie ; les objets métier restent affichables sans fond. La météo envoie seulement coordonnées et créneau demandés à [Open-Meteo](https://open-meteo.com/en/docs), sans clé. Respecter les conditions d’usage avant un déploiement hors hackathon. Pas de transfert de fichier mission à un backend.
+La flotte affiche un drone par ligne, son modèle, son état et sa hauteur simulée au-dessus du sol. Elle représente les unités individuelles ; le panneau **Drone** représente les modèles du catalogue. Aucune batterie ni télémétrie réelle n’est affichée.
 
-La vue satellite utilise le [WMTS public IGN](https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/diffusion/wmts/) (orthophotos, attribution IGN). La recherche d’adresses françaises utilise le [géocodage IGN / BAN](https://ignf.github.io/cartes.gouv.fr-documentation/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/geocodage/) : requête après 600 ms, annulation des recherches obsolètes, cache de session et délai maximal de 7 s. La saisie d’adresse est envoyée à ce service ; les coordonnées peuvent être utilisées sans géocodage.
+Les unités disponibles au-delà du besoin calculé restent sur la carte et dans la flotte **en réserve**. Elles ne contribuent pas à la couverture et ne sont pas engagées automatiquement.
 
-La règle de simulation « Matrice 4T autorisé sous pluie » se distingue de la fiche DJI : le Matrice 4T n’est pas étanche. Les caractéristiques affichées et leurs sources sont documentées dans DRONE_SPECS. Le simulateur ne vérifie pas la validité juridique d’une autorisation saisie.
+Pour utiliser une réserve : sélectionner le drone, le placer par clic ou glisser-déposer, régler son secteur et l’engager. Lors du déplacement d’une réserve, son télépilote est également repositionné. Lors du déplacement d’un drone engagé, le télépilote reste distinct et la portée est contrôlée.
 
-### Rectification 3
+**Mettre le drone en réserve** retire sa couverture tout en conservant la possibilité de le déplacer et de le redéployer. Un drone indisponible peut être **remis en réserve** avant d’être placé. Ces actions sont disponibles dans les ressources après recalcul et pendant une opération active.
 
-Les unités disponibles en supplément sont conservées dans la carte et la flotte en réserve. Sélectionner une unité, la placer par clic ou glisser-déposer, régler son secteur puis l’engager ; sa couverture et les conflits sont alors recalculés. Cette édition est disponible dans les ressources avant lancement et pendant la conduite. La réserve ne compte pas comme couverture active et ne décolle pas automatiquement.
+### 5. Conduite de l’opération
 
-Après l’atterrissage d’urgence simulé, « Relancer l’opération » restaure les positions, altitudes, secteurs et disponibilités précédents. L’instantané est exporté dans les nouvelles missions en urgence ; les anciens fichiers sans instantané nécessitent un nouveau calcul. Les paramètres sont accessibles uniquement dans le planificateur. Les champs sont gris clair avec texte noir dans les deux thèmes.
+Après lancement, les drones prêts deviennent actifs ; les réserves restent en réserve. La sélection d’un drone permet de modifier son altitude, son cap et son angle de travail. L’aperçu du secteur et les métriques se mettent à jour avant validation. Les déplacements par clic ou glisser-déposer recalculent la couverture et les conflits.
 
-L’accueil utilise une console d’accès aux missions, le logo et les icônes de `/public/image`. La carte montre les arcs de portée en pointillés uniquement hors de l’opération et dans l’angle du secteur de travail, garde les zones de travail découpées et supprime le calque de cellules non couvertes. Les métriques et les cibles de réorganisation restent calculées. Les orthophotos IGN utilisent la matrice publiée PM_0_19 ; le plan reste affiché sous les tuiles en chargement ou en erreur.
+Les contrôles portent sur les plafonds, la séparation verticale, le chevauchement autorisé, la portée, les qualifications, les ressources, la pluie, la nuit et les éventuelles limites d’autorisation saisies.
 
-### Occupation et présentation de l’accueil
+La réorganisation locale facultative recherche le déplacement d’au plus un drone actif, sans augmenter le nombre de conflits. Elle ne recalcule pas librement l’ensemble du dispositif.
 
-Reprise ciblée depuis `feature/occupancy-map-mode` (`a322a93`) : service d’occupation, calque Leaflet, carte précalculée de Mirepoix et tests. Aucune fusion de la branche complète ni ajout du moteur de recherche d’emplacements. Le troisième bouton « Occupation » affiche les couleurs du terrain et leurs causes au clic. Les demandes en direct partent uniquement après « Lancer le calcul », avec deux requêtes simultanées, 24 tuiles par lancement et cache de session. Le nombre de tuiles énumérées reste borné lors d’un dézoom mondial pour éviter de bloquer l’interface.
+**Fin de mission** demande confirmation et simule le retour des drones vers leurs télépilotes. **Arrêt d’urgence** demande confirmation et simule l’atterrissage sur place. Les animations durent quatre secondes. Les drones indisponibles restent immobiles.
 
-Mirepoix est disponible immédiatement depuis `public/occupancy/commune-09194.json`. Pour les autres secteurs, configurer `VITE_OCCUPANCY_API_URL` vers le service compatible `POST /api/v1/occupancy/tile` ; en développement l’adresse par défaut est `http://127.0.0.1:8000`. Sans service, la carte précalculée reste consultable. La légende et les fenêtres de détail signalent les possibilités et limites d’accès au terrain ; cette analyse aide au choix d’un emplacement et ne valide pas une autorisation.
+Après l’atterrissage d’urgence, **Relancer l’opération** restaure les positions, altitudes, secteurs et états précédents. Cet instantané est inclus dans les exports récents ; un ancien fichier d’urgence sans instantané nécessite un nouveau dispositif.
 
-Les zones non couvertes sont de nouveau représentées par les petits points rouges de la V1, jamais par des cellules hachurées. Les arcs extérieurs ambre suivent uniquement l’angle de travail et les contours des drones sont plus fins. L’accueil ordinateur affiche les grands logos Gendarmerie et Division Drone, détourés sur fond transparent. L’icône de flotte reste distincte. Sources et prompts du détourage : [LOGOS.md](docs/LOGOS.md).
+## Fonds cartographiques et légende
 
-Les disques complets à 360° sont comparés aux secteurs orientés par le planificateur, dans les limites d’angle et de chevauchement définies. Les intersections des zones de travail engagées apparaissent en jaune sur les fonds Plan/Satellite ; les points rouges sont affichés sur une grille quatre fois plus dense sans modifier les métriques. Le bouton « Dispositif » possède son propre accès sur la carte des ressources.
+| Mode | Données et comportement |
+| --- | --- |
+| Plan | Tuiles OpenStreetMap avec attribution |
+| Satellite | Orthophotos IGN en France ; un fond Plan reste présent sous les images en chargement ou en erreur |
+| Occupation | Analyse du terrain et indications de possibilités de décollage ; carte précalculée ou service externe facultatif |
+
+Sur Plan et Satellite, les zones de travail sont découpées à la zone d’opération. Les arcs de portée en pointillés ambre apparaissent uniquement à l’extérieur de l’opération et dans l’angle de travail du drone. Les parties couvertes par plusieurs drones engagés sont jaunes ; les autres parties conservent leur couleur.
+
+Les petites zones rouges non couvertes sont représentées par des **points**, sans cellules hachurées. Leur affichage utilise quatre sous-échantillons par cellule de la grille de calcul, sans modifier les métriques. Le mode Occupation utilise sa propre légende et masque les points rouges et le surlignage jaune pour garder les catégories du terrain lisibles.
+
+## Algorithme de répartition
+
+Le moteur utilise une **heuristique gloutonne déterministe de couverture**, puis retire les drones redondants. Il ne garantit pas une optimisation globale ni le nombre minimal de drones.
+
+1. Filtrer les modèles compatibles avec la météo et le scénario, et contrôler les ressources et contraintes.
+2. Échantillonner le polygone sur une grille de points et créer une grille de positions candidates.
+3. Pour chaque position et scénario, comparer des caps, des rayons et des angles : disque complet si autorisé, secteur adapté aux points restants, puis angles plus étroits.
+4. Noter chaque proposition selon les nouveaux points couverts : **+1** pour un point ordinaire, **+4** pour un point prioritaire. Un point déjà couvert coûte **0,4**, ou **0,02** en priorité. Rejeter tout dépassement du chevauchement maximal.
+5. Ajouter la meilleure proposition et recommencer jusqu’à atteindre **98 % de couverture totale et 99 % des priorités**, ou jusqu’à épuisement des moyens ou des placements utiles admissibles. À gain équivalent, préférer TP1 à TP2.
+6. Retirer les unités redondantes sans perdre les objectifs atteints ; pour un dispositif partiel, préserver la couverture obtenue.
+7. Réattribuer les modèles standard interchangeables pour équilibrer Matrice 4T, Mavic et Mini selon les stocks et les capacités, sans changer les positions ou la couverture. Les tiers sont approchés avec des effectifs entiers ; la nuit ou sous la pluie, l’effectif est exclusivement en Matrice 4T.
+8. Attribuer les altitudes aux drones qui partagent une surface, sous les plafonds et avec la séparation minimale. La recherche utilise un graphe de chevauchement et une recherche DSatur bornée ; un échec produit des avertissements et des conflits à résoudre.
+
+Les pourcentages sont estimés à partir de points échantillonnés. La grille métrique utilise par défaut 44 divisions sur le plus grand côté ; les intersections utilisées pour les contours et les conflits géométriques sont calculées sur des polygones représentant les disques ou secteurs.
+
+### Scénarios de vol du prototype
+
+| Scénario | Portée maximale | Plafond rural | Plafond urbain |
+| --- | --- | --- | --- |
+| TP1 en vue | 500 m | 120 m | 120 m |
+| TP1 hors vue | 1 000 m | 50 m | 80 m |
+| TP2 hors vue | 2 000 m | 120 m | 120 m |
+
+Ces valeurs sont les règles du prototype, pas une interprétation réglementaire. En mode mixte, le rayon est adapté au besoin ; un TP2 n’est pas retenu pour un rayon inférieur ou égal à 1 km. Un scénario unique conserve son rayon de référence. Les altitudes proposées commencent à 10 m ; la séparation par défaut est de 30 m et le chevauchement maximal par défaut de 20 %.
+
+Voir [ALGORITHMES.md](docs/ALGORITHMES.md) pour les détails.
+
+## Paramètres et persistance
+
+**Paramètres** est accessible uniquement depuis le planificateur. Il permet de mémoriser sur cet appareil le catalogue par défaut, la séparation verticale minimale et le chevauchement maximal.
+
+Une autorisation facultative peut déclarer une référence, un effectif maximal et une période. Le simulateur contrôle ces valeurs sans vérifier la validité juridique d’un arrêté. Les valeurs d’autorisation ne sont pas conservées comme paramètres par défaut des missions suivantes.
+
+Les préférences et le thème sont persistés localement. **La mission courante reste en mémoire** : un rechargement ne la sauvegarde pas. Utiliser l’export JSON pour conserver les positions et les résultats.
+
+## Import et export JSON
+
+Depuis l’accueil, importer un fichier ou coller un JSON **schemaVersion `1.0`**. Une mission fictive du secteur de Rennes est disponible pour une démonstration immédiate. L’import passe par les ressources afin de vérifier ou recalculer les moyens avant lancement ; il ne reprend pas une animation interrompue.
+
+Le bouton **Export JSON** est directement visible sur les cartes de planification, ressources et conduite. Une boîte de dialogue permet de choisir le nom du fichier. Le nom est nettoyé pour empêcher une interprétation comme chemin de fichier.
+
+L’export contient notamment : métadonnées, date ISO, localisation, opération et priorités, météo, contraintes, estimation, effectifs disponibles, télépilotes, drones, état de mission et, si présents, catalogue personnalisé et instantané de récupération d’urgence. Les champs supplémentaires compatibles sont conservés après validation.
+
+L’import contrôle les types, les dates, les coordonnées, la géométrie, les identifiants, les références, les effectifs et le catalogue. Les entrées malformées, trop volumineuses ou dangereuses sont rejetées avec un message.
+
+- Exemple versionné : [src/data/exampleMission.json](src/data/exampleMission.json).
+- Format détaillé : [FORMAT_JSON.md](docs/FORMAT_JSON.md).
+- Contrats des moteurs : [API_CONTRACT.md](docs/API_CONTRACT.md).
+
+## Services externes et configuration
+
+L’application fonctionne sans clé API pour le plan, le satellite, le géocodage et la météo. Leur disponibilité dépend du réseau et des services. Les tuiles portent les attributions correspondantes.
+
+| Service | Usage et données transmises |
+| --- | --- |
+| OpenStreetMap | Tuiles correspondant à la vue cartographique |
+| IGN orthophotos | Imagerie satellite correspondant à la vue |
+| IGN / BAN | Recherche d’adresse française ; le texte saisi est envoyé au géocodeur |
+| Open-Meteo | Prévision au lieu et au créneau choisis |
+| Service d’occupation facultatif | Emprise de la tuile demandée pour analyse du terrain |
+
+La recherche d’adresses attend 600 ms après la saisie, annule les recherches obsolètes et utilise un cache de session. Géocodage et météo disposent d’un délai maximal de sept secondes. Une erreur météo conserve un état inconnu. Jour/Nuit est calculé localement au seuil solaire de −6°.
+
+Les fichiers de mission ne sont pas transmis à un backend métier. Les requêtes cartographiques, d’adresse et de météo peuvent en revanche révéler le secteur consulté aux services correspondants.
+
+### Occupation du terrain — facultative
+
+Le dépôt fournit immédiatement l’analyse précalculée de **Mirepoix, INSEE 09194**, dans `public/occupancy/commune-09194.json`.
+
+Pour une analyse en direct dans d’autres secteurs, démarrer séparément un service compatible avec **`POST /api/v1/occupancy/tile`**. Ce backend n’est pas inclus dans ce dépôt. En développement, l’URL par défaut est `http://127.0.0.1:8000`. Pour une autre URL, définir dans un fichier `.env.local` :
+
+```dotenv
+VITE_OCCUPANCY_API_URL=http://127.0.0.1:8000
+```
+
+Redémarrer Vite après modification. Pour un build statique, définir cette variable avant `npm run build`. Sans URL configurée en production, seules les analyses précalculées sont disponibles. Le service doit accepter les requêtes provenant de l’origine du frontend.
+
+L’utilisateur déclenche l’analyse avec **Lancer le calcul**. Chaque lancement est limité à 24 tuiles, avec deux requêtes simultanées et un cache de session. Un dézoom très large n’entraîne pas une énumération illimitée. Les catégories et leurs causes sont consultables dans la légende et les détails au clic.
+
+L’analyse indique notamment les obstacles, les pentes, l’accès et la portée. Elle aide au choix d’un emplacement ; elle ne constitue pas une autorisation de décollage. L’intégration reprend uniquement la partie occupancy map de `feature/occupancy-map-mode`, sans son moteur de recherche d’emplacements ni une fusion de la branche complète.
+
+## Architecture
+
+**React 19, TypeScript strict, Vite et Leaflet**. L’application utilise directement Leaflet, sans routeur, wrapper de carte, bibliothèque de dessin, moteur d’état supplémentaire ni dépendance de test dédiée.
+
+| Répertoire | Responsabilité |
+| --- | --- |
+| `src/app` | Contexte de mission, préférences et horloge de simulation |
+| `src/pages` | Accueil, import, planification, ressources et conduite |
+| `src/components` | Carte, panneaux, flotte, formulaires et dialogues |
+| `src/styles` | Thèmes et mise en page |
+| `src/types` | Contrats des missions, drones, géométries, météo et résultats |
+| `src/engines/geometry` | Projection locale, validation, clipping, échantillonnage et métriques |
+| `src/engines/planning` | Estimation, placement, modèles et altitudes |
+| `src/engines/operations` | Conflits, recalcul ciblé et transitions simulées |
+| `src/services` | Météo, géocodage, occupation, JSON, préférences et conversion mission/plan |
+| `src/data` | Catalogue standard et mission fictive |
+| `public/image` | Logos transparents et icônes |
+| `public/occupancy` | Analyse précalculée du terrain |
+| `tests` | Tests `.mjs` important directement les sources `.ts` |
+| `docs` | Documentation fonctionnelle et technique complémentaire |
+
+Les moteurs sont distincts du rendu React. Le catalogue de la mission est utilisé pour les capacités et contrôles des modèles personnalisés. Voir [ARCHITECTURE.md](docs/ARCHITECTURE.md) et [INTEGRATION.md](docs/INTEGRATION.md).
+
+## Tests et vérification
+
+```sh
+npm test
+npm run build
+git diff --check
+```
+
+Les tests couvrent la géométrie et le dessin, la couverture et ses intersections, les modèles et la météo, l’équilibrage des effectifs, les contraintes TP1/TP2, les altitudes, les réserves et le placement, les conflits, l’import/export, les services externes et les transitions d’urgence/retour. Un parcours complet vérifie l’estimation, le manque de ressources, le lancement, les modifications et la sauvegarde.
+
+Pour la validation visuelle sur ordinateur, vérifier le dessin, les panneaux, le catalogue Drone après ajout d’un modèle, le déplacement d’une réserve, l’aperçu des secteurs, les trois fonds cartographiques et l’export nommé. Voir [VALIDATION.md](docs/VALIDATION.md).
+
+## Déploiement statique
+
+Construire avec `npm run build`, puis publier **tout le contenu de `dist/`** sur un serveur HTTP(S), avec les fichiers `image/` et `occupancy/` inclus. La configuration actuelle utilise des chemins d’assets absolus : servir le site à la racine du domaine ou de l’origine.
+
+Aucune API métier n’est requise. L’occupation en direct nécessite son propre service si elle est activée. Les variables préfixées `VITE_` sont intégrées au frontend et ne doivent pas contenir de secrets. Ne pas versionner `node_modules/`, `dist/`, `.env*` ou des secrets. `npm run preview` sert à vérifier le build localement.
+
+## Limites connues
+
+- Projection locale ; zone limitée à **50 km de côté**, hors régions polaires et franchissement de l’antiméridien.
+- Jusqu’à **20 zones prioritaires**, **300 sommets distincts par anneau** et fichiers JSON de **2 Mo maximum**.
+- Les formulaires permettent l’ajout de modèles jusqu’à 20 modèles au total ; le catalogue importé ou fourni au moteur est validé séparément.
+- Aucune limite fixe de 32 drones. L’effectif dépend des stocks, des placements utiles, de la grille et des éventuelles limites d’autorisation déclarées. Le coût du calcul augmente avec la taille du dispositif.
+- Les pourcentages et les petites lacunes de couverture restent approximatifs, notamment pour des secteurs très fins.
+- Rayon de travail simplifié, sans modèle de champ de vision ou de capteur constructeur.
+- Drone et télépilote sont initialement au même emplacement ; aucune recherche automatique d’accès terrain n’est intégrée au placement.
+- La résistance au vent et le zoom sont des valeurs du catalogue : aucune prévision de vent ni optimisation selon ces caractéristiques n’est appliquée.
+- Pas de relief dans le moteur de couverture, de Street View, de moteur physique, de télémétrie, de communication radio réelle ou de contrôle aéronautique.
+- Une configuration d’altitudes impossible peut être proposée avec des avertissements ; les conflits doivent être résolus avant lancement.
+- La règle de simulation autorisant le Matrice 4T sous la pluie ne constitue pas une certification constructeur : sa fiche précise qu’il n’est pas étanche.
+- La disponibilité des tuiles, du géocodage, de la météo et de l’occupation en direct n’est pas garantie. Sans fond cartographique, les objets de mission restent affichables.
+- Pas de sauvegarde serveur ou automatique de la mission : exporter avant de recharger ou quitter.
+
+## Documentation complémentaire
+
+- [DEMO.md](docs/DEMO.md) — parcours de démonstration.
+- [REQUIREMENTS.md](docs/REQUIREMENTS.md) — exigences fonctionnelles.
+- [ALGORITHMES.md](docs/ALGORITHMES.md) — calculs et choix heuristiques.
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — organisation de l’application.
+- [API_CONTRACT.md](docs/API_CONTRACT.md) — contrats des moteurs.
+- [FORMAT_JSON.md](docs/FORMAT_JSON.md) — sauvegardes et compatibilité.
+- [INTEGRATION.md](docs/INTEGRATION.md) — intégration des composants.
+- [VALIDATION.md](docs/VALIDATION.md) — contrôles fonctionnels.
+- [DRONE_SPECS.md](docs/DRONE_SPECS.md) — caractéristiques et sources constructeur.
+- [LOGOS.md](docs/LOGOS.md) — sources et préparation des logos.
