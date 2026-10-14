@@ -41,7 +41,7 @@ La mission fictive intégrée se charge depuis l’écran d’import pour une d�
 Troisième fond de carte à côté de Plan et Satellite. Il colore la carte cellule par cellule (~10 m) : libre, libre non confirmé, accès éloigné (> 100 m d’une voie), pente > 12°, marge obstacle (< 10 m) ou occupé (bâti, chaussée, eau, végétation, sursol LiDAR, ligne/pylône…). Un clic sur une couleur donne la cause. C’est un tri sur données ouvertes (OSM, IGN BD TOPO, LiDAR HD, BD ORTHO), **jamais une autorisation** : l’emplacement est vérifié sur le terrain.
 
 - **Mirepoix (09194)** : carte précalculée de la commune entière, `public/occupancy/commune-09194.json`, affichée immédiatement.
-- **Ailleurs** : calcul en direct de la zone visible, par tuiles fixes d’environ 800 m (10–20 s par tuile, centre de l’écran d’abord, cache de session). Il faut zoomer à 20 tuiles visibles au plus. Ce calcul utilise le backend Python du module *drone-pilot-site-finder* (branche `feature/drone-pilot-site-finder-occupancy`, `POST /api/v1/occupancy/tile`) :
+- **Ailleurs** : bouton **Lancer le calcul** quand la vue est prête. La zone visible est calculée par tuiles fixes d’environ 800 m (10–20 s par tuile, deux à la fois, centre de l’écran d’abord, 24 tuiles au plus par lancement, cache de session). Les tuiles en attente sont en pointillés ; après un déplacement, relancer pour la nouvelle vue. Ce calcul utilise le backend Python du module *drone-pilot-site-finder* (branche `feature/drone-pilot-site-finder-occupancy`, `POST /api/v1/occupancy/tile`) :
 
 ```sh
 uv run uvicorn drone_site_finder.main:app --host 127.0.0.1 --port 8000

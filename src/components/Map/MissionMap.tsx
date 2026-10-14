@@ -179,9 +179,11 @@ export function MissionMap(props: MapProps) {
     {layer === 'occupation' && <div className="occupancy-status" role="status">
       <strong>Occupation au décollage</strong>
       {occupancy.precomputed && <span>{occupancy.precomputed} : carte précalculée</span>}
-      {occupancy.tooWide ? <span>Zoomez pour calculer hors de la zone précalculée.</span>
-        : occupancy.pending > 0 ? <span>Calcul en cours · {occupancy.pending} tuile(s) restante(s), ~15 s chacune</span>
-        : !occupancy.liveAvailable && <span>Calcul en direct non configuré.</span>}
+      {!occupancy.liveAvailable ? <span>Calcul en direct non configuré.</span>
+        : occupancy.pending > 0 ? <span>Calcul en cours · {occupancy.pending} tuile(s) (pointillés), ~15 s chacune, centre d’abord</span>
+        : occupancy.toCompute > 0 ? <span>{occupancy.toCompute} tuile(s) visible(s) non calculée(s){occupancy.tooWide ? ' · vue large : les 24 plus proches du centre' : ''}</span>
+        : <span>Zone visible à jour{occupancy.done ? ` · ${occupancy.done} tuile(s) calculée(s)` : ''}</span>}
+      {occupancy.liveAvailable && occupancy.toCompute > 0 && <button className="occupancy-start" onClick={occupancy.start}>Lancer le calcul</button>}
       {occupancy.error && <span className="occupancy-error">{occupancy.error} <button onClick={occupancy.retry}>Réessayer</button></span>}
       <small>Aide à la décision · vérification terrain obligatoire</small>
     </div>}

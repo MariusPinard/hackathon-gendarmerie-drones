@@ -56,8 +56,10 @@ export const TAKEOFF_LABELS: Record<TakeoffVerdict, string> = {
 /** Fixed global tile grid (~800 m at Mirepoix): neighbouring tiles never overlap. */
 export const TILE_LAT = 0.0072;
 export const TILE_LON = 0.01;
-/** Beyond this, the view is too wide to compute live (one tile ≈ 10–20 s). */
-export const MAX_LIVE_TILES = 20;
+/** Tiles queued per view, nearest to the screen centre first (one tile ≈ 10–20 s). */
+export const MAX_LIVE_TILES = 24;
+/** Tiles computed at the same time (public services allow a few parallel requests). */
+export const LIVE_CONCURRENCY = 2;
 
 export type TileKey = string;
 export interface Tile { key: TileKey; bbox: [number, number, number, number] }

@@ -414,3 +414,5 @@ input[type="file"]::file-selector-button { font: inherit; padding: 8px 12px; mar
 .occupancy-status .occupancy-error { color: var(--map-conflict); }
 .occupancy-status button { margin-left: 6px; padding: 2px 8px; font-size: 10px; }
 @media (max-width: 650px) { .occupancy-status { top: 140px; right: 12px; left: 62px; max-width: none; } }
+.occupancy-status .occupancy-start { margin: 4px 0 2px; padding: 7px 12px; font-size: 11px; font-weight: 700; background: var(--primary); color: var(--on-primary); border: 1px solid var(--primary-ink); border-radius: var(--radius); cursor: pointer; align-self: flex-start; }
+.leaflet-occupancy-pane { opacity: .55; }
