@@ -1,61 +1,53 @@
-# Exigences métier
+# Exigences et état de réalisation
 
-Ce document reprend le brief du hackathon. Les règles TP ci-dessous sont les règles du prototype, sans interprétation réglementaire supplémentaire.
+Règles de simulation du hackathon. Aucune commande réelle, aucun SDK drone, aucun backend, aucune zone interdite et aucun Street View.
 
-## Planification à développer
+## Fonctionnel
 
-1. Définir localisation, date et heure avec fuseau explicite.
-2. Afficher une carte et basculer plan/satellite.
-3. Dessiner une zone d’opération et plusieurs zones prioritaires en polygones GeoJSON.
-4. Obtenir une météo simple et signaler la pluie.
-5. Estimer les moyens et produire un plan qui privilégie les zones prioritaires et minimise les chevauchements hors de ces zones.
-6. Sauvegarder la mission en JSON, puis passer aux ressources.
+| Besoin | Réalisation |
+| --- | --- |
+| Planification et lancement direct | Accueil à deux actions ; import fichier/texte puis ressources |
+| Nom, localisation, date et heure | Nom, latitude/longitude, date/heure locale -> ISO avec fuseau |
+| Carte plan | Leaflet, zoom/déplacement et attribution OSM |
+| Zone opération / plusieurs priorités | Dessin natif par clics, Terminer/double clic, annulation, retrait sommet et suppression |
+| Météo simple | Pluie horaire Open-Meteo, avertissement et indisponibilité propre |
+| Moyens estimés / disponibles | Estimation par modèle, compteurs manuels, comparaison et recalcul |
+| Configuration expliquée | Heuristique déterministe, métriques et hypothèses visibles |
+| Couverture | Disque 360° initial, secteur cap/angle en conduite |
+| Positions drone/télépilote | Références distinctes, marqueurs D/T sélectionnables et déplaçables |
+| Altitude / conflits | Plafond scénario, séparation 10 m en chevauchement, alerte explicite |
+| Indisponibilité | Retrait couverture, affichage des pertes, réparation locale facultative |
+| Fin / urgence | Confirmation, retour à chaque télépilote ou atterrissage sur place |
+| JSON | Schéma 1.0, validation et export/import sauvegardable |
 
-Pas de zones interdites. La fondation ne fournit que la carte plan minimale et les contrats ; aucun dessin ni placement avancé.
+## Scénarios et modèles
 
-## Lancement et conduite à développer
-
-1. Importer directement une mission JSON, indépendamment de la planification.
-2. Saisir les quantités réellement disponibles par modèle et comparer avec l’estimation.
-3. Lancer une simulation, afficher séparément drones et télépilotes ainsi que les couvertures.
-4. Utiliser une couverture 360° par défaut, modifiable par cap et angle de travail.
-5. Déplacer manuellement drone ou télépilote puis transmettre un `MissionChange` au moteur.
-6. Recalculer couverture et conflits après changement.
-7. Déclencher un arrêt d’urgence simulé ou terminer avec retour simulé de chaque drone vers son télépilote.
-
-Aucune connexion réelle à des drones. Les boutons de simulation et leur logique restent à développer.
-
-## Catalogue et capacités imposées
-
-Modèles : DJI Matrice 4T, DJI Mavic 3 Enterprise, DJI Mini 5. Les capacités hackathon sont partagées par les modèles dans ce socle ; elles ne décrivent pas leurs spécifications commerciales.
+DJI Matrice 4T, DJI Mavic 3 Enterprise, DJI Mini 5. Capacités hackathon partagées, sans caractéristiques commerciales inventées.
 
 | Scénario | Portée | Hauteur max rural | Hauteur max urbain |
 | --- | --- | --- | --- |
-| TP1 en vue | À préciser (`null`) | 120 m/sol | 120 m/sol |
+| TP1 en vue | Inconnue (`null`) ; estimation indisponible | 120 m/sol | 120 m/sol |
 | TP1 hors vue | 1 000 m | 50 m/sol | 80 m/sol |
 | TP2 hors vue | 2 000 m | 120 m/sol | 120 m/sol |
 
-Les Mini deviennent incompatibles si la pluie est détectée. Aucun autre effet météo n’est défini. `rainDetected: null` signifie une information inconnue ; il ne faut pas en déduire une compatibilité. Jour/nuit doit être déterminé ultérieurement selon coordonnées et date/heure, jamais par une heure fixe. Valeurs : `day`, `night`, `unknown`.
+Scénario et environnement sélectionnables. Les Mini sont exclus de la planification si pluie détectée et signalés en conflit si une mission active en contient malgré la pluie. Pluie inconnue : avertissement, sans inventer une prévision. Pas d’effet vent, température ou visibilité.
 
-## Géométrie, positions et états
+Jour/nuit : `day`, `night`, `unknown`. Cette version conserve `unknown` : aucune heure fixe ou calcul astronomique non testé. Satellite : source à configurer ultérieurement, seule la vue plan est actuellement disponible.
 
-GeoJSON WGS84, ordre longitude/latitude. Couverture conceptuelle : centre, rayon en mètres, cap en degrés, angle de travail en degrés. Défaut 360° ; futur disque ou secteur. Le rayon de couverture n’est pas la portée drone-télépilote.
+## Simplifications explicites
 
-Représentation principalement 2D, altitude numérique en mètres au-dessus du sol (`Agl`). Deux couvertures qui se chevauchent exigent au moins 10 m de séparation verticale. La configuration est prête ; la détection et le solveur ne sont pas implémentés. Le relief et la comparaison d’altitudes AGL sur des terrains différents restent hors fondation.
+Rayon simulé = portée du scénario ; ne décrit pas une empreinte réelle de capteur. Un télépilote proposé par drone, initialement au même point au sol. Les altitudes sont attribuées sur une échelle 10 m, 20 m, etc., bornée par le scénario et vérifiée contre les couvertures déjà placées. Une impossibilité est signalée et bloque le lancement via les conflits.
 
-Chaque drone référence un télépilote ; `pilotPosition` et `dronePosition` restent distincts. États drone : `ready`, `active`, `unavailable`, `returning`, `emergency_landing`, `completed`. États mission : `draft`, `planned`, `ready`, `active`, `emergency`, `returning`, `completed`. Les transitions seront définies par le moteur de conduite.
+Projection locale, opérations <= 50 km de côté, hors pôles et antiméridien. Surfaces par grille régulière, priorités limitées à leur intersection avec la zone opération. Une priorité trop fine peut ne recevoir aucun échantillon : avertissement explicite. Les secteurs sont dessinés par segments d’arc <= 5° ; de minuscules intersections près des limites peuvent être approximées.
 
-## Décisions à coordonner avant les fonctionnalités
+Le recalcul normal préserve les positions des autres éléments. La réorganisation demandée explore au plus 8 drones actifs et 5 points perdus ; elle applique au plus un déplacement si le gain pondéré progresse sans augmenter le nombre de conflits. Aucun placement optimal garanti.
 
-- Distance/critère exact « en vue » ; éventuel scénario TP2 en vue et règles de qualification.
-- Relation entre portée opérationnelle et rayon de couverture ; rayons d’exemple purement illustratifs.
-- Méthode d’estimation, métriques/objectifs et stratégie de placement.
-- Fournisseur satellite et droits d’usage ; fonctionnement hors ligne éventuel.
-- Fournisseur météo, gestion des prévisions indisponibles et calcul astronomique jour/nuit.
-- Politique pour pluie inconnue, ressources insuffisantes et affectation drone/télépilote.
-- Containment des zones prioritaires, trous, auto-intersections, validation topologique et précision géométrique.
-- Interprétation de la séparation verticale avec relief et limites d’altitude.
-- Transitions de simulation, délais d’arrêt/retour, résolution des conflits et convention de changement d’état.
-- Origine et synchronisation du rayon de couverture ; aucun changement de rayon n’est encore prévu dans `MissionChange`.
+En retour/urgence, les drones cessent immédiatement de contribuer à la couverture. Interpolation de 4 s, sans physique. Les indisponibles restent indisponibles et sont exclus des mouvements. Le retour finit en mission `completed` ; après atterrissage d’urgence la mission reste `emergency`, drones engagés `completed` à 0 m. Les positions indisponibles ne sont pas déplacées.
 
-Toute évolution des contrats 1.0 doit être convenue entre les modules ; si des missions existantes deviennent incompatibles, prévoir version/migration.
+## Bornes et sujets restant ouverts
+
+32 drones par dispositif/import, 100 télépilotes, 20 priorités, 20 anneaux par polygone, 300 sommets par anneau, 100 unités disponibles par modèle et JSON <= 2 Mo. Les limites servent l’interactivité, pas une règle opérationnelle.
+
+À décider avant une utilisation élargie : portée/critères en vue, qualification hiérarchique TP2/TP1 (aucune équivalence supposée), rayon réel de capteur, vérification de positions télépilotes sur terrain, relief/altitudes absolues, calcul astronomique, fournisseur satellite/licences, politique météo inconnue, finesse adaptative pour zones très étroites et stratégie de résolution de conflits complexes.
+
+Les transitions acceptées par les moteurs et le schéma sont décrits dans API_CONTRACT. Toute évolution incompatible devra prévoir une version/migration coordonnée.

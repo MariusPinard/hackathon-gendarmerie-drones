@@ -1,41 +1,42 @@
-# Architecture de la fondation
+# Architecture du prototype
 
-Le prototype est une application statique React/TypeScript construite avec Vite. Leaflet est utilisé directement dans un composant React qui crée la carte à son montage et la détruit au démontage, y compris sous StrictMode. Le composant traduit `[longitude, latitude]` en `[latitude, longitude]` uniquement à la frontière Leaflet.
+Application statique React/TypeScript/Vite. Aucun serveur applicatif. Les contrats partagés séparent strictement l’interface, les moteurs métier et les services. Les moteurs n’importent ni React, ni Leaflet, ni DOM, ni service réseau.
 
-## Responsabilités
-
-- `app/` : contexte mission en mémoire et navigation interne par union de pages, sans routeur.
-- `pages/` : composition des workflows ; trois pages sont réservées aux développements suivants.
-- `components/Map/` : rendu Leaflet ; `Layout/` : conteneur ; `Controls/` et `Panels/` réservés aux futurs éléments UI.
-- `engines/planning/` : estimation et génération de plan, puis métriques de couverture.
-- `engines/operations/` : recalcul après changement, conflits, arrêt et retour simulés.
-- `types/` : vocabulaire partagé et contrats ; aucun import React/Leaflet.
-- `services/` : météo fournisseur-indépendante et sérialisation/validation/import/export JSON.
-- `data/` : catalogue connu et mission fictive, sans caractéristiques commerciales inventées.
-- `tests/` : tests Node sans dépendance ; `public/assets/` : futurs fichiers statiques.
-
-## Circulation des données
+## Responsabilités et circulation
 
 ```text
-JSON -> missionStorage (unknown -> validation -> Mission) -> AppContext -> pages
-pages -> PlanningInput -> moteur planning -> PlanningResult -> mise à jour Mission
-pages -> Mission + MissionChange -> moteur operations -> OperationsResult -> AppContext
-pages -> service weather -> WeatherInfo -> Mission / PlanningInput
-Mission -> missionStorage -> JSON 1.0 / téléchargement
+Import fichier/texte -> missionStorage -> Mission validée -> AppContext
+Formulaire + dessin Leaflet -> PlanningInput -> planning -> PlanningResult
+PlanningResult -> Mission planifiée -> ressources réelles -> nouveau PlanningResult
+Mission prête -> startMission -> Mission active
+Drag/altitude/cap/angle/disponibilité -> MissionChange -> recalculateMission
+Mission + progression -> advanceSimulation -> Mission mise à jour -> carte et panneaux
+Mission -> serializeMission / exportMission -> JSON 1.0
+Coordonnées + date -> service weather -> WeatherInfo -> PlanningInput / Mission
 ```
 
-Les deux lignes moteur décrivent l’intégration future. Les pages actuelles ne les appellent pas. Elles ne font aucun calcul géométrique. `Mission` est l’état sauvegardé ; les moteurs recevront un instantané et devront retourner de nouvelles données sans mutation de l’entrée. L’UI restera responsable de l’application d’un résultat et des messages d’erreur.
+`app/` gère la mission en mémoire et une navigation interne typée. Un brouillon sans zone reste dans le formulaire local : aucune `Mission` invalide n’est créée. La configuration modifiée invalide le plan précédent. Date ou localisation modifiées invalident aussi la météo ; un identifiant de requête empêche une ancienne réponse de remplacer le nouveau créneau.
 
-## Contrats et dépendances
+`components/Map/MissionMap.tsx` encapsule Leaflet : nettoyage StrictMode, redimensionnement, conversion de l’ordre des coordonnées, couches zones/couverture/pertes, marqueurs et dessin. La carte est créée une seule fois par montage. Les mises à jour de couches ne recentrent pas le plan ; le fit des zones change uniquement quand la géométrie de l’opération change. Les noms importés sont rendus comme texte, jamais injectés comme HTML.
 
-Les types sont réutilisés via `import type` ; aucun objet React ou Leaflet ne traverse les moteurs. `ResourceEstimate` est défini avec les ressources dans `drone.ts` et réexporté par `planning.ts`, évitant un cycle mission/planning. Les moteurs ne dépendent pas des services réseau ni du DOM.
+`components/Controls/` contient saisie drone et confirmations modales natives ; `Panels/` contient les métriques ; `Layout/` le header. `pages/` orchestre le parcours sans développer de calcul géométrique. `styles/` contient les règles responsive et le panneau de conduite à défilement indépendant.
 
-`missionStorage` dépend du catalogue pour valider les références modèles/scénarios. Seul `exportMission` nécessite un navigateur ; parser et sérialiser sont utilisables dans les tests Node. Le service météo est un adaptateur asynchrone qui ne contacte aucun fournisseur pour le moment.
+`components/Map/mapSources.ts` isole les URL, attribution et zoom des fonds cartographiques. La source plan OSM est configurée ; satellite reste null jusqu’au choix d’une source autorisée. Aucun faux bouton de bascule n’est proposé dans cette version.
 
-Le JSON conserve les zones, positions, paramètres de couverture et estimation métier nullable. Les surfaces, pourcentages, polygones de couverture et conflits devront être recalculés ; ils ne sont pas persistés. `coverage.center` est redondant avec `dronePosition` pour respecter le descripteur demandé : la validation impose leur égalité.
+`engines/geometry/` expose les primitives métier et métriques. `engines/planning/` utilise ces primitives pour estimer les moyens, choisir des emplacements et attribuer les altitudes. `engines/operations/` reçoit un instantané de mission et retourne de nouvelles données sans modifier l’entrée. Les algorithmes sont documentés dans API_CONTRACT.
 
-## Choix délibérés et limites
+`services/weather.ts` est le seul endroit connaissant Open-Meteo et `fetch`. `services/missionStorage.ts` valide la structure et les limites géométriques via le module pur geometry. `services/missionPlanning.ts` construit l’entrée planning et applique un résultat en conservant l’estimation initiale pour la comparaison.
 
-Pas de plugin React Vite nécessaire pour le socle : Vite traite TSX et le runtime JSX automatique. Les mises à jour peuvent recharger la page ; pas de Fast Refresh React garantissant la conservation de l’état. Pas de bibliothèque de dessin, de calcul géographique, de composants UI, de gestion d’état ou de tests.
+`AppContext` fournit aussi l’horloge de démonstration : elle avance une animation de retour/atterrissage toutes les 150 ms, sur 4 s, même si la page de conduite est démontée. Le moteur reçoit une progression depuis un instantané initial immuable. Remplacer la mission ou recharger l’application interrompt naturellement cette simulation en mémoire.
 
-Les moteurs lèvent une erreur commune jusqu’à leur implémentation. La météo inconnue ne signifie jamais « pas de pluie ». Les règles TP et altitude sont des contraintes du hackathon ; aucune extension à d’autres scénarios n’est déduite. Les décisions encore ouvertes sont dans REQUIREMENTS.md.
+## Données persistées / calculées
+
+JSON : metadata, date/heure avec fuseau, localisation, zones GeoJSON, météo, contraintes, estimation nullable, ressources, télépilotes, drones, positions, altitude, descripteur de couverture et états. `coverage.center` est conservé pour compatibilité mais doit correspondre à `dronePosition`.
+
+Métriques, échantillons non couverts, géométries dérivées et conflits sont recalculés. Pas de localStorage, base de données ou backend. L’import revient aux ressources et la régénération remplace les positions et états antérieurs après une action explicite de recalcul.
+
+## Dépendances et limites
+
+Pas de nouvelle dépendance. Le runtime JSX automatique de Vite suffit ; les modifications de source peuvent recharger l’application (pas de Fast Refresh React). Tous les imports relatifs doivent se résoudre et le graphe reste sans cycle, y compris entre types mission/planning.
+
+Les règles métier sont celles du hackathon. Projection locale, portée utilisée comme rayon de simulation, échantillonnage et séparation AGL sans relief ne valident pas une sécurité aéronautique réelle. Les erreurs de saisie, API et import sont présentées à l’utilisateur ; une configuration ayant des conflits ne peut pas être lancée.
