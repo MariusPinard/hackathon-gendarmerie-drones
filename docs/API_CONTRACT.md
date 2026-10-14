@@ -95,3 +95,9 @@ JSON requis : schemaVersion 1.0 ; metadata (id/name/createdAt/updatedAt) ; sched
 Validation : objets/listes/enums/champs critiques, coordonnées/unités finies, calendrier/date avec fuseau, références et IDs uniques, anneaux fermés non dégénérés/non croisés, trous contenus et disjoints, centre égal à dronePosition, bornes d’interactivité et domaine géographique. Une mission sans zone reste un formulaire, pas un JSON 1.0. Le stockage n’exige pas un plan exempt de conflits : le moteur les détecte avant lancement.
 
 Parser et sérialiser revalident ; erreurs visibles dans l’UI sans crash. Fichiers/textes <= 2 Mo. Export navigateur par Blob/URL temporaire. Pas de backend/localStorage. L’import conduit aux ressources puis à un recalcul explicite, pas à la reprise d’une animation enregistrée.
+
+## Adaptateur adresses et dessin
+
+`searchAddresses(query, { signal?, fetcher? })` retourne au plus cinq `{ id, label, coordinates }` validés depuis le géocodage IGN/BAN. Requête de 4 à 200 caractères, timeout 7 s, erreurs lisibles ; aucun appel réseau depuis les moteurs. Les coordonnées suivent toujours `[longitude, latitude]`.
+
+`closeDrawnPolygon(vertices)` clone les sommets, ferme l’anneau (sans doubler un sommet déjà fermé), valide la géométrie et les bornes locales, puis retourne un Polygon. Un échec ne termine pas le dessin. Batteries fictives et état des panneaux sont exclusivement UI : aucun champ JSON obligatoire ajouté, schéma 1.0 inchangé.

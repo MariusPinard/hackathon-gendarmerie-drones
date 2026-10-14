@@ -10,10 +10,11 @@ import { ImportPage } from '../pages/ImportPage';
 type Page = 'home' | 'planning' | 'import' | 'resources' | 'operations';
 function Application() {
   const [page, setPage] = useState<Page>('home');
-  const { setMission } = useMission();
+  const { setMission, navigationLocked } = useMission();
   useEffect(() => { window.scrollTo({ top: 0 }); }, [page]);
-  return <Layout mode={page === 'operations' ? 'CONDUITE DE L’OPÉRATION' : page === 'planning' ? 'PLANIFICATION' : page === 'resources' ? 'RESSOURCES' : page === 'import' ? 'IMPORT MISSION' : 'ACCUEIL'} onHome={() => setPage('home')}>
-    {page !== 'home' && <div className="workflow"><span className={page === 'planning' ? 'current' : ''}>01 Planification</span><span className={page === 'resources' ? 'current' : ''}>02 Ressources</span><span className={page === 'operations' ? 'current' : ''}>03 Conduite</span><button className="text-button" onClick={() => setPage('home')}>Retour à l’accueil</button></div>}
+  const mapMode = ['planning', 'resources', 'operations'].includes(page);
+  return <Layout mapMode={mapMode} locked={navigationLocked} mode={page === 'operations' ? 'CONDUITE DE L’OPÉRATION' : page === 'planning' ? 'PLANIFICATION' : page === 'resources' ? 'RESSOURCES' : page === 'import' ? 'IMPORT MISSION' : 'ACCUEIL'} onHome={() => setPage('home')}>
+    {page === 'import' && <div className="workflow"><span>Importer une mission</span><button className="text-button" onClick={() => setPage('home')}>Retour à l’accueil</button></div>}
     {page === 'home' && <HomePage onPlan={() => { setMission(null); setPage('planning'); }} onLaunch={() => { setMission(null); setPage('import'); }} />}
     {page === 'import' && <ImportPage onImported={() => setPage('resources')} />}
     {page === 'planning' && <PlanningPage onPrepare={() => setPage('resources')} />}

@@ -6,12 +6,15 @@ import { advanceSimulation } from '../engines/operations';
 interface AppState {
   mission: Mission | null;
   setMission: (mission: Mission | null) => void;
+  navigationLocked: boolean;
+  setNavigationLocked: (locked: boolean) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [mission, setMission] = useState<Mission | null>(null);
+  const [navigationLocked, setNavigationLocked] = useState(false);
   const status = mission?.status;
   useEffect(() => {
     if (!mission || !['returning', 'emergency'].includes(mission.status)
@@ -26,7 +29,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 150);
     return () => clearInterval(timer);
   }, [status]);
-  return <AppContext.Provider value={{ mission, setMission }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ mission, setMission, navigationLocked, setNavigationLocked }}>{children}</AppContext.Provider>;
 }
 
 export function useMission(): AppState {

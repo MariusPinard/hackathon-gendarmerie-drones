@@ -7,14 +7,15 @@ Règles de simulation du hackathon. Aucune commande réelle, aucun SDK drone, au
 | Besoin | Réalisation |
 | --- | --- |
 | Planification et lancement direct | Accueil à deux actions ; import fichier/texte puis ressources |
-| Nom, localisation, date et heure | Nom, latitude/longitude, date/heure locale -> ISO avec fuseau |
-| Carte plan | Leaflet, zoom/déplacement et attribution OSM |
-| Zone opération / plusieurs priorités | Dessin natif par clics, Terminer/double clic, annulation, retrait sommet et suppression |
-| Météo simple | Pluie horaire Open-Meteo, avertissement et indisponibilité propre |
+| Nom, localisation, date et heure | Nom, adresse française ou latitude/longitude, Toulouse initial, date/heure locale -> ISO avec fuseau |
+| Carte plan / satellite | Leaflet plein écran sans scroll de page, OSM / orthophotos IGN avec attribution |
+| Panneaux / flotte | Boutons carrés à flèche, panneaux coulissants, un drone par ligne à droite, hauteur et batterie fictive colorée |
+| Zone opération / plusieurs priorités | Dessin par clics, fermeture au premier sommet ou automatique par Terminer, annulation et suppression ; actions verrouillées, notifications et validation |
+| Météo simple | Pluie horaire Open-Meteo, pictogramme pluie/soleil, avertissement et indisponibilité propre |
 | Moyens estimés / disponibles | Estimation par modèle, compteurs manuels, comparaison et recalcul |
 | Configuration expliquée | Heuristique déterministe, métriques et hypothèses visibles |
-| Couverture | Disque 360° initial, secteur cap/angle en conduite |
-| Positions drone/télépilote | Références distinctes, marqueurs D/T sélectionnables et déplaçables |
+| Couverture | Disque 360° initial, aperçu secteur cap/angle en direct puis validation en conduite |
+| Positions drone/télépilote | Références distinctes, marqueurs D/T sélectionnables et déplaçables ; drone par drag/drop ou clic puis destination, recalcul automatique |
 | Altitude / conflits | Plafond scénario, séparation 10 m en chevauchement, alerte explicite |
 | Indisponibilité | Retrait couverture, affichage des pertes, réparation locale facultative |
 | Fin / urgence | Confirmation, retour à chaque télépilote ou atterrissage sur place |
@@ -32,7 +33,7 @@ DJI Matrice 4T, DJI Mavic 3 Enterprise, DJI Mini 5. Capacités hackathon partag�
 
 Scénario et environnement sélectionnables. Les Mini sont exclus de la planification si pluie détectée et signalés en conflit si une mission active en contient malgré la pluie. Pluie inconnue : avertissement, sans inventer une prévision. Pas d’effet vent, température ou visibilité.
 
-Jour/nuit : `day`, `night`, `unknown`. Cette version conserve `unknown` : aucune heure fixe ou calcul astronomique non testé. Satellite : source à configurer ultérieurement, seule la vue plan est actuellement disponible.
+Jour/nuit : `day`, `night`, `unknown`. Cette version conserve `unknown` : aucune heure fixe ou calcul astronomique non testé. Satellite : orthophotos IGN publiques en France, retour au plan en cas d’indisponibilité.
 
 ## Simplifications explicites
 
@@ -48,6 +49,6 @@ En retour/urgence, les drones cessent immédiatement de contribuer à la couvert
 
 32 drones par dispositif/import, 100 télépilotes, 20 priorités, 20 anneaux par polygone, 300 sommets par anneau, 100 unités disponibles par modèle et JSON <= 2 Mo. Les limites servent l’interactivité, pas une règle opérationnelle.
 
-À décider avant une utilisation élargie : portée/critères en vue, qualification hiérarchique TP2/TP1 (aucune équivalence supposée), rayon réel de capteur, vérification de positions télépilotes sur terrain, relief/altitudes absolues, calcul astronomique, fournisseur satellite/licences, politique météo inconnue, finesse adaptative pour zones très étroites et stratégie de résolution de conflits complexes.
+À décider avant une utilisation élargie : portée/critères en vue, qualification hiérarchique TP2/TP1 (aucune équivalence supposée), rayon réel de capteur, vérification de positions télépilotes sur terrain, relief/altitudes absolues, calcul astronomique, conditions d’usage des services externes, politique météo inconnue, finesse adaptative pour zones très étroites et stratégie de résolution de conflits complexes.
 
 Les transitions acceptées par les moteurs et le schéma sont décrits dans API_CONTRACT. Toute évolution incompatible devra prévoir une version/migration coordonnée.

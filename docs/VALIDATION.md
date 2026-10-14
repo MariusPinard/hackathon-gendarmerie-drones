@@ -1,4 +1,4 @@
-# Validation de l’itération core-application
+# Validation du prototype et de la carte
 
 Validation réalisée le 14 octobre 2026. Fondation présente sur main via le merge 8e51c6c ; aucune modification de main, aucun push/merge de cette itération.
 
@@ -36,3 +36,15 @@ Vues inspectées à 1 366 × 900, 1 024 × 768 et 760 × 900 : pas de débordeme
 106 imports applicatifs vérifiés : chemins résolus, graphe sans cycle, aucun import externe React/Leaflet/UI dans engines. Recherche de secrets potentiels et de TODO/placeholders incohérents : aucun dans les sources finales. JSON exemple validé par les tests. node_modules/dist ignorés, aucun artefact de navigateur/téléchargement/screenshot versionné.
 
 Les scénarios automatisés sont des tests métier, pas une suite Playwright ajoutée au dépôt. Les essais UI sont manuels et tracés ici. Les limites de géométrie locale, grille/secteurs, rayon de simulation, météo/horizon, jour/nuit inconnu, satellite non configuré et stockage en mémoire sont documentées dans README, REQUIREMENTS et API_CONTRACT.
+
+## Itération map-workspace — 14 octobre 2026
+
+Branche `codex/map-workspace` depuis `main` `f0e0e57`. Aucune nouvelle dépendance ni évolution du schéma JSON. Les validations historiques ci-dessus décrivent l’ancienne interface ; retrait de sommet supprimé et satellite désormais implémenté.
+
+`npm test` : **68 tests réussis** (61 existants + 4 géocodage + 3 dessin). Build avec TypeScript strict réussi. Nouveaux tests : mapping et URL IGN, entrées malformées, erreurs HTTP/réseau, fermeture/non-mutation, premier sommet sans duplication, anneau croisé/incomplet et bornes.
+
+Essais navigateur réels : Toulouse par défaut, recherche du Capitole via IGN, saisie coordonnée, chargement de 24/24 tuiles IGN et attribution correctement remplacée, dessin fermé par le premier sommet et par Terminer, deux sommets refusés, polygone croisé refusé sans déverrouiller, Annuler libérant les commandes. Prévision réelle affichée « Beau temps ». Rectangle/priorité : 7 drones, 94,1 % total, 100 % priorité, 17,4 % chevauchement, 1 672 points. Export JSON puis import fichier et recalcul reproductibles.
+
+En conduite : flotte avec batteries fictives dans les trois couleurs et hauteurs, aperçu 90°/90° avant validation avec flotte conservée sur ordinateur, déplacement au clic puis glisser-déposer et recalcul/conflict de portée. Carte à 1280 × 720, 1024 × 768 et 390 × 844 : dimensions du document égales au viewport, sans défilement de page. Les essais UI restent manuels, sans dépendance Playwright ajoutée.
+
+Derniers contrôles : ouverture réciproque Informations/Flotte sur mobile fermant l’autre panneau, confirmation de retour jusqu’à Terminée (toutes les hauteurs à 0 m), nouveau dispositif lancé à nouveau. Aucune erreur ou alerte console. Revue statique : 137 imports résolus, graphe sans cycle, moteurs indépendants du navigateur. `git diff --check` réussi ; lockfile inchangé.
