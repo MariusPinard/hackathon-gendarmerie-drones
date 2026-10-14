@@ -47,10 +47,12 @@ En retour/urgence, les drones cessent immédiatement de contribuer à la couvert
 
 ## Bornes et sujets restant ouverts
 
-32 drones par dispositif/import, 100 télépilotes, 20 priorités, 20 anneaux par polygone, 300 sommets par anneau, 100 unités disponibles par modèle et JSON <= 2 Mo. Les limites servent l’interactivité, pas une règle opérationnelle.
+20 priorités, 20 anneaux par polygone, 300 sommets par anneau, JSON <= 2 Mo. Les limites servent l’interactivité, pas une règle opérationnelle.
 
 À décider avant une utilisation élargie : validation des critères en vue, qualification hiérarchique TP2/TP1 (aucune équivalence supposée), rayon réel de capteur, vérification de positions télépilotes sur terrain, relief/altitudes absolues, conditions d’usage des services externes, politique météo inconnue, finesse adaptative pour zones très étroites et stratégie de résolution de conflits complexes.
 
 Les transitions acceptées par les moteurs et le schéma sont décrits dans API_CONTRACT. Toute évolution incompatible devra prévoir une version/migration coordonnée.
 
-Catalogue étendu dans les ressources : nom, pluie/nuit déclarés, vent et zoom ; fiches DJI sourcées. Paramètres persistés et catalogue de20modèles max. Autorisation facultative référence/effectif0–32/périodeISO : contrôles déclaratifs, aucune vérification juridique. Schéma1.0 étendu de champs facultatifs et imports historiques conservés.
+Catalogue étendu dans les ressources : nom, pluie/nuit déclarés, vent et zoom ; fiches DJI sourcées. Paramètres persistés et catalogue de20modèles max. Autorisation facultative référence/effectif entier positif ou nul/périodeISO : contrôles déclaratifs, aucune vérification juridique. Schéma1.0 étendu de champs facultatifs et imports historiques conservés.
+
+Rectification 3 : aucune limite fixe du nombre de drones ou télépilotes ; quantités entières sûres positives ou nulles. Les ressources supplémentaires sont conservées en réserve, placées/engagées manuellement et contrôlées avant lancement. Relance après urgence avec restitution du dispositif précédent. Paramètres dans le planificateur seulement. Logo et icône de flotte fournis, accueil opérationnel, champs clairs, indication de zone validée sans nombre de sommets. Calque de pertes en carrés supprimé ; contours de portée extérieurs en pointillés et tuiles IGN avec fond de secours.

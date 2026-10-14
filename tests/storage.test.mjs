@@ -37,11 +37,11 @@ const invalidCases = [
   ['separation below business rule', m => { m.constraints.minimumVerticalSeparationMeters = 9; }],
   ['calendar overflow', m => { m.scheduledAt = '2026-02-30T12:00:00Z'; }],
   ['self intersecting polygon', m => { m.operationZone.geometry.coordinates = [[[-1.7,48.1],[-1.6,48.2],[-1.7,48.2],[-1.6,48.1],[-1.7,48.1]]]; }],
-  ['too many drones', m => { m.drones = Array(33).fill(m.drones[0]); }],
+  ['duplicate IDs in a large fleet', m => { m.drones = Array(33).fill(m.drones[0]); }],
   ['excessive domain', m => { m.operationZone.geometry.coordinates = [[[0,0],[2,0],[2,2],[0,2],[0,0]]]; }],
   ['unknown scenario setting', m => { m.constraints.capabilityId = 'future'; }],
   ['unavailable weather treated as dry', m => { m.weather.rainDetected = false; }],
-  ['availability above bound', m => { m.availableResources.dronesByModel['dji-mini-5'] = 101; }],
+  ['unsafe availability integer', m => { m.availableResources.dronesByModel['dji-mini-5'] = Number.MAX_SAFE_INTEGER + 1; }],
   ['unknown availability key', m => { m.availableResources.dronesByModel.other = 0; }],
   ['missing availability key', m => { delete m.availableResources.dronesByModel['dji-mini-5']; }],
   ['invalid overlap setting', m => { m.constraints.maximumOverlapPercent = 101; }],
@@ -105,7 +105,7 @@ test('authorization rejects invalid reference, numeric ceiling, calendar or peri
     startAt: '2026-10-15T08:00:00Z', endAt: '2026-10-15T12:00:00Z' };
   for (const mutate of [
     a => { a.reference = ''; }, a => { a.reference = ' '; }, a => { a.reference = 'a'.repeat(121); },
-    a => { a.maximumDrones = -1; }, a => { a.maximumDrones = 33; }, a => { a.maximumDrones = 1.5; },
+    a => { a.maximumDrones = -1; }, a => { a.maximumDrones = Number.MAX_SAFE_INTEGER + 1; }, a => { a.maximumDrones = 1.5; },
     a => { a.maximumDrones = '2'; }, a => { a.maximumDrones = Infinity; },
     a => { a.startAt = '2026-02-30T08:00:00Z'; }, a => { a.endAt = '2026-10-15T25:00:00Z'; },
     a => { a.startAt = '2026-10-15T08:00:00'; }, a => { delete a.endAt; },

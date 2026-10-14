@@ -24,7 +24,7 @@ export function MapWorkspace({ children, tools, panel, onPanel, title, panelCont
     {onFleet && <button className={`fleet-toggle square-tool ${fleetOpen && !rightPanel ? 'active' : ''}`} disabled={locked} aria-label="Afficher la flotte" aria-expanded={fleetOpen && !rightPanel} onClick={() => {
       if (!fleetOpen && window.matchMedia('(max-width: 1100px)').matches) onPanel(null);
       onFleet();
-    }}><span className="fleet-tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M10 10h12v12H10zM7 7l5 5m8 8 5 5M25 7l-5 5m-8 8-5 5" /><circle cx="6" cy="6" r="4" /><circle cx="26" cy="6" r="4" /><circle cx="6" cy="26" r="4" /><circle cx="26" cy="26" r="4" /></svg></span><span>Flotte</span><span className="tool-arrow" aria-hidden="true">{fleetOpen && !rightPanel ? '›' : '‹'}</span></button>}
+    }}><span className="fleet-tool-icon" aria-hidden="true"><img src="/image/drone_icone.png" alt="" /></span><span>Flotte</span><span className="tool-arrow" aria-hidden="true">{fleetOpen && !rightPanel ? '›' : '‹'}</span></button>}
     {fleet && fleetOpen && !rightPanel && <aside className="fleet-panel" aria-label="Flotte de drones" inert={locked}>{fleet}</aside>}
     {rightPanel && <aside className="right-panel" aria-label={rightPanelTitle ?? 'Résultat de l’estimation'} inert={locked}>
       {onRightPanelClose && <div className="slide-panel-heading"><h2>{rightPanelTitle ?? 'Estimation du dispositif'}</h2><button aria-label="Fermer le résultat" onClick={onRightPanelClose}>›</button></div>}

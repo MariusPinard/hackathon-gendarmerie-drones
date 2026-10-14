@@ -4,7 +4,7 @@ import type { CoverageMetrics } from '../../types/planning';
 import { distanceMeters, pointInPolygon, project, unproject, samplePolygon } from './primitives.ts';
 import { intersectPolygons } from './clipping.ts';
 export * from './primitives.ts';
-export { intersectPolygons } from './clipping.ts';
+export { intersectPolygons, outsidePolygonOutline } from './clipping.ts';
 const RAD = Math.PI / 180;
 
 export function pointInCoverage(point: Coordinates, coverage: CoverageArea): boolean {

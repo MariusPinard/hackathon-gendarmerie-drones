@@ -51,17 +51,17 @@ Les exports geometry incluent projection/inverse, distance haversine, point-in-p
 1. Valider catalogue, quantités, météo, contraintes et géométrie locale. Échantillonner l’opération et les priorités sur une grille bornée, avec une grille de repli pour les zones très étroites.
 2. Explorer les emplacements candidats et profils TP1/TP2 compatibles. Ajuster le rayon aux cibles utiles et l’enveloppe angulaire ; tester des secteurs réduits si le chevauchement doit être limité.
 3. Scorer les nouvelles surfaces (priorité ×4), pénaliser la redondance et préférer TP1 à bénéfice équivalent. TP2 exige un rayon >1km ; les rayons n’excèdent pas la portée du scénario.
-4. Respecter inventaire, limite globale32, autorisation éventuelle et pourcentage maximal de chevauchement. Supprimer les drones devenus redondants.
+4. Respecter inventaire, autorisation éventuelle et pourcentage maximal de chevauchement. Supprimer les drones devenus redondants.
 5. Découper chaque zone de travail à l’opération (concavités/trous/morceaux disjoints compris), puis affecter les altitudes par graphe de conflits, recherche DSatur bornée à20 000nœuds.
 6. Produire métriques, modèles utilisés, couples drone/télépilote, facteurs limitants et avertissements. Si aucune altitude séparée n’est trouvée, le résultat reste inspectable et le lancement est bloqué par les conflits.
 
-`estimateResources` utilise un budget virtuel32 par modèle ; `generatePlan` respecte l’inventaire réel. Les modèles non compatibles sont exclus si pluie ou nuit. Le rayon n’est pas une empreinte de capteur constructeur. TP1en vue500m/plafond120m est une règle du scénario fournie dans le brief ; les catalogues historiques à portée null restent lisibles mais ne sont pas calculables dans ce mode. L’heuristique ne garantit pas un minimum mathématique de drones. Voir [ALGORITHMES.md](ALGORITHMES.md) pour les formules, bornes et approximations.
+`estimateResources` utilise un budget virtuel proportionné au nombre de points utiles de la grille par modèle ; `generatePlan` respecte l’inventaire réel. Les modèles non compatibles sont exclus si pluie ou nuit. Le rayon n’est pas une empreinte de capteur constructeur. TP1en vue500m/plafond120m est une règle du scénario fournie dans le brief ; les catalogues historiques à portée null restent lisibles mais ne sont pas calculables dans ce mode. L’heuristique ne garantit pas un minimum mathématique de drones. Voir [ALGORITHMES.md](ALGORITHMES.md) pour les formules, bornes et approximations.
 
 ## Couverture et conflits
 
-Chaque point de la grille cible représente une cellule carrée. Surface totale approximative = nombre de points × surface cellule. Couverture = cellules touchées par au moins un drone ready/active ; priorité = cellules dans l’union des priorités ; chevauchement = cellules couvertes au moins deux fois (comptées une seule fois). Les pourcentages total et chevauchement ont pour dénominateur la surface opération, donc restent [0,100]. Priorité sans point : null, affichée « — ». `uncoveredPoints` conserve les centres de toutes les cellules non couvertes de la grille bornée ; l’interface dessine leurs surfaces hachurées, découpées à l’opération. Ces cellules restent une approximation, pas une limite physique exacte.
+Chaque point de la grille cible représente une cellule carrée. Surface totale approximative = nombre de points × surface cellule. Couverture = cellules touchées par au moins un drone ready/active ; priorité = cellules dans l’union des priorités ; chevauchement = cellules couvertes au moins deux fois (comptées une seule fois). Les pourcentages total et chevauchement ont pour dénominateur la surface opération, donc restent [0,100]. Priorité sans point : null, affichée « — ». `uncoveredPoints` conserve les centres de toutes les cellules non couvertes de la grille bornée ; l’interface conserve les métriques sans afficher les cellules carrées. Ces cellules restent une approximation, pas une limite physique exacte.
 
-Disque : test distance projetée <= rayon. Secteur : même test plus cap relatif, nord = 0°, sens horaire. Chevauchement disque/disque par distance entre centres ; secteurs par sommets et intersection de segments, arcs approximés par pas <= 5°. Les conflits peuvent être détectés hors de la zone opération si les couvertures s’y chevauchent. La position de conflit vertical est un milieu des centres, seulement un indicateur approximatif (pas un polygone d’intersection exact).
+Disque : test distance projetée <= rayon. Secteur : même test plus cap relatif, nord = 0°, sens horaire. Chevauchement disque/disque par distance entre centres ; secteurs par sommets et intersection de segments, arcs approximés par pas <= 5°. Les conflits géométriques utilisent les zones de travail découpées à l’opération. La position de conflit vertical est un milieu des centres, seulement un indicateur approximatif (pas un polygone d’intersection exact).
 
 Conflit vertical si couvertures chevauchantes et écart d’altitude < séparation configurée. Autres types : pluie/Mini, portée/plafond/qualification/référence/scénario, effectifs engagés dépassant l’inventaire. Absence de conflit ne signifie pas une validation aéronautique.
 
@@ -98,7 +98,7 @@ Parser et sérialiser revalident ; erreurs visibles dans l’UI sans crash. Fich
 
 `searchAddresses(query, { signal?, fetcher? })` retourne au plus cinq `{ id, label, coordinates }` validés depuis le géocodage IGN/BAN. Requête de 4 à 200 caractères, timeout 7 s, erreurs lisibles ; aucun appel réseau depuis les moteurs. Les coordonnées suivent toujours `[longitude, latitude]`.
 
-`closeDrawnPolygon(vertices)` clone les sommets, ferme l’anneau (sans doubler un sommet déjà fermé), valide la géométrie et les bornes locales, puis retourne un Polygon. Un échec ne termine pas le dessin. Batteries fictives et état des panneaux sont exclusivement UI : aucun champ JSON obligatoire ajouté, schéma 1.0 inchangé.
+`closeDrawnPolygon(vertices)` clone les sommets, ferme l’anneau (sans doubler un sommet déjà fermé), valide la géométrie et les bornes locales, puis retourne un Polygon. Un échec ne termine pas le dessin. L’état des panneaux est exclusivement UI : aucun champ JSON obligatoire ajouté, schéma 1.0 inchangé.
 
 ## Extensions opérationnelles compatibles
 
@@ -107,3 +107,5 @@ Champs facultatifs1.0 : Mission.droneCatalog, constraints.maximumOverlapPercent 
 adjustPlanningCoverage(input, plan, droneId, { headingDegrees, workingAngleDegrees, radiusMeters }) produit une copie validée, conserve les positions, convertit TP1/TP2 en mixed selon le rayon puis réaffecte les altitudes. coveragePolygons(coverage) retourne les différentes intersections (Polygon[]) pour l’affichage.
 
 exportMission(mission, filename?) accepte un nom Unicode normalisé et ajoute .json ; les chemins, contrôles et noms trop longs sont nettoyés. Le popup de nommage est distinct de la sérialisation.
+
+`retainAvailableDrones(mission)` ajoute les unités excédentaires en réserve. `editPreparedMission(mission, change)` applique les mêmes contrôles d’édition avant lancement que `recalculateMission` pendant l’opération. `restartOperation(mission)` nécessite la fin de l’atterrissage, restaure `emergencyRecovery` et vérifie les conflits.

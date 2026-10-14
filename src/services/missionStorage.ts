@@ -83,7 +83,7 @@ function resourceCounts(value: unknown, path: string, catalog: readonly DroneMod
   requireValid(Object.keys(counts).length === catalog.length && Object.keys(counts).every(id => expectedIds.has(id)), path);
   for (const model of catalog) {
     requireValid(Object.hasOwn(counts, model.id), `${path}.${model.id}`);
-    number(counts[model.id], `${path}.${model.id}`, 0, 100);
+    number(counts[model.id], `${path}.${model.id}`, 0, Number.MAX_SAFE_INTEGER);
     requireValid(Number.isSafeInteger(counts[model.id]), `${path}.${model.id}`);
   }
 }
@@ -136,7 +136,7 @@ export function validateMission(value: unknown): asserts value is Mission {
     const authorization = object(constraints.authorization, 'constraints.authorization');
     text(authorization.reference, 'constraints.authorization.reference');
     requireValid(authorization.reference.length <= 120, 'constraints.authorization.reference (maximum 120 caractères)');
-    number(authorization.maximumDrones, 'constraints.authorization.maximumDrones', 0, 32);
+    number(authorization.maximumDrones, 'constraints.authorization.maximumDrones', 0, Number.MAX_SAFE_INTEGER);
     requireValid(Number.isSafeInteger(authorization.maximumDrones), 'constraints.authorization.maximumDrones (entier attendu)');
     dateTime(authorization.startAt, 'constraints.authorization.startAt');
     dateTime(authorization.endAt, 'constraints.authorization.endAt');
@@ -153,7 +153,6 @@ export function validateMission(value: unknown): asserts value is Mission {
   resourceCounts(object(mission.availableResources, 'availableResources').dronesByModel, 'availableResources.dronesByModel', catalog);
   const pilotIds = new Set<string>();
   const pilots = array(mission.pilots, 'pilots');
-  requireValid(pilots.length <= 100, 'pilots (maximum 100)');
   for (const value of pilots) {
     const pilot = object(value, 'pilots[]');
     text(pilot.id, 'pilot.id');
@@ -165,7 +164,6 @@ export function validateMission(value: unknown): asserts value is Mission {
   }
   const droneIds = new Set<string>();
   const drones = array(mission.drones, 'drones');
-  requireValid(drones.length <= 32, 'drones (maximum 32)');
   for (const value of drones) {
     const drone = object(value, 'drones[]');
     text(drone.id, 'drone.id');
@@ -178,7 +176,7 @@ export function validateMission(value: unknown): asserts value is Mission {
     requireValid(pilotIds.has(drone.pilotId), 'drone.pilotId (référence inconnue)');
     coordinates(drone.dronePosition, 'drone.dronePosition');
     number(drone.altitudeMetersAgl, 'drone.altitudeMetersAgl');
-    oneOf(drone.status, ['ready', 'active', 'unavailable', 'returning', 'emergency_landing', 'completed'], 'drone.status');
+    oneOf(drone.status, ['reserve', 'ready', 'active', 'unavailable', 'returning', 'emergency_landing', 'completed'], 'drone.status');
     const coverage = object(drone.coverage, 'drone.coverage');
     coordinates(coverage.center, 'drone.coverage.center');
     requireValid(JSON.stringify(coverage.center) === JSON.stringify(drone.dronePosition), 'drone.coverage.center (position du drone attendue)');
@@ -189,6 +187,14 @@ export function validateMission(value: unknown): asserts value is Mission {
     if (coverage.clipPolygon !== undefined) requireValid(equalJson(coverage.clipPolygon, object(mission.operationZone, 'operationZone').geometry), 'drone.coverage.clipPolygon (zone opération attendue)');
   }
   oneOf(mission.status, ['draft', 'planned', 'ready', 'active', 'emergency', 'returning', 'completed'], 'status');
+  if (mission.emergencyRecovery !== undefined) {
+    const snapshot = array(mission.emergencyRecovery, 'emergencyRecovery');
+    const { emergencyRecovery: _snapshot, ...withoutSnapshot } = mission;
+    void _snapshot;
+    requireValid(mission.status === 'emergency', 'emergencyRecovery (mission en urgence attendue)');
+    requireValid(snapshot.length === drones.length && snapshot.every((value, i) => object(value, 'emergencyRecovery[]').id === object(drones[i], 'drones[]').id), 'emergencyRecovery (flotte identique attendue)');
+    validateMission({ ...withoutSnapshot, drones: snapshot, status: 'active' });
+  }
   try { samplePolygon((mission.operationZone as Mission['operationZone']).geometry); }
   catch (error) { throw new Error(`Mission JSON invalide : ${error instanceof Error ? error.message : 'zone invalide'}`); }
 }

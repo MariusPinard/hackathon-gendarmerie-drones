@@ -42,7 +42,7 @@ Heuristique gloutonne, pas une optimisation exacte. Projection locale et surface
 
 Le scénario TP1 « en vue » utilise 500 m et un plafond de 120 m selon la règle complémentaire du brief. Jour/nuit est calculé au seuil solaire −6°, indépendamment de l’horizon météo. La vue « Satellite » utilise les orthophotos IGN en France ; leur couverture et disponibilité dépendent du service. Aucune télémétrie réelle n’est disponible. Pas de Street View, relief, vent/température/visibilité, moteur physique ou contrôle aéronautique réel.
 
-Limites : zone locale <= 50 km de côté, centre de zone à latitude <= 75° en valeur absolue, 32 drones au maximum, 20 priorités, 300 sommets par anneau et fichiers <= 2 Mo. Les secteurs très fins et les limites de couverture restent approximatifs. Les positions et résultats ne survivent pas à un rechargement sans export JSON. Une importation reprend par les ressources et reconstruit le dispositif : elle ne reprend pas une animation interrompue. Les mouvements d’urgence/retour durent quatre secondes de démonstration.
+Limites : zone locale <= 50 km de côté, centre de zone à latitude <= 75° en valeur absolue, 20 priorités, 300 sommets par anneau et fichiers <= 2 Mo. Aucune limite fixe d’effectif n’est imposée ; le calcul dépend des moyens, de la couverture utile et des éventuelles limites saisies par le chef de mission. Les secteurs très fins et les limites de couverture restent approximatifs. Les positions et résultats ne survivent pas à un rechargement sans export JSON. Une importation reprend par les ressources et reconstruit le dispositif : elle ne reprend pas une animation interrompue. Les mouvements d’urgence/retour durent quatre secondes de démonstration.
 
 ## Architecture et dépendances
 
@@ -72,3 +72,11 @@ La carte utilise les tuiles [OpenStreetMap](https://operations.osmfoundation.org
 La vue satellite utilise le [WMTS public IGN](https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/diffusion/wmts/) (orthophotos, attribution IGN). La recherche d’adresses françaises utilise le [géocodage IGN / BAN](https://ignf.github.io/cartes.gouv.fr-documentation/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/geocodage/) : requête après 600 ms, annulation des recherches obsolètes, cache de session et délai maximal de 7 s. La saisie d’adresse est envoyée à ce service ; les coordonnées peuvent être utilisées sans géocodage.
 
 La règle de simulation « Matrice 4T autorisé sous pluie » se distingue de la fiche DJI : le Matrice 4T n’est pas étanche. Les caractéristiques affichées et leurs sources sont documentées dans DRONE_SPECS. Le simulateur ne vérifie pas la validité juridique d’une autorisation saisie.
+
+### Rectification 3
+
+Les unités disponibles en supplément sont conservées dans la carte et la flotte en réserve. Sélectionner une unité, la placer par clic ou glisser-déposer, régler son secteur puis l’engager ; sa couverture et les conflits sont alors recalculés. Cette édition est disponible dans les ressources avant lancement et pendant la conduite. La réserve ne compte pas comme couverture active et ne décolle pas automatiquement.
+
+Après l’atterrissage d’urgence simulé, « Relancer l’opération » restaure les positions, altitudes, secteurs et disponibilités précédents. L’instantané est exporté dans les nouvelles missions en urgence ; les anciens fichiers sans instantané nécessitent un nouveau calcul. Les paramètres sont accessibles uniquement dans le planificateur. Les champs sont gris clair avec texte noir dans les deux thèmes.
+
+L’accueil utilise une console d’accès aux missions, le logo et les icônes de `/public/image`. La carte montre les arcs de portée 360° en pointillés uniquement hors de l’opération, garde les zones de travail découpées et supprime le calque de cellules non couvertes. Les métriques et les cibles de réorganisation restent calculées. Les orthophotos IGN utilisent la matrice publiée PM_0_19 ; le plan reste affiché sous les tuiles en chargement ou en erreur.

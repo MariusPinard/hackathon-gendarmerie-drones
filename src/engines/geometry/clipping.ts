@@ -38,6 +38,31 @@ function splitAtIntersections(a: Edge, b: Edge): void {
   }
 }
 
+/** Split a closed outline at exact operation edges; retain exterior arcs, including holes. */
+export function outsidePolygonOutline(outline: Polygon, operation: Polygon): Coordinates[][] {
+  const origin = polygonBounds(operation).origin;
+  const boundary = edges(operation, origin);
+  const segments = outline.coordinates[0]!.slice(0, -1).map((point, i): Edge => ({
+    a: project(point, origin), b: project(outline.coordinates[0]![i + 1]!, origin), cuts: [0, 1],
+  }));
+  const paths: Coordinates[][] = [];
+  let path: Coordinates[] = [];
+  for (const segment of segments) {
+    for (const edge of boundary) splitAtIntersections(segment, edge);
+    const cuts = [...new Set(segment.cuts)].sort((a, b) => a - b);
+    for (let i = 1; i < cuts.length; i++) {
+      const start = cuts[i - 1]!, end = cuts[i]!;
+      if (end - start < EPS) continue;
+      if (!pointInPolygon(unproject(interpolate(segment.a, segment.b, (start + end) / 2), origin), operation)) {
+        if (!path.length) path.push(unproject(interpolate(segment.a, segment.b, start), origin));
+        path.push(unproject(interpolate(segment.a, segment.b, end), origin));
+      } else if (path.length) { paths.push(path); path = []; }
+    }
+  }
+  if (path.length) paths.push(path);
+  return paths;
+}
+
 /** Boundary intersection in a local metric projection. Supports concave exteriors and disjoint holes.
  * No raster approximation is used for the displayed work areas; sampled coverage metrics stay separate.
  */

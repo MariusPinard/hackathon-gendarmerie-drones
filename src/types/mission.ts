@@ -37,5 +37,6 @@ export interface Mission {
   droneCatalog?: DroneModel[];
   pilots: Pilot[];
   drones: DroneInstance[];
+  emergencyRecovery?: DroneInstance[];
   status: MissionStatus;
 }

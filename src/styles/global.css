@@ -407,3 +407,46 @@ input[type="file"]::file-selector-button { font: inherit; padding: 8px 12px; mar
 
 /* Focus and automatic scrolling stay inside drawers, never shift the map workspace. */
 .app-layout.map-layout, main.map-main, .map-workspace, .mission-map.leaflet-container { overflow: clip; }
+
+/* Form fields remain distinct from dark panels, including native dropdowns. */
+input:not([type="checkbox"]):not([type="range"]), select, textarea {
+  background: #ededed; color: #111111; border-color: #b5b5b5; color-scheme: light;
+}
+input::placeholder, textarea::placeholder { color: #595959; opacity: 1; }
+input:disabled, select:disabled, textarea:disabled { background: #d9d9d9; color: #555555; }
+.brand-logo { width: 66px; height: 44px; object-fit: contain; flex-shrink: 0; }
+.fleet-drone { display: flex; align-items: center; gap: 9px; }
+.fleet-drone > img { width: 36px; height: 36px; object-fit: contain; background: #ffffff; border-radius: 3px; flex-shrink: 0; }
+.fleet-drone > span { min-width: 0; }
+.fleet-tool-icon img { width: 100%; height: 100%; object-fit: contain; background: #ffffff; border-radius: 3px; }
+.drone-marker.reserve { background: var(--surface-alt); color: var(--text); border-color: var(--primary-ink); border-style: dashed; }
+.operations-home { width: min(1080px, 100%); margin: 38px auto 64px; }
+.console-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+.console-heading h1 { font-size: 28px; margin: 10px 0; }
+.console-heading p { margin-bottom: 0; }
+.console-status { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.console-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--secondary); }
+.console-panel { border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.console-panel-heading { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 16px; }
+.console-panel-heading h2 { margin: 0; font-size: 16px; }
+.console-panel-heading > span { color: var(--text-muted); font-size: 12px; }
+.mission-entry { width: 100%; display: grid; grid-template-columns: 42px minmax(0,1fr) auto; gap: 20px; align-items: center; text-align: left; padding: 26px 22px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; }
+.mission-entry:last-child { border-bottom: 0; }
+.entry-symbol { display: grid; place-items: center; width: 42px; height: 42px; font-size: 26px; color: var(--primary-ink); background: var(--primary-soft); }
+.mission-entry strong { font-size: 16px; display: block; }
+.mission-entry small { color: var(--text-muted); font-size: 12px; font-weight: 400; line-height: 1.6; display: block; margin-top: 7px; }
+.entry-action { color: var(--primary-ink); font-size: 12px; display: flex; gap: 16px; align-items: center; }
+.entry-action b { font-size: 22px; }
+.console-note { background: var(--surface); border-left: 3px solid var(--primary-ink); margin-top: 24px; padding: 16px 20px; font-size: 12px; }
+.console-note p { margin: 7px 0 0; color: var(--text-muted); }
+@media (max-width: 650px) {
+  .brand-logo { width: 48px; height: 32px; }
+  .operations-home { margin: 18px auto 30px; }
+  .console-heading { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .console-heading h1 { font-size: 24px; }
+  .console-panel-heading { padding: 16px; }
+  .console-panel-heading > span { display: none; }
+  .mission-entry { padding: 20px 16px; grid-template-columns: 32px minmax(0,1fr); gap: 14px; }
+  .entry-symbol { width: 32px; height: 38px; }
+  .entry-action { grid-column: 2; justify-content: space-between; }
+}

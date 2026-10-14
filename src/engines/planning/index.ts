@@ -1,10 +1,9 @@
 import type { CoverageMetrics, PlanningInput, PlanningResult, ResourceEstimate } from '../../types/planning';
 import type { DroneCapability, DroneModel, DroneModelId, AvailableResources, DroneInstance } from '../../types/drone';
 import type { Coordinates, CoverageArea } from '../../types/geo';
-import { coverageMetrics, samplePolygon, pointInPolygon, coveragesOverlap, validatePolygon, project } from '../geometry/index.ts';
+import { coverageMetrics, samplePolygon, pointInPolygon, coveragesOverlap, validatePolygon, project, hasCoverage } from '../geometry/index.ts';
 import { inspectAuthorization } from './authorization.ts';
 
-export const MAX_PLANNING_DRONES = 32;
 const PRIORITY_WEIGHT = 4;
 const RAD = Math.PI / 180;
 
@@ -74,7 +73,7 @@ function assignAltitudes(drones: DroneInstance[], catalog: readonly DroneModel[]
     }
     return false;
   };
-  if (!search()) {
+  if (drones.length > 150 || !search()) {
     assignments.fill(-1);
     for (let step = 0; step < drones.length; step++) {
       const i = nextIndex()!;
@@ -112,12 +111,12 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   const counts: Record<string, number> = {};
   for (const model of input.catalog) {
     const count = available.dronesByModel[model.id] ?? 0;
-    if (!Number.isSafeInteger(count) || count < 0 || count > 100) throw new Error('Quantité de drones invalide (0 à 100).');
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error('Quantité de drones invalide (entier positif ou nul).');
     counts[model.id] = count;
   }
   const grid = samplePolygon(input.operationZone.geometry);
   let candidates: Coordinates[];
-  try { candidates = samplePolygon(input.operationZone.geometry, 14).points; }
+  try { candidates = samplePolygon(input.operationZone.geometry, Math.max(14, Math.ceil(44 * grid.spacingMeters / Math.min(...profiles.map(profile => profile.capability.rangeMeters!), 2000)))).points; }
   catch {
     // A thin but valid operation may miss the coarse grid while the metric grid has cells.
     const stride = Math.max(1, Math.ceil(grid.points.length / 196));
@@ -125,7 +124,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   }
   const priority = grid.points.map(point => input.priorityZones.some(zone => pointInPolygon(point, zone.geometry)));
   const priorityCount = priority.filter(Boolean).length;
-  const coverCounts = new Uint8Array(grid.points.length);
+  const coverCounts = new Uint32Array(grid.points.length);
   const samples = candidates.map(center => grid.points.map((point, index): Sample => {
     const [x, y] = project(point, center);
     return { index, distance: Math.hypot(x, y), bearing: (Math.atan2(x, y) / RAD + 360) % 360 };
@@ -139,7 +138,8 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   };
   let overlapCount = 0;
   const used = new Set<string>();
-  for (let iteration = 0; iteration < Math.min(MAX_PLANNING_DRONES, authorization.maximumDrones); iteration++) {
+  const maximumDeployments = Math.min(Object.values(counts).reduce((sum, count) => sum + count, 0), authorization.maximumDrones, grid.points.length);
+  for (let iteration = 0; iteration < maximumDeployments; iteration++) {
     let best: Option | undefined;
     for (const { model, capability } of profiles) {
       if (counts[model.id]! <= 0) continue;
@@ -205,9 +205,9 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   result.pilots = result.pilots.filter(pilot => result.drones.some(drone => drone.pilotId === pilot.id));
   for (const drone of result.drones) result.estimate.dronesByModel[drone.modelId] = (result.estimate.dronesByModel[drone.modelId] ?? 0) + 1;
   result.estimate.pilotCount = result.drones.length;
-  result.warnings.push(...assignAltitudes(result.drones, input.catalog, input));
+  result.warnings.push(...assignAltitudes(result.drones.filter(hasCoverage), input.catalog, input));
   const metrics = computeCoverage(result);
-  if (metrics.totalCoveragePercent < 98) result.warnings.push('Couverture partielle : moyens, chevauchement autorisé ou limite de 32 drones.');
+  if (metrics.totalCoveragePercent < 98) result.warnings.push('Couverture partielle : moyens disponibles, chevauchement autorisé ou placements admissibles insuffisants.');
   if (authorization.maximumDrones === 0) result.warnings.push('Autorisation saisie : aucun drone autorisé.');
   else if (input.constraints.authorization && metrics.totalCoveragePercent < 98 && result.drones.length === authorization.maximumDrones)
     result.warnings.push(`Autorisation saisie : plafond de ${authorization.maximumDrones} drones atteint.`);
@@ -215,7 +215,6 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   if (input.weather.rainDetected === true) result.warnings.push('Pluie prévue : modèles non autorisés sous la pluie exclus.');
   if (input.weather.dayNight === 'night') result.warnings.push('Mission de nuit : modèles sans capacité nocturne exclus.');
   if (input.weather.rainDetected === null) result.warnings.push('Pluie inconnue : compatibilité météo à confirmer.');
-  if (result.drones.length === MAX_PLANNING_DRONES) result.warnings.push('Limite de démonstration : 32 drones par dispositif.');
   if (metrics.priorityCoveragePercent === null && input.priorityZones.length) result.warnings.push('Zones prioritaires hors zone ou trop fines pour la grille ; vérifier le dessin.');
   result.estimate.assumptions = [
     'Heuristique gloutonne déterministe avec suppression des drones redondants ; aucun minimum mathématique garanti.',
@@ -229,7 +228,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
 }
 
 export function estimateResources(input: PlanningInput): ResourceEstimate {
-  const dronesByModel = Object.fromEntries(input.catalog.map(model => [model.id, MAX_PLANNING_DRONES])) as Record<DroneModelId, number>;
+  const dronesByModel = Object.fromEntries(input.catalog.map(model => [model.id, samplePolygon(input.operationZone.geometry).points.length])) as Record<DroneModelId, number>;
   return plan(input, { dronesByModel }).estimate;
 }
 
@@ -267,7 +266,7 @@ export function adjustPlanningCoverage(input: PlanningInput, source: PlanningRes
     workingAngleDegrees: change.workingAngleDegrees, clipPolygon: structuredClone(input.operationZone.geometry) };
   result.warnings = result.warnings.filter(warning => !warning.includes('aucune altitude') && !warning.startsWith('Couverture partielle')
     && !warning.startsWith('Chevauchement '));
-  result.warnings.push(...assignAltitudes(result.drones, input.catalog, input));
+  result.warnings.push(...assignAltitudes(result.drones.filter(hasCoverage), input.catalog, input));
   const metrics = computeCoverage(result);
   if (metrics.totalCoveragePercent < 98) result.warnings.push('Couverture partielle après réglage : ajuster les secteurs ou les moyens.');
   if (input.constraints.maximumOverlapPercent !== undefined && metrics.overlapPercent > input.constraints.maximumOverlapPercent + 1e-6)

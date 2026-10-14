@@ -10,6 +10,8 @@ export function missionPlanningInput(mission: Mission): PlanningInput {
 }
 
 export function applyPlan(mission: Mission, plan: PlanningResult): Mission {
-  return { ...mission, metadata: { ...mission.metadata, updatedAt: new Date().toISOString() },
+  const { emergencyRecovery: _recovery, ...fields } = mission;
+  void _recovery;
+  return { ...fields, metadata: { ...mission.metadata, updatedAt: new Date().toISOString() },
     estimate: mission.estimate ?? plan.estimate, pilots: plan.pilots, drones: plan.drones, status: 'ready' };
 }

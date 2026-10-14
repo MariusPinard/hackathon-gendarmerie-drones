@@ -13,7 +13,7 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
   const [heading, setHeading] = useState(String(drone.coverage.headingDegrees));
   const [angle, setAngle] = useState(String(drone.coverage.workingAngleDegrees));
   useEffect(() => { setAltitude(String(drone.altitudeMetersAgl)); setHeading(String(drone.coverage.headingDegrees)); setAngle(String(drone.coverage.workingAngleDegrees)); }, [drone.id, drone.altitudeMetersAgl, drone.coverage.headingDegrees, drone.coverage.workingAngleDegrees]);
-  const enabled = active && drone.status === 'active';
+  const enabled = active && (['active', 'ready', 'reserve'].includes(drone.status));
   const validSector = heading.trim() && angle.trim() && Number.isFinite(Number(heading)) && Number.isFinite(Number(angle)) && Number(heading) >= 0 && Number(heading) <= 359 && Number(angle) >= 1 && Number(angle) <= 360;
   function preview(nextHeading: string, nextAngle: string) {
     if (!nextHeading.trim() || !nextAngle.trim() || !Number.isFinite(Number(nextHeading)) || !Number.isFinite(Number(nextAngle)) || Number(nextHeading) < 0 || Number(nextHeading) > 359 || Number(nextAngle) < 1 || Number(nextAngle) > 360) { onPreview(null); return; }
@@ -33,7 +33,7 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
     {!validSector && <p className="notice error">Cap attendu : 0–359° ; angle : 1–360°.</p>}
     <button className="primary wide" disabled={!enabled || !validSector} onClick={() => onChange({ type: 'set_coverage', droneId: drone.id, headingDegrees: Number(heading), workingAngleDegrees: Number(angle) })}>Appliquer le cap et l’angle</button>
     <p className="muted">360° : disque · angle réduit : secteur orienté.</p>
-    <button className="wide" disabled={!active || !['active', 'unavailable'].includes(drone.status)} onClick={() => onChange({ type: 'set_availability', droneId: drone.id, status: drone.status === 'unavailable' ? 'active' : 'unavailable' })}>
-      {drone.status === 'unavailable' ? 'Rendre le drone disponible' : 'Marquer le drone indisponible'}</button>
+    <button className="wide" disabled={!active || !['active', 'ready', 'unavailable', 'reserve'].includes(drone.status)} onClick={() => onChange({ type: 'set_availability', droneId: drone.id, status: ['unavailable', 'reserve'].includes(drone.status) ? 'active' : 'unavailable' })}>
+      {drone.status === 'reserve' ? 'Engager ce drone supplémentaire' : drone.status === 'unavailable' ? 'Rendre le drone disponible' : 'Marquer le drone indisponible'}</button>
   </div>;
 }

@@ -10,7 +10,7 @@ import { ExportDialog } from '../components/Controls/ExportDialog';
 import { ConfirmDialog } from '../components/Controls/ConfirmDialog';
 import { Notification } from '../components/Controls/Notification';
 import type { Notice } from '../components/Controls/Notification';
-import { inspectMission, recalculateMission, triggerEmergencyLanding, triggerReturnToHome, proposeLocalReorganization } from '../engines/operations';
+import { inspectMission, recalculateMission, restartOperation, triggerEmergencyLanding, triggerReturnToHome, proposeLocalReorganization } from '../engines/operations';
 import { exportMission } from '../services/missionStorage';
 import { DRONE_CATALOG } from '../data/droneCatalog';
 import type { MissionChange, OperationsResult } from '../types/operations';
@@ -34,7 +34,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
   const [event, setEvent] = useState('Dispositif engagé. Sélectionnez un drone ou un télépilote sur la carte.');
   const [extraWarnings, setExtraWarnings] = useState<string[]>([]);
   const [elapsed, setElapsed] = useState<number | null>(null);
-  const canPreview = preview && mission?.status === 'active' && mission.drones.some(d => d.id === preview.droneId && d.status === 'active');
+  const canPreview = preview && mission?.status === 'active' && mission.drones.some(d => d.id === preview.droneId && ['active', 'reserve'].includes(d.status));
   const result = useMemo(() => mission ? canPreview && preview ? recalculateMission(mission, preview) : inspectMission(mission) : null, [mission, preview, canPreview]);
   if (!mission || !result) return <p className="notice">Aucune mission en conduite. <button onClick={onResources}>Préparer les ressources</button></p>;
   const catalog = mission.droneCatalog ?? DRONE_CATALOG;
@@ -43,7 +43,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
   const pilot = mission.pilots.find(p => `pilot:${p.id}` === selected);
   const maxAltitude = drone ? catalog.find(m => m.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId)?.maxAltitudeMetersAgl[mission.constraints.environment] ?? 0 : 0;
   const eventMessage = mission.status === 'completed' ? 'Retour simulé terminé : chaque drone engagé a rejoint son télépilote.'
-    : mission.status === 'emergency' && !mission.drones.some(d => d.status === 'emergency_landing') ? 'Atterrissage d’urgence simulé terminé. La mission reste en état d’urgence.' : event;
+    : mission.status === 'emergency' && !mission.drones.some(d => d.status === 'emergency_landing') ? 'Atterrissage d’urgence simulé terminé. Vous pouvez relancer l’opération.' : event;
   function select(id: string) { setSelected(id); setPreview(null); setPlacingDroneId(null); setPanel('drone'); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); }
   function apply(next: OperationsResult, description: string, duration?: number) {
     setMission({ ...next.mission, metadata: { ...next.mission.metadata, updatedAt: new Date().toISOString() } });
@@ -74,7 +74,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
       {panel === 'actions' && <><p className="notice">{mission.drones.filter(d => d.status === 'active').length} drones actifs · {labels[mission.status]}</p>
         <button className="wide" disabled={!active || !mission.drones.some(d => d.status === 'unavailable')} onClick={() => { try { apply(proposeLocalReorganization(mission), 'Réorganisation locale calculée.'); } catch (error) { notify('error', error instanceof Error ? error.message : 'Réorganisation impossible.'); } }}>Proposer une réorganisation locale</button>
         <button className="primary wide" disabled={!active} onClick={() => setConfirmation('return')}>Fin de mission</button>
-        <button className="danger wide" disabled={!['active', 'returning'].includes(mission.status)} onClick={() => setConfirmation('emergency')}>ARRÊT D’URGENCE</button>
+        {mission.status === 'emergency' ? <button className="primary wide" disabled={mission.drones.some(d => d.status === 'emergency_landing')} onClick={() => { try { apply(restartOperation(mission), 'Opération relancée : dispositif restauré.'); } catch (error) { notify('error', error instanceof Error ? error.message : 'Relance impossible.'); } }}>Relancer l’opération</button> : <button className="danger wide" disabled={!['active', 'returning'].includes(mission.status)} onClick={() => setConfirmation('emergency')}>ARRÊT D’URGENCE</button>}
         <button className="wide" onClick={() => setExportOpen(true)}>Exporter la mission JSON</button>
         <button className="wide" disabled={mission.status === 'returning' || mission.drones.some(d => d.status === 'emergency_landing')} onClick={onResources}>Préparer un nouveau dispositif</button>
         <p className="muted">Retour/atterrissage simulés en 4 s. Les drones indisponibles restent immobiles.</p></>}
@@ -90,7 +90,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
         }} />}
     </>}>
     <MissionMap center={mission.location} operationZone={mission.operationZone} priorityZones={mission.priorityZones} drones={result.mission.drones} pilots={mission.pilots}
-      uncoveredPoints={result.coverage.uncoveredPoints} uncoveredCellSizeMeters={result.coverage.sampleSpacingMeters} selected={selected} editable={active} placingDroneId={active ? placingDroneId : null}
+      selected={selected} editable={active} placingDroneId={active ? placingDroneId : null}
       conflictDroneIds={result.conflicts.flatMap(c => c.droneIds)} onSelect={select}
       onMoveDrone={(id, point) => change({ type: 'move_drone', droneId: id, dronePosition: point })}
       onMovePilot={(id, point) => change({ type: 'move_pilot', pilotId: id, pilotPosition: point })} />

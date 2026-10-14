@@ -2,7 +2,7 @@ import type { Coordinates, CoverageArea } from './geo';
 
 export type DroneModelId = string;
 export type DroneStatus =
-  | 'ready' | 'active' | 'unavailable' | 'returning'
+  | 'reserve' | 'ready' | 'active' | 'unavailable' | 'returning'
   | 'emergency_landing' | 'completed';
 export type Environment = 'rural' | 'urban';
 

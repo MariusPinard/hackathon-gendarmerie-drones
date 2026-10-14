@@ -63,7 +63,7 @@ export function detectConflicts(mission: Mission): Conflict[] {
 export function inspectMission(mission: Mission): OperationsResult {
   const coverage = coverageMetrics(mission.operationZone.geometry, mission.priorityZones, mission.drones);
   const warnings: string[] = [];
-  if (coverage.totalCoveragePercent < 98 && (mission.status === 'active' || mission.status === 'ready')) warnings.push('Couverture partielle : les points rouges indiquent les secteurs non couverts.');
+  if (coverage.totalCoveragePercent < 98 && (mission.status === 'active' || mission.status === 'ready')) warnings.push('Couverture partielle : ajustez le dispositif pour couvrir les secteurs restants.');
   if (mission.weather.rainDetected === null) warnings.push('Météo inconnue : compatibilité pluie à confirmer.');
   return { mission, coverage, conflicts: detectConflicts(mission), warnings };
 }
@@ -89,9 +89,16 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
   } else {
     const drone = mission.drones.find(d => d.id === change.droneId);
     if (!drone) throw new Error('Drone inconnu.');
-    if (change.type !== 'set_availability' && drone.status !== 'active') throw new Error('Ce drone n’est pas actif.');
+    if (change.type !== 'set_availability' && !['active', 'reserve'].includes(drone.status)) throw new Error('Ce drone n’est pas actif ou en réserve.');
     switch (change.type) {
-      case 'move_drone': assertCoordinates(change.dronePosition); drone.dronePosition = [...change.dronePosition]; drone.coverage.center = [...change.dronePosition]; break;
+      case 'move_drone':
+        assertCoordinates(change.dronePosition);
+        drone.dronePosition = [...change.dronePosition]; drone.coverage.center = [...change.dronePosition];
+        if (drone.status === 'reserve') {
+          const pilot = mission.pilots.find(p => p.id === drone.pilotId);
+          if (pilot) pilot.pilotPosition = [...change.dronePosition];
+        }
+        break;
       case 'set_altitude': {
         const model = (mission.droneCatalog ?? DRONE_CATALOG).find(m => m.id === drone.modelId);
         const capability = model?.capabilities.find(c => c.id === drone.capabilityId);
@@ -105,7 +112,20 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
           || !Number.isFinite(change.workingAngleDegrees) || change.workingAngleDegrees < 1 || change.workingAngleDegrees > 360) throw new Error('Cap : 0–359° ; angle : 1–360°.');
         drone.coverage.headingDegrees = change.headingDegrees; drone.coverage.workingAngleDegrees = change.workingAngleDegrees; break;
       case 'set_availability':
-        if (!['active', 'unavailable'].includes(change.status) || !['active', 'unavailable'].includes(drone.status)) throw new Error('Transition de disponibilité invalide.');
+        if (!['active', 'unavailable'].includes(change.status) || !['active', 'unavailable', 'reserve'].includes(drone.status)) throw new Error('Transition de disponibilité invalide.');
+        if (drone.status === 'reserve' && change.status === 'active') {
+          const capability = (mission.droneCatalog ?? DRONE_CATALOG).find(model => model.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId);
+          const ceiling = capability?.maxAltitudeMetersAgl[mission.constraints.environment] ?? 0;
+          const neighbors = mission.drones.filter(other => other.id !== drone.id && hasCoverage(other)
+            && coveragesOverlap({ ...other.coverage, clipPolygon: mission.operationZone.geometry }, drone.coverage));
+          const levels = [drone.altitudeMetersAgl];
+          for (let altitude = 10; altitude <= ceiling; altitude += mission.constraints.minimumVerticalSeparationMeters) levels.push(altitude);
+          for (const altitude of levels.filter(value => value >= 0 && value <= ceiling)) {
+            if (neighbors.every(other => Math.abs(other.altitudeMetersAgl - altitude) >= mission.constraints.minimumVerticalSeparationMeters)) {
+              drone.altitudeMetersAgl = altitude; break;
+            }
+          }
+        }
         drone.status = change.status; break;
     }
   }
@@ -136,8 +156,22 @@ export function proposeLocalReorganization(source: Mission): OperationsResult {
 export function triggerEmergencyLanding(source: Mission): OperationsResult {
   if (!['active', 'returning'].includes(source.status)) throw new Error('Aucune opération en cours à arrêter.');
   const mission = structuredClone(source);
+  mission.emergencyRecovery = structuredClone(source.drones);
   mission.status = 'emergency';
   mission.drones.forEach(d => { if (d.status === 'active' || d.status === 'returning') d.status = 'emergency_landing'; });
+  return inspectMission(mission);
+}
+
+export function restartOperation(source: Mission): OperationsResult {
+  if (source.status !== 'emergency' || source.drones.some(drone => drone.status === 'emergency_landing'))
+    throw new Error('Attendez la fin de l’atterrissage avant de relancer l’opération.');
+  if (!source.emergencyRecovery) throw new Error('Dispositif avant arrêt absent : préparez un nouveau dispositif.');
+  const mission = structuredClone(source);
+  mission.drones = structuredClone(source.emergencyRecovery);
+  mission.drones.forEach(drone => { if (drone.status === 'returning') drone.status = 'active'; });
+  mission.status = 'active';
+  delete mission.emergencyRecovery;
+  if (detectConflicts(mission).length) throw new Error('Le dispositif restauré présente des conflits : préparez un nouveau dispositif.');
   return inspectMission(mission);
 }
 
