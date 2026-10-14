@@ -20,7 +20,7 @@ La grille métrique comporte normalement 44 cellules sur le plus grand côté de
 
 Les surfaces sont estimées par le nombre de cellules multiplié par leur aire. Les pourcentages total, prioritaire et de chevauchement sont donc des estimations, sensibles à la résolution. Le chevauchement global est le pourcentage de cellules de l’opération couvertes par au moins deux drones ; une cellule couverte par trois drones ne compte qu’une fois dans ce pourcentage. Le plafond configurable concerne aussi les cellules prioritaires.
 
-Les points non couverts restent disponibles pour les métriques et la réorganisation locale. Le calque de cellules carrées a été retiré de la carte. Les drones indisponibles, en retour, en atterrissage ou terminés ne fournissent plus de couverture active.
+Les points non couverts restent disponibles pour les métriques et la réorganisation locale. Le calque de cellules carrées a été retiré de la carte ; les centres des cellules non couvertes sont de nouveau affichés sous forme de petits points rouges. Les drones indisponibles, en retour, en atterrissage ou terminés ne fournissent plus de couverture active.
 
 ## Placement et mix TP1/TP2
 
@@ -63,3 +63,5 @@ Les tests couvrent notamment les concavités, trous, frontières coïncidentes, 
 Une mesure locale observée pendant la validation donne environ 0,4 s à froid pour une petite zone mixte et environ 0,1 s pour un rectangle allongé. Sur ce dernier cas, le dispositif mixte proposait 3 drones contre 7 en TP1 seul. Ces résultats illustrent un cas de test, pas un minimum garanti ni un engagement de performance.
 
 Les ressources réelles ajoutent ensuite toutes les unités supplémentaires en état `reserve`, avec identifiants et télépilotes distincts. Leur placement manuel conserve les autres drones. Leur engagement choisit si possible une altitude séparée sous le plafond, puis expose les conflits restants ; un dispositif conflictuel ne peut pas être lancé.
+
+`outsideCoverageArc` construit uniquement l’arc du secteur selon le cap et l’angle de travail (pas ses côtés radiaux), puis le découpe aux intersections exactes avec les anneaux de l’opération. Seuls les segments extérieurs sont affichés en pointillés ; l’approximation de l’arc conserve le pas maximal de 5°.

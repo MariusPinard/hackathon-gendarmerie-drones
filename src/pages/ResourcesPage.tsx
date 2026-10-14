@@ -78,7 +78,7 @@ export function ResourcesPage({ onLaunch, onBack }: { onLaunch: () => void; onBa
       {insufficient && <p className="notice warning">Moyens inférieurs à l’estimation : couverture partielle possible.</p>}
       <button className="primary wide" disabled={adding} onClick={calculate}>Recalculer avec les ressources réelles</button>{prepared && <button className="wide" onClick={() => { setResultOpen(true); setPanel(null); setFleetOpen(false); }}>Voir le dispositif</button>}<button className="wide" onClick={onBack}>Retour à la planification</button>
     </>}</>}>
-    <MissionMap center={mission.location} operationZone={mission.operationZone} priorityZones={mission.priorityZones} drones={prepared ? displayedMission?.drones ?? [] : []} pilots={prepared ? mission.pilots : []} selected={selected} onSelect={select} editable={prepared} placingDroneId={placingDroneId}
+    <MissionMap center={mission.location} operationZone={mission.operationZone} priorityZones={mission.priorityZones} uncoveredPoints={metrics?.uncoveredPoints ?? []} drones={prepared ? displayedMission?.drones ?? [] : []} pilots={prepared ? mission.pilots : []} selected={selected} onSelect={select} editable={prepared} placingDroneId={placingDroneId}
       conflictDroneIds={conflicts.flatMap(conflict => conflict.droneIds)} onMoveDrone={(id, point) => edit({ type: 'move_drone', droneId: id, dronePosition: point })} onMovePilot={(id, point) => edit({ type: 'move_pilot', pilotId: id, pilotPosition: point })} />
   </MapWorkspace>;
 }

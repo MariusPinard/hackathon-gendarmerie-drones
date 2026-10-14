@@ -2,7 +2,7 @@ import type { Coordinates, CoverageArea, Polygon, PriorityZone } from '../../typ
 import type { DroneInstance } from '../../types/drone';
 import type { CoverageMetrics } from '../../types/planning';
 import { distanceMeters, pointInPolygon, project, unproject, samplePolygon } from './primitives.ts';
-import { intersectPolygons } from './clipping.ts';
+import { intersectPolygons, outsidePolyline } from './clipping.ts';
 export * from './primitives.ts';
 export { intersectPolygons, outsidePolygonOutline } from './clipping.ts';
 const RAD = Math.PI / 180;
@@ -28,6 +28,19 @@ export function coveragePolygon(coverage: CoverageArea): Polygon {
   }
   points.push(points[0]!);
   return { type: 'Polygon', coordinates: [points] };
+}
+
+/** Only the curved edge within the work angle, without the sector's radial sides. */
+export function outsideCoverageArc(coverage: CoverageArea, operation: Polygon): Coordinates[][] {
+  const full = coverage.workingAngleDegrees === 360;
+  const steps = Math.max(2, Math.ceil(coverage.workingAngleDegrees / 5));
+  const start = full ? 0 : coverage.headingDegrees - coverage.workingAngleDegrees / 2;
+  const arc = Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = (start + coverage.workingAngleDegrees * i / steps) * RAD;
+    return unproject([Math.sin(angle) * coverage.radiusMeters, Math.cos(angle) * coverage.radiusMeters], coverage.center);
+  });
+  if (full) arc[arc.length - 1] = arc[0]!;
+  return outsidePolyline(arc, operation);
 }
 
 /** Work area, clipped to the operation. An intersection can have several disconnected pieces. */

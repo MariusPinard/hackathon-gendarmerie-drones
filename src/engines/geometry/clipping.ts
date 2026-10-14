@@ -39,11 +39,11 @@ function splitAtIntersections(a: Edge, b: Edge): void {
 }
 
 /** Split a closed outline at exact operation edges; retain exterior arcs, including holes. */
-export function outsidePolygonOutline(outline: Polygon, operation: Polygon): Coordinates[][] {
+export function outsidePolyline(points: Coordinates[], operation: Polygon): Coordinates[][] {
   const origin = polygonBounds(operation).origin;
   const boundary = edges(operation, origin);
-  const segments = outline.coordinates[0]!.slice(0, -1).map((point, i): Edge => ({
-    a: project(point, origin), b: project(outline.coordinates[0]![i + 1]!, origin), cuts: [0, 1],
+  const segments = points.slice(0, -1).map((point, i): Edge => ({
+    a: project(point, origin), b: project(points[i + 1]!, origin), cuts: [0, 1],
   }));
   const paths: Coordinates[][] = [];
   let path: Coordinates[] = [];
@@ -61,6 +61,10 @@ export function outsidePolygonOutline(outline: Polygon, operation: Polygon): Coo
   }
   if (path.length) paths.push(path);
   return paths;
+}
+
+export function outsidePolygonOutline(outline: Polygon, operation: Polygon): Coordinates[][] {
+  return outsidePolyline(outline.coordinates[0]!, operation);
 }
 
 /** Boundary intersection in a local metric projection. Supports concave exteriors and disjoint holes.
