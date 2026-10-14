@@ -16,8 +16,8 @@ from drone_site_finder.services.engine import SiteFinderEngine
 
 router = APIRouter(prefix="/api/v1")
 _ANALYSIS_LOCK = asyncio.Lock()
-# Tiles are queued one at a time to respect public data services.
-_TILE_LOCK = asyncio.Lock()
+# At most two tiles at a time, to respect public data services.
+_TILE_LOCK = asyncio.Semaphore(2)
 
 
 def get_engine():

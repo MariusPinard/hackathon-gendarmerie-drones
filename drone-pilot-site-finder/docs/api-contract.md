@@ -13,8 +13,8 @@ obstacle_buffer | occupied`), optional `reason` / `reason_label`, `takeoff`
 `POST /api/v1/occupancy/tile` (additive, for map clients such as the main app's « Occupation »
 mode) takes `{"bbox": [west, south, east, north], "cell_m": 10}` for one tile of 50 m to 2.5 km and
 returns the same `OccupancyMap`, in territory mode (`assessed.range` and `assessed.masking` false),
-clipped exactly to the tile so neighbouring tiles join without overlap. Tiles are queued one at a
-time server-side; errors use the `AnalysisFailureResponse` envelope (422 invalid tile, 503, 504).
+clipped exactly to the tile so neighbouring tiles join without overlap. At most two tiles are computed
+at a time server-side; errors use the `AnalysisFailureResponse` envelope (422 invalid tile, 503, 504).
 
 # V0.4 additive extension — pending human validation
 
