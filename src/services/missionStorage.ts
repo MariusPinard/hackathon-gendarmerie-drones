@@ -139,7 +139,7 @@ export function validateMission(value: unknown): asserts value is Mission {
   }
   const droneIds = new Set<string>();
   const drones = array(mission.drones, 'drones');
-  requireValid(drones.length <= 32, 'drones (maximum 32)');
+  requireValid(drones.length <= 2000, 'drones');
   for (const value of drones) {
     const drone = object(value, 'drones[]');
     text(drone.id, 'drone.id');

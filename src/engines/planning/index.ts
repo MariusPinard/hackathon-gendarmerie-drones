@@ -3,7 +3,7 @@ import type { DroneCapability, DroneModel, DroneModelId, AvailableResources } fr
 import type { Coordinates } from '../../types/geo';
 import { coverageMetrics, samplePolygon, pointInPolygon, pointInCoverage, coveragesOverlap, validatePolygon } from '../geometry/index.ts';
 
-export const MAX_PLANNING_DRONES = 32;
+export const MAX_PLANNING_DRONES = 2000;
 const PRIORITY_WEIGHT = 4;
 
 export function selectedCapability(model: DroneModel, capabilityId = 'tp1-out-of-sight'): DroneCapability {
@@ -26,7 +26,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   const counts: Record<string, number> = {};
   for (const model of input.catalog) {
     const count = available.dronesByModel[model.id];
-    if (!Number.isSafeInteger(count) || count < 0 || count > 100) throw new Error('Quantité de drones invalide (0 à 100).');
+    if (!Number.isSafeInteger(count) || count < 0 || count > 2000) throw new Error('Quantité de drones abérante!');
     counts[model.id] = count;
   }
   const grid = samplePolygon(input.operationZone.geometry);
@@ -97,10 +97,10 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
     if (covered / grid.points.length >= 0.98 && (!priorityCount || priorityCovered / priorityCount >= 0.99)) break;
   }
   const metrics = computeCoverage(result);
-  if (metrics.totalCoveragePercent < 98) result.warnings.push('Couverture partielle : moyens épuisés, gain marginal insuffisant ou limite de 32 drones.');
+  if (metrics.totalCoveragePercent < 98) result.warnings.push('Couverture partielle : moyens épuisés, gain marginal insuffisant ou quantitée de drones abérante.');
   if (input.weather.rainDetected === true) result.warnings.push('Pluie détectée : DJI Mini 5 exclus de la configuration.');
   if (input.weather.rainDetected === null) result.warnings.push('Pluie inconnue : compatibilité météo à confirmer.');
-  if (result.drones.length === MAX_PLANNING_DRONES) result.warnings.push('Limite de démonstration : 32 drones par dispositif.');
+  if (result.drones.length === MAX_PLANNING_DRONES) result.warnings.push('Quantitée de drone abérante');
   if (metrics.priorityCoveragePercent === null && input.priorityZones.length) result.warnings.push('Zones prioritaires hors zone ou trop fines pour la grille ; élargir/vérifier le dessin.');
   result.estimate.assumptions = [
     'Heuristique gloutonne déterministe ; aucune optimalité mathématique revendiquée.',
