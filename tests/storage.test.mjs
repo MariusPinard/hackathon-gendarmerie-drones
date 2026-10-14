@@ -50,7 +50,7 @@ test('rejects malformed JSON and null root', () => {
 });
 
 test('weather placeholder preserves unknown rain and day/night', async () => {
-  const weather = await getWeather(48.1173, -1.6778, example.scheduledAt);
+  const weather = await getWeather(48.1173, -1.6778, '2099-01-01T12:00:00Z');
   assert.deepEqual(weather.location, example.location);
   assert.equal(weather.status, 'unavailable');
   assert.equal(weather.rainDetected, null);

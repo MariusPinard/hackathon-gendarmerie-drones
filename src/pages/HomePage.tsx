@@ -1,8 +1,3 @@
 export function HomePage({ onPlan, onLaunch }: { onPlan: () => void; onLaunch: () => void }) {
-  return <section>
-    <h2>Accueil</h2>
-    <p>Fondation technique : les moteurs métier et les workflows seront développés ultérieurement.</p>
-    <button onClick={onPlan}>Planifier une mission</button>
-    <button onClick={onLaunch}>Lancer une opération</button>
-  </section>;
+  return <section className="home"><p className="eyebrow">AIDE À LA DÉCISION · MULTI-DRONES</p><h1>Préparer. Déployer. Adapter.</h1><p className="home-intro">Concevez un dispositif de couverture et conduisez son évolution dans une simulation cartographique.</p><div className="home-cards"><article className="panel"><span className="step-number">01</span><h2>Planifier une mission</h2><p>Définissez la zone, les priorités et le scénario pour obtenir une estimation expliquée des moyens.</p><button className="primary" onClick={onPlan}>Planifier une mission →</button></article><article className="panel"><span className="step-number">02</span><h2>Lancer une opération</h2><p>Importez une mission enregistrée, ajustez vos ressources et ouvrez la conduite simulée.</p><button onClick={onLaunch}>Lancer une opération →</button></article></div><p className="muted">Données et résultats de simulation. Le prototype ne valide pas une opération aéronautique réelle.</p></section>;
 }
