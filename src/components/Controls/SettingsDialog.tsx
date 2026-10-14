@@ -27,7 +27,7 @@ export function SettingsDialog({ catalog, constraints, onCancel, onSave }: {
     </details>
     <h3>Catalogue par défaut</h3><p className="muted">Les modèles ajoutés ici seront proposés aux nouvelles missions.</p>
     <ul className="default-models">{models.map(m => <li key={m.id}>{m.name}</li>)}</ul>
-    {adding ? <CustomDroneForm onCancel={() => setAdding(false)} onAdd={model => { const next = [...models, model]; validateDroneCatalog(next); setModels(next); setAdding(false); }} /> : <button disabled={models.length >= 20} onClick={() => setAdding(true)}>+ Ajouter un drone par défaut</button>}
+    {adding ? <CustomDroneForm onCancel={() => setAdding(false)} onAdd={model => { const next = [...models, model]; validateDroneCatalog(next); setModels(next); setAdding(false); }} /> : <button disabled={models.length >= 20} onClick={() => setAdding(true)}>+ Ajouter un drone</button>}
     {error && <p className="notice error" role="alert">{error}</p>}
     <div className="actions"><button onClick={onCancel}>Annuler</button><button className="primary" disabled={adding} onClick={() => { try {
       const min = Number(separation), max = Number(overlap);

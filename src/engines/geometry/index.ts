@@ -71,6 +71,31 @@ export function hasCoverage(drone: DroneInstance): boolean {
   return drone.status === 'ready' || drone.status === 'active';
 }
 
+/** Four visual samples per metric cell, without changing the planning metrics. */
+export function uncoveredDisplayPoints(operation: Polygon, drones: DroneInstance[]): Coordinates[] {
+  const grid = samplePolygon(operation);
+  const areas = drones.filter(hasCoverage).map(drone => drone.coverage);
+  const points: Coordinates[] = [];
+  for (const center of grid.points) for (const x of [-.25, .25]) for (const y of [-.25, .25]) {
+    const point = unproject([x * grid.spacingMeters, y * grid.spacingMeters], center);
+    if (pointInPolygon(point, operation) && !areas.some(area => pointInCoverage(point, area))) points.push(point);
+  }
+  return points;
+}
+
+/** Exact vector intersections of engaged work areas, including operation holes. */
+export function overlapPolygons(operation: Polygon, drones: DroneInstance[]): Polygon[] {
+  const areas = drones.filter(hasCoverage).map(drone => ({ ...drone.coverage, clipPolygon: operation }));
+  const polygons: Polygon[] = [];
+  for (let i = 0; i < areas.length; i++) for (let j = i + 1; j < areas.length; j++) {
+    const a = areas[i]!, b = areas[j]!;
+    if (distanceMeters(a.center, b.center) >= a.radiusMeters + b.radiusMeters) continue;
+    for (const first of coveragePolygons(a)) for (const second of coveragePolygons(b))
+      polygons.push(...intersectPolygons(first, second));
+  }
+  return polygons;
+}
+
 export function coverageMetrics(operation: Polygon, priorities: PriorityZone[], drones: DroneInstance[]): CoverageMetrics {
   const grid = samplePolygon(operation);
   const active = drones.filter(hasCoverage);

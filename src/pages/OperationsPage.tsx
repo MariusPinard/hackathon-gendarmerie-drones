@@ -55,7 +55,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
     apply(next, change.type === 'move_pilot' ? `${change.pilotId} déplacé ; drones conservés.` : `${change.droneId} modifié ; couverture et conflits recalculés.`, performance.now() - started);
   } catch (error) { notify('error', error instanceof Error ? error.message : 'Modification impossible.'); } }
   const titles: Record<string, string> = { drone: 'Drone / télépilote', information: 'Informations & couverture', actions: 'Conduite & actions' };
-  return <MapWorkspace tools={[{ id: 'drone', label: 'Réglages', icon: '⌖' }, { id: 'information', label: 'Couverture', icon: 'i' }, { id: 'actions', label: 'Actions', icon: '⚑' }]}
+  return <MapWorkspace tools={[{ id: 'drone', label: 'Réglages', icon: '⌖' }, { id: 'information', label: 'Couverture', icon: 'i' }, { id: 'actions', label: 'Actions', icon: '⚑' }, { id: 'export', label: 'Export JSON', icon: '↥', onActivate: () => setExportOpen(true) }]}
     panel={panel} onPanel={next => { setPanel(next); if (next !== 'drone') setPreview(null); }} title={titles[panel ?? ''] ?? ''}
     fleetOpen={fleetOpen} onFleet={() => { setFleetOpen(open => !open); if (window.matchMedia('(max-width: 1100px)').matches) { setPanel(null); setPreview(null); } }}
     fleet={<FleetPanel drones={mission.drones} catalog={catalog} selected={selected} onSelect={select} onClose={() => setFleetOpen(false)} />}

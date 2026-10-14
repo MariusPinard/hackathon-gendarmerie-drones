@@ -65,3 +65,9 @@ Une mesure locale observée pendant la validation donne environ 0,4 s à froid p
 Les ressources réelles ajoutent ensuite toutes les unités supplémentaires en état `reserve`, avec identifiants et télépilotes distincts. Leur placement manuel conserve les autres drones. Leur engagement choisit si possible une altitude séparée sous le plafond, puis expose les conflits restants ; un dispositif conflictuel ne peut pas être lancé.
 
 `outsideCoverageArc` construit uniquement l’arc du secteur selon le cap et l’angle de travail (pas ses côtés radiaux), puis le découpe aux intersections exactes avec les anneaux de l’opération. Seuls les segments extérieurs sont affichés en pointillés ; l’approximation de l’arc conserve le pas maximal de 5°.
+
+## Répartition et affichage de la couverture
+
+Le calcul compare le disque complet (360° si autorisé) avec les secteurs plus étroits, sous le plafond de chevauchement. À gain équivalent, le disque conserve la priorité parmi les angles d’un même scénario. Après suppression des positions redondantes, les modèles standard interchangeables sont répartis entre Matrice 4T, Mavic et Mini par effectifs aussi proches que possible, sans dépasser les stocks ni modifier la géométrie ou les qualifications. La nuit ou sous la pluie, le filtre est strict : Matrice 4T exclusivement.
+
+Les points rouges utilisent quatre sous-échantillons par cellule de la grille métrique, chacun vérifié dans la zone et hors couverture engagée. Cet affichage laisse les métriques inchangées. Les chevauchements jaunes sont les intersections vectorielles des surfaces engagées, découpées à la zone (avec ses trous). Un seul chemin avec remplissage nonzero évite que les intersections triples disparaissent ou s’assombrissent.

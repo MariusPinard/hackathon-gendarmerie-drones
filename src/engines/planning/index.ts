@@ -26,6 +26,7 @@ function validateCapability(capability: DroneCapability): void {
 
 /** Operational policy is separate from manufacturers' equipment specifications. */
 export function compatibleModel(model: DroneModel, weather: PlanningInput['weather']): boolean {
+  if ((weather.rainDetected === true || weather.dayNight === 'night') && model.id !== 'dji-matrice-4t') return false;
   return !(model.incompatibleWithRain && weather.rainDetected === true)
     && !(model.nightCapable !== true && weather.dayNight === 'night');
 }
@@ -153,7 +154,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
         const radius = mixed ? Math.min(range, Math.max(...useful.map(point => point.distance)) + grid.spacingMeters * 0.8) : range;
         if (capability.pilotQualification === 'TP2' && radius <= 1000) continue;
         // Try the useful angular envelope and progressively narrower directions when overlap is constrained.
-        const widths = [...new Set([Math.min(angleLimit, envelope.angle), Math.min(angleLimit, 180), Math.min(angleLimit, 90), Math.min(angleLimit, 45)])];
+        const widths = [...new Set([angleLimit, Math.min(angleLimit, envelope.angle), Math.min(angleLimit, 180), Math.min(angleLimit, 90), Math.min(angleLimit, 45)])];
         const headings = [envelope.heading];
         if (angleLimit < envelope.angle || maximumOverlap < 100) {
           const centroid = useful.reduce((sum, point) => [sum[0] + Math.sin(point.bearing * RAD), sum[1] + Math.cos(point.bearing * RAD)] as [number, number], [0, 0] as [number, number]);
@@ -203,6 +204,28 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
       || metrics.priorityCoveragePercent + 1e-8 >= priorityTarget)) result.drones.splice(i, 1);
   }
   result.pilots = result.pilots.filter(pilot => result.drones.some(drone => drone.pilotId === pilot.id));
+  // Reassign interchangeable standard models after removing redundant positions.
+  // Geometry and qualifications stay unchanged; stock limits remain authoritative.
+  const standardIds = ['dji-matrice-4t', 'dji-mavic-3-enterprise', 'dji-mini-5'];
+  const standardModels = eligible.filter(model => standardIds.includes(model.id));
+  const allocated: Record<string, number> = {};
+  const pending: Record<string, number> = {};
+  for (const drone of result.drones) pending[drone.modelId] = (pending[drone.modelId] ?? 0) + 1;
+  for (const drone of result.drones) {
+    if (!standardIds.includes(drone.modelId)) continue;
+    pending[drone.modelId]!--;
+    const original = selectedCapability(input.catalog.find(model => model.id === drone.modelId)!, drone.capabilityId);
+    const choices = standardModels.filter(model => {
+      const capability = model.capabilities.find(item => item.id === drone.capabilityId);
+      // Keep enough of each model for later positions requiring its capabilities.
+      return (allocated[model.id] ?? 0) + (pending[model.id] ?? 0) < (available.dronesByModel[model.id] ?? 0)
+        && capability?.pilotQualification === original.pilotQualification
+        && (capability.rangeMeters ?? 0) >= original.rangeMeters!
+        && capability.maxAltitudeMetersAgl[input.constraints.environment] >= original.maxAltitudeMetersAgl[input.constraints.environment];
+    }).sort((a, b) => (allocated[a.id] ?? 0) - (allocated[b.id] ?? 0) || standardIds.indexOf(a.id) - standardIds.indexOf(b.id));
+    const model = choices[0];
+    if (model) { drone.modelId = model.id; allocated[model.id] = (allocated[model.id] ?? 0) + 1; }
+  }
   for (const drone of result.drones) result.estimate.dronesByModel[drone.modelId] = (result.estimate.dronesByModel[drone.modelId] ?? 0) + 1;
   result.estimate.pilotCount = result.drones.length;
   result.warnings.push(...assignAltitudes(result.drones.filter(hasCoverage), input.catalog, input));
@@ -212,14 +235,15 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   else if (input.constraints.authorization && metrics.totalCoveragePercent < 98 && result.drones.length === authorization.maximumDrones)
     result.warnings.push(`Autorisation saisie : plafond de ${authorization.maximumDrones} drones atteint.`);
   if (authorization.outsideWindow) result.warnings.push('Hors période autorisée : ajustez la date ou l’autorisation avant lancement.');
-  if (input.weather.rainDetected === true) result.warnings.push('Pluie prévue : modèles non autorisés sous la pluie exclus.');
-  if (input.weather.dayNight === 'night') result.warnings.push('Mission de nuit : modèles sans capacité nocturne exclus.');
+  if (input.weather.rainDetected === true) result.warnings.push('Pluie prévue : seuls les Matrice 4T sont autorisés.');
+  if (input.weather.dayNight === 'night') result.warnings.push('Mission de nuit : seuls les Matrice 4T sont autorisés.');
   if (input.weather.rainDetected === null) result.warnings.push('Pluie inconnue : compatibilité météo à confirmer.');
   if (metrics.priorityCoveragePercent === null && input.priorityZones.length) result.warnings.push('Zones prioritaires hors zone ou trop fines pour la grille ; vérifier le dessin.');
   result.estimate.assumptions = [
     'Heuristique gloutonne déterministe avec suppression des drones redondants ; aucun minimum mathématique garanti.',
     `Priorités pondérées ×${PRIORITY_WEIGHT} ; chevauchement autorisé : ${maximumOverlap} %.`,
     'Rayon adapté au besoin dans la limite de portée ; cap et angle ajustés ; surfaces découpées à la zone d’opération.',
+    'Disques 360° évalués avant les secteurs ; modèles standard répartis équitablement selon les stocks, Matrice 4T exclusivement la nuit ou sous la pluie.',
     mixed ? 'TP1/TP2 mixtes : préférence TP1 à gain équivalent, aucun TP2 à rayon ≤ 1 km.' : 'Scénario unique conservé pour compatibilité des missions précédentes.',
     `Grille adaptative : ${metrics.sampleCount} échantillons, espacement ~${Math.round(metrics.sampleSpacingMeters)} m.`,
     'Positions initiales drone/télépilote identiques par simplification, références distinctes.',

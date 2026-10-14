@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Coordinates, OperationZone, PriorityZone } from '../../types/geo';
 import type { DroneInstance, Pilot } from '../../types/drone';
-import { coveragePolygon, coveragePolygons, hasCoverage, outsideCoverageArc } from '../../engines/geometry/index.ts';
+import { coveragePolygon, coveragePolygons, hasCoverage, outsideCoverageArc, uncoveredDisplayPoints, overlapPolygons } from '../../engines/geometry/index.ts';
 import { MAP_SOURCES } from './mapSources';
 import { useOccupancyOverlay } from './occupancyOverlay';
 import { OCCUPANCY_STYLES } from '../../services/occupancy';
@@ -42,6 +42,9 @@ export function MissionMap(props: MapProps) {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const occupancy = useOccupancyOverlay(mapInstance, layer === 'occupation', !props.drawing && !props.placingDroneId);
   const geometryKey = JSON.stringify(props.operationZone?.geometry ?? null);
+  const displayDots = useMemo(() => props.operationZone && props.uncoveredPoints && (!!props.drones?.length || !!props.uncoveredPoints.length)
+    ? uncoveredDisplayPoints(props.operationZone.geometry, props.drones ?? []) : [], [props.operationZone, props.drones, !!props.uncoveredPoints, !!props.uncoveredPoints?.length]);
+  const sharedAreas = useMemo(() => props.operationZone ? overlapPolygons(props.operationZone.geometry, props.drones ?? []) : [], [props.operationZone, props.drones]);
   const [longitude, latitude] = props.center;
   useEffect(() => {
     if (!container.current) return;
@@ -92,7 +95,7 @@ export function MissionMap(props: MapProps) {
     layers.clearLayers();
     if (props.operationZone) L.polygon(rings(props.operationZone.geometry.coordinates), { stroke: false, fillColor: 'var(--map-operation)', fillOpacity: 0.07, interactive: false }).addTo(layers);
     props.priorityZones.forEach(z => L.polygon(rings(z.geometry.coordinates), { color: 'var(--map-priority)', weight: 2, fillColor: 'var(--map-priority-fill)', fillOpacity: 0.28, interactive: false }).addTo(layers));
-    if (layer !== 'occupation') props.uncoveredPoints?.forEach(point => L.circleMarker(latLng(point), {
+    if (layer !== 'occupation') displayDots.forEach(point => L.circleMarker(latLng(point), {
       className: 'uncovered-point', radius: 2, color: 'var(--map-lost)', fillColor: 'var(--map-lost)', weight: 0, fillOpacity: .8, interactive: false,
     }).addTo(layers));
     const vertices = props.vertices ?? [];
@@ -148,13 +151,17 @@ export function MissionMap(props: MapProps) {
       marker.on('click', () => { if (!callbacks.current.drawing && !callbacks.current.placingDroneId) callbacks.current.onSelect?.(`drone:${drone.id}`); });
       marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMoveDrone?.(drone.id, [p.lng, p.lat]); });
     });
+    // One nonzero path paints pair/triple overlaps uniformly without even-odd cancellation.
+    if (layer !== 'occupation' && sharedAreas.length) L.polygon(sharedAreas.map(polygon => rings(polygon.coordinates)), {
+      className: 'shared-coverage', stroke: false, fillColor: '#ffd43b', fillOpacity: .48, fillRule: 'nonzero', interactive: false,
+    }).addTo(layers);
     // Keep the operation outline identifiable where a clipped drone area shares its boundary.
     if (props.operationZone) {
       L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-contrast-light)', weight: 7, fill: false, opacity: 0.95, interactive: false }).addTo(layers);
       L.polygon(rings(props.operationZone.geometry.coordinates), { color: 'var(--map-operation)', weight: 3.5, fill: false, interactive: false }).addTo(layers);
     }
 
-  }, [props, layer]);
+  }, [props, layer, displayDots, sharedAreas]);
   return <div className={`map-wrap ${layer === 'satellite' ? 'satellite-map' : ''} ${props.drawing ? 'draw-lock' : ''}`}>
     <button className="map-center square-tool" disabled={props.drawing || !!props.placingDroneId || !props.operationZone} onClick={() => {
       if (props.operationZone) mapRef.current?.fitBounds(L.latLngBounds(props.operationZone.geometry.coordinates[0]!.map(latLng)), { padding: [100, 70], maxZoom: 15 });
@@ -175,6 +182,6 @@ export function MissionMap(props: MapProps) {
     <div ref={container} className={`mission-map ${props.drawing || props.placingDroneId ? 'drawing' : ''}`} role="region" aria-label="Carte de mission" />
     {layer === 'occupation'
       ? <div className="map-legend occupancy-legend" aria-label="Légende de l’occupation"><strong>Occupation</strong>{(Object.keys(OCCUPANCY_STYLES) as (keyof typeof OCCUPANCY_STYLES)[]).map(status => <span key={status}><i className="legend-swatch" style={{ background: OCCUPANCY_STYLES[status].color, borderColor: OCCUPANCY_STYLES[status].color }} />{OCCUPANCY_STYLES[status].label}</span>)}</div>
-      : <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span><i className="legend-swatch exterior-swatch" />Portée hors zone · dans le secteur</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span><i className="legend-dot" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>}
+      : <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span><i className="legend-swatch" style={{ background: '#ffd43b', borderColor: '#c69a00' }} />Chevauchement des drones</span><span><i className="legend-swatch exterior-swatch" />Portée hors zone · dans le secteur</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span><i className="legend-dot" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>}
   </div>;
 }

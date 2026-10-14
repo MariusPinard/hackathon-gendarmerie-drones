@@ -91,6 +91,11 @@ test('operations use embedded custom catalogue for capacities, resources and wea
   assert.throws(() => recalculateMission(source, { type: 'set_altitude', droneId: source.drones[0].id, altitudeMetersAgl: 40 }), /35/);
   source.availableResources.dronesByModel[custom.id] = 0;
   assert.ok(detectConflicts(source).some(conflict => conflict.type === 'resource_shortage' && conflict.message.includes(custom.name)));
+  source.weather.dayNight = 'night';
+  assert.ok(detectConflicts(source).some(conflict => conflict.message.includes('mission de nuit') && conflict.droneIds.includes(source.drones[0].id)));
+  source.weather.dayNight = 'day'; source.weather.rainDetected = true;
+  assert.ok(detectConflicts(source).some(conflict => conflict.type === 'rain_incompatibility' && conflict.droneIds.includes(source.drones[0].id)));
+  source.weather.rainDetected = false;
   source.weather.dayNight = 'night'; source.droneCatalog = [...DRONE_CATALOG, { ...custom, nightCapable: false }];
   assert.ok(detectConflicts(source).some(conflict => conflict.message.includes('mission de nuit') && conflict.droneIds.includes(source.drones[0].id)));
 });

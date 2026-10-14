@@ -21,9 +21,9 @@ export function detectConflicts(mission: Mission): Conflict[] {
     const capability = model?.capabilities.find(c => c.id === drone.capabilityId);
     const pilot = mission.pilots.find(p => p.id === drone.pilotId);
     const add = (type: Conflict['type'], message: string) => conflicts.push({ id: `${type}-${drone.id}`, type, droneIds: [drone.id], message, approximatePosition: [...drone.dronePosition] });
-    if (model?.incompatibleWithRain && mission.weather.rainDetected === true)
+    if (model && (model.id !== 'dji-matrice-4t' || model.incompatibleWithRain) && mission.weather.rainDetected === true)
       add('rain_incompatibility', `${drone.id} : ${model.name} non autorisé sous la pluie prévue.`);
-    if (model && model.nightCapable !== true && mission.weather.dayNight === 'night')
+    if (model && (model.id !== 'dji-matrice-4t' || model.nightCapable !== true) && mission.weather.dayNight === 'night')
       add('capability_limit', `${drone.id} : ${model.name} non autorisé pour une mission de nuit.`);
     if (!capability || !pilot) add('capability_limit', `${drone.id} : modèle, scénario ou télépilote inconnu.`);
     else {

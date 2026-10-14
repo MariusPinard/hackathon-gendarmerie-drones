@@ -67,19 +67,18 @@ test('configured working angle and overlap ceiling are enforced with clear parti
   assert.throws(() => generatePlan({ ...source, constraints: { ...source.constraints, maximumOverlapPercent: 101 } }), /Chevauchement/);
 });
 
-test('rain or night excludes Mavic and Mini independently; custom models participate with explicit abilities', () => {
+test('rain or night exclusively uses Matrice 4T; custom models remain available in dry daytime', () => {
   for (const weather of [{ dayNight: 'night', rainDetected: false }, { dayNight: 'day', rainDetected: true }]) {
     const source = input(); source.weather = { ...source.weather, ...weather };
     assert.ok(generatePlan(source).drones.every(drone => drone.modelId === 'dji-matrice-4t'));
   }
   const source = input(), custom = { ...DRONE_CATALOG[0], id: 'custom-field', name: 'Drone personnalisé', nightCapable: true, incompatibleWithRain: false };
   source.catalog = [custom]; source.availableResources.dronesByModel = { 'custom-field': 2 };
-  source.weather = { ...source.weather, dayNight: 'night', rainDetected: true };
   const plan = generatePlan(source);
   assert.deepEqual(Object.keys(plan.estimate.dronesByModel), ['custom-field']);
   assert.equal(plan.drones[0].modelId, 'custom-field');
   assert.equal(estimateResources(source).pilotCount, 1);
-  source.catalog = [{ ...custom, nightCapable: false }];
+  source.weather = { ...source.weather, dayNight: 'night', rainDetected: true };
   assert.throws(() => generatePlan(source), /compatible/);
 });
 
@@ -155,4 +154,38 @@ test('authorization dates and counts are validated, with explicit out-of-window 
   assert.throws(() => generatePlan(source), /Autorisation/);
   source.constraints.authorization = { ...authorization(2), endAt: '2026-10-15T10:00:00Z' };
   assert.throws(() => generatePlan(source), /période/);
+});
+
+
+test('dry daytime standard fleet is balanced after geometry selection and respects scarce stocks', () => {
+  const source = input(.05, .025), before = structuredClone(source);
+  const plan = generatePlan(source);
+  const counts = DRONE_CATALOG.map(model => plan.drones.filter(drone => drone.modelId === model.id).length);
+  assert.ok(plan.drones.length >= 3);
+  assert.ok(Math.max(...counts) - Math.min(...counts) <= 1);
+  assert.deepEqual(source, before);
+  const scarce = structuredClone(source);
+  scarce.availableResources.dronesByModel['dji-matrice-4t'] = 0;
+  scarce.availableResources.dronesByModel['dji-mini-5'] = 1;
+  const limited = generatePlan(scarce);
+  assert.ok(limited.drones.every(drone => drone.modelId !== 'dji-matrice-4t'));
+  assert.ok(limited.drones.filter(drone => drone.modelId === 'dji-mini-5').length <= 1);
+  assert.ok(computeCoverage(limited).totalCoveragePercent >= 98);
+});
+
+test('a single drone closes its disk when the full circle covers the operation', () => {
+  const source = input(), plan = generatePlan(source);
+  assert.equal(plan.drones.length, 1);
+  assert.equal(plan.drones[0].coverage.workingAngleDegrees, 360);
+  assert.equal(computeCoverage(plan).totalCoveragePercent, 100);
+});
+
+test('weather restriction never falls back to another model when 4T stock is exhausted', () => {
+  const source = input(); source.availableResources.dronesByModel['dji-matrice-4t'] = 0;
+  for (const weather of [{ rainDetected: true, dayNight: 'day' }, { rainDetected: false, dayNight: 'night' }]) {
+    const plan = generatePlan({ ...source, weather: { ...source.weather, ...weather } });
+    assert.equal(plan.drones.length, 0);
+    assert.equal(computeCoverage(plan).totalCoveragePercent, 0);
+    assert.ok(plan.warnings.some(warning => warning.includes('partielle')));
+  }
 });

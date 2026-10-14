@@ -21,7 +21,8 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
   }
   return <div className="drone-controls"><h3>{drone.id} · {modelName ?? DRONE_CATALOG.find(m => m.id === drone.modelId)?.name}</h3>
     <p className="muted">{drone.pilotId} · Rayon {drone.coverage.radiusMeters} m · {drone.capabilityId}</p>
-    <button className="wide" disabled={!enabled} onClick={onPlace}>⌖ Déplacer le drone sur la carte</button><p className="muted">Glisser-déposer le marqueur D, ou cliquer ce bouton puis sa nouvelle position.</p>
+    <button className="wide" disabled={!active || !['active', 'ready', 'unavailable', 'reserve'].includes(drone.status)} onClick={() => onChange({ type: 'set_availability', droneId: drone.id, status: ['unavailable', 'reserve'].includes(drone.status) ? 'active' : 'unavailable' })}>
+      {drone.status === 'reserve' ? 'Engager ce drone supplémentaire' : drone.status === 'unavailable' ? 'Déployer le drone' : 'Mettre le drone en réserve'}</button>
     <label>Altitude (m/sol)<input type="number" min={0} max={maxAltitude} step={1} disabled={!enabled} value={altitude} onChange={e => setAltitude(e.target.value)} /></label>
     <button disabled={!enabled || !altitude.trim() || !Number.isFinite(Number(altitude)) || Number(altitude) < 0 || Number(altitude) > maxAltitude} onClick={() => onChange({ type: 'set_altitude', droneId: drone.id, altitudeMetersAgl: Number(altitude) })}>Appliquer l’altitude</button>
     <p className="muted">Plafond : {maxAltitude} m · séparation minimale : {separation} m.</p>
@@ -33,7 +34,7 @@ export function DroneControls({ drone, maxAltitude, active, onChange, onPreview,
     {!validSector && <p className="notice error">Cap attendu : 0–359° ; angle : 1–360°.</p>}
     <button className="primary wide" disabled={!enabled || !validSector} onClick={() => onChange({ type: 'set_coverage', droneId: drone.id, headingDegrees: Number(heading), workingAngleDegrees: Number(angle) })}>Appliquer le cap et l’angle</button>
     <p className="muted">360° : disque · angle réduit : secteur orienté.</p>
-    <button className="wide" disabled={!active || !['active', 'ready', 'unavailable', 'reserve'].includes(drone.status)} onClick={() => onChange({ type: 'set_availability', droneId: drone.id, status: ['unavailable', 'reserve'].includes(drone.status) ? 'active' : 'unavailable' })}>
-      {drone.status === 'reserve' ? 'Engager ce drone supplémentaire' : drone.status === 'unavailable' ? 'Déployer le drone' : 'Mettre le drone en réserve'}</button>
+
+    <button className="wide" disabled={!enabled} onClick={onPlace}>⌖ Déplacer le drone sur la carte</button><p className="muted">Glisser-déposer le marqueur D, ou cliquer ce bouton puis sa nouvelle position.</p>
   </div>;
 }

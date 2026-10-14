@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export interface MapTool { id: string; label: string; icon: string; disabled?: boolean }
+export interface MapTool { id: string; label: string; icon: string; disabled?: boolean; onActivate?: () => void; active?: boolean }
 
 export function MapWorkspace({ children, tools, panel, onPanel, title, panelContent, locked = false, fleet, onFleet, fleetOpen = false, floating, status, rightPanel, rightPanelTitle, onRightPanelClose }: {
   children: ReactNode; tools: MapTool[]; panel: string | null; onPanel: (panel: string | null) => void;
@@ -10,9 +10,10 @@ export function MapWorkspace({ children, tools, panel, onPanel, title, panelCont
   return <section className="map-workspace">
     <div className="workspace-map">{children}</div>
     <div className="workspace-tools" aria-label="Panneaux cartographiques">
-      {tools.map(tool => <button key={tool.id} className={`square-tool ${panel === tool.id ? 'active' : ''}`} title={tool.label}
-        aria-label={tool.label} aria-expanded={panel === tool.id} disabled={locked || tool.disabled}
+      {tools.map(tool => <button key={tool.id} className={`square-tool ${panel === tool.id || tool.active ? 'active' : ''}`} title={tool.label}
+        aria-label={tool.label} aria-expanded={tool.onActivate ? undefined : panel === tool.id} aria-pressed={tool.active} disabled={locked || tool.disabled}
         onClick={() => {
+          if (tool.onActivate) { tool.onActivate(); return; }
           if (fleetOpen && window.matchMedia('(max-width: 1100px)').matches) onFleet?.();
           onPanel(panel === tool.id ? null : tool.id);
         }}><span className="tool-icon" aria-hidden="true">{tool.icon}</span><span>{tool.label}</span><span className="tool-arrow" aria-hidden="true">{panel === tool.id ? '‹' : '›'}</span></button>)}
