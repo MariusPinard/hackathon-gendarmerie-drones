@@ -118,7 +118,7 @@ export function MissionMap(props: MapProps) {
       marker.on('dragend', () => { const p = marker.getLatLng(); callbacks.current.onMovePilot?.(pilot.id, [p.lng, p.lat]); });
     });
     props.drones?.forEach((drone, index) => {
-      const conflict = props.conflictDroneIds?.includes(drone.id);
+      const conflict = hasCoverage(drone) && props.conflictDroneIds?.includes(drone.id);
       const selected = props.selected === `drone:${drone.id}`;
       const color = conflict ? 'var(--map-conflict)' : selected ? 'var(--map-selected)' : 'var(--map-coverage)';
       if (hasCoverage(drone) || (selected && drone.status === 'reserve')) {

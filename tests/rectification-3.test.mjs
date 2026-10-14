@@ -84,3 +84,38 @@ test('dotted circle arcs contain only exterior segments, with exact boundary cut
   const inner = coveragePolygon({ center: [.003, .003], radiusMeters: 40, headingDegrees: 0, workingAngleDegrees: 360 });
   assert.equal(outsidePolygonOutline(inner, operation).length, 1);
 });
+
+test('putting an engaged drone in reserve permits repositioning and redeployment before and after launch', () => {
+  for (const duringOperation of [false, true]) {
+    const source = duringOperation ? startMission(prepared()).mission : prepared();
+    const edit = duringOperation ? recalculateMission : editPreparedMission;
+    const id = source.drones.find(d => ['active', 'ready'].includes(d.status)).id;
+    const before = structuredClone(source);
+    const reserved = edit(source, { type: 'set_availability', droneId: id, status: 'reserve' });
+    assert.equal(reserved.mission.drones.find(d => d.id === id).status, 'reserve');
+    assert.equal(reserved.coverage.usedDroneCount, 0);
+    assert.ok(!reserved.conflicts.some(c => c.droneIds.includes(id)));
+    const position = [.004, .004];
+    const moved = edit(reserved.mission, { type: 'move_drone', droneId: id, dronePosition: position });
+    const drone = moved.mission.drones.find(d => d.id === id);
+    assert.equal(drone.status, 'reserve');
+    assert.deepEqual(drone.dronePosition, position);
+    assert.deepEqual(drone.coverage.center, position);
+    assert.deepEqual(moved.mission.pilots.find(p => p.id === drone.pilotId).pilotPosition, position);
+    assert.equal(moved.coverage.usedDroneCount, 0);
+    const deployed = edit(moved.mission, { type: 'set_availability', droneId: id, status: 'active' });
+    assert.equal(deployed.mission.drones.find(d => d.id === id).status, duringOperation ? 'active' : 'ready');
+    assert.equal(deployed.coverage.usedDroneCount, 1);
+    assert.equal(deployed.conflicts.length, 0);
+    assert.deepEqual(source, before);
+  }
+});
+
+test('an unavailable unit can return to reserve for placement without activating its coverage', () => {
+  const source = startMission(prepared()).mission, id = source.drones[0].id;
+  const unavailable = recalculateMission(source, { type: 'set_availability', droneId: id, status: 'unavailable' });
+  const reserve = recalculateMission(unavailable.mission, { type: 'set_availability', droneId: id, status: 'reserve' });
+  assert.equal(reserve.mission.drones[0].status, 'reserve');
+  assert.equal(reserve.coverage.usedDroneCount, 0);
+  assert.doesNotThrow(() => recalculateMission(reserve.mission, { type: 'move_drone', droneId: id, dronePosition: [.003,.003] }));
+});

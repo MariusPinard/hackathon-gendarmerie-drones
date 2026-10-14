@@ -112,7 +112,7 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
           || !Number.isFinite(change.workingAngleDegrees) || change.workingAngleDegrees < 1 || change.workingAngleDegrees > 360) throw new Error('Cap : 0–359° ; angle : 1–360°.');
         drone.coverage.headingDegrees = change.headingDegrees; drone.coverage.workingAngleDegrees = change.workingAngleDegrees; break;
       case 'set_availability':
-        if (!['active', 'unavailable'].includes(change.status) || !['active', 'unavailable', 'reserve'].includes(drone.status)) throw new Error('Transition de disponibilité invalide.');
+        if (!['active', 'reserve', 'unavailable'].includes(change.status) || !['active', 'unavailable', 'reserve'].includes(drone.status)) throw new Error('Transition de disponibilité invalide.');
         if (drone.status === 'reserve' && change.status === 'active') {
           const capability = (mission.droneCatalog ?? DRONE_CATALOG).find(model => model.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId);
           const ceiling = capability?.maxAltitudeMetersAgl[mission.constraints.environment] ?? 0;
@@ -130,6 +130,7 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
     }
   }
   const result = inspectMission(mission);
+  if (change.type === 'set_availability' && change.status === 'reserve') result.warnings.push('Drone en réserve : couverture retirée. Placez le drone avant de le déployer.');
   if (change.type === 'set_availability' && change.status === 'unavailable') result.warnings.push('Drone indisponible : couverture retirée. Les autres positions sont conservées ; une réorganisation locale peut être demandée.');
   return result;
 }

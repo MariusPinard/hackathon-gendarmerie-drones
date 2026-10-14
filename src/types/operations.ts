@@ -17,7 +17,7 @@ export type MissionChange =
   | { type: 'move_pilot'; pilotId: string; pilotPosition: Coordinates }
   | { type: 'set_altitude'; droneId: string; altitudeMetersAgl: number }
   | { type: 'set_coverage'; droneId: string; headingDegrees: number; workingAngleDegrees: number }
-  | { type: 'set_availability'; droneId: string; status: Extract<DroneStatus, 'active' | 'unavailable'> };
+  | { type: 'set_availability'; droneId: string; status: Extract<DroneStatus, 'active' | 'reserve' | 'unavailable'> };
 
 export interface OperationsResult {
   mission: Mission;
