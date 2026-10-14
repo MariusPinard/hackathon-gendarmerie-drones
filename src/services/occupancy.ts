@@ -8,7 +8,7 @@
  * Screening from open data only: never an authorization, the spot is checked on the ground.
  */
 
-export type OccupancyStatus = 'free' | 'free_unconfirmed' | 'light_vegetation' | 'limited_range' | 'no_access' | 'masked'
+export type OccupancyStatus = 'free' | 'free_unconfirmed' | 'limited_range' | 'no_access' | 'masked'
   | 'out_of_range' | 'steep' | 'obstacle_buffer' | 'occupied';
 export type TakeoffVerdict = 'possible' | 'conditional' | 'impossible';
 
@@ -18,8 +18,6 @@ export interface OccupancyZone {
   label: string;
   reason_label: string | null;
   takeoff: TakeoffVerdict;
-  /** A ≥ 70, B 45–70, C < 45 on the takeoff quality score (free cells only). */
-  quality?: 'A' | 'B' | 'C' | null;
   area_m2: number;
   geometry: { type: 'MultiPolygon'; coordinates: number[][][][] };
 }
@@ -42,7 +40,6 @@ export interface CommuneOccupancy {
 export const OCCUPANCY_STYLES: Record<OccupancyStatus, { label: string; color: string }> = {
   free: { label: 'Libre', color: '#1f9d55' },
   free_unconfirmed: { label: 'Libre non confirmé', color: '#9bd36b' },
-  light_vegetation: { label: 'Végétation basse', color: '#c9a227' },
   limited_range: { label: 'Portée partielle', color: '#e2c23b' },
   no_access: { label: 'Accès éloigné', color: '#6f86b8' },
   masked: { label: 'Vue masquée', color: '#e8862e' },
@@ -87,24 +84,15 @@ function inRing(x: number, y: number, ring: number[][]): boolean {
   return inside;
 }
 
-/** True when the four tile corners fall inside precomputed communes (no live request needed). */
-export function tileCoveredBy(communes: CommuneOccupancy | CommuneOccupancy[] | null, [w, s, e, n]: Tile['bbox']): boolean {
-  const list = Array.isArray(communes) ? communes : communes ? [communes] : [];
-  const polygons = list.flatMap(commune => (commune.commune.geometry.type === 'Polygon'
-    ? [commune.commune.geometry.coordinates] : commune.commune.geometry.coordinates) as number[][][][]);
-  return polygons.length > 0 && [[w, s], [e, s], [e, n], [w, n]].every(([x, y]) => polygons.some(rings => inRing(x!, y!, rings[0]!)));
+/** True when the four tile corners fall inside the precomputed commune (no live request needed). */
+export function tileCoveredBy(commune: CommuneOccupancy | null, [w, s, e, n]: Tile['bbox']): boolean {
+  if (!commune) return false;
+  const polygons = (commune.commune.geometry.type === 'Polygon'
+    ? [commune.commune.geometry.coordinates] : commune.commune.geometry.coordinates) as number[][][][];
+  return [[w, s], [e, s], [e, n], [w, n]].every(([x, y]) => polygons.some(rings => inRing(x!, y!, rings[0]!)));
 }
 
-export interface CommuneManifestEntry { insee: string; name: string; file: string; generated_at: string; bbox: [number, number, number, number] }
-
-/** Precomputed communes listed in public/occupancy/index.json (Mirepoix when the list is absent). */
-export async function loadCommuneManifest(signal?: AbortSignal): Promise<CommuneManifestEntry[]> {
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}occupancy/index.json`, { signal: signal ?? null });
-    if (response.ok) { const list = await response.json() as CommuneManifestEntry[]; if (Array.isArray(list) && list.length) return list; }
-  } catch { /* fall back below */ }
-  return [{ insee: '09194', name: 'Mirepoix', file: 'commune-09194.json', generated_at: '', bbox: [1.814276, 43.066927, 1.927103, 43.160501] }];
-}
+export const PRECOMPUTED_COMMUNES = ['09194'];
 
 export async function loadCommuneOccupancy(insee: string, signal?: AbortSignal): Promise<CommuneOccupancy> {
   const response = await fetch(`${import.meta.env.BASE_URL}occupancy/commune-${insee}.json`, { signal: signal ?? null });
@@ -136,22 +124,4 @@ export async function fetchOccupancyTile(apiUrl: string, tile: Tile, signal?: Ab
     throw new Error(body?.error?.message ?? `Calcul d’occupation impossible (${response.status}).`);
   }
   return body;
-}
-
-/** Géoportail « Restrictions UAS » (catégorie Ouverte et aéromodélisme), zooms 3–15. */
-export const UAS_RESTRICTIONS_URL = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=TRANSPORTS.DRONES.RESTRICTIONS&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM_3_15&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
-
-export interface TakeoffFeedback { position: [number, number]; verdict: 'ok' | 'impossible'; comment?: string; recorded_at?: string }
-
-export async function sendFeedback(apiUrl: string, feedback: TakeoffFeedback): Promise<TakeoffFeedback> {
-  const response = await fetch(`${apiUrl}/api/v1/occupancy/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(feedback) });
-  if (!response.ok) throw new Error('Retour terrain non enregistré.');
-  return await response.json() as TakeoffFeedback;
-}
-
-export async function loadFeedback(apiUrl: string, signal?: AbortSignal): Promise<TakeoffFeedback[]> {
-  const response = await fetch(`${apiUrl}/api/v1/occupancy/feedback`, { signal: signal ?? null });
-  if (!response.ok) return [];
-  const body = await response.json() as { features: { geometry: { coordinates: [number, number] }; properties: TakeoffFeedback }[] };
-  return body.features.map(f => ({ ...f.properties, position: f.geometry.coordinates }));
 }

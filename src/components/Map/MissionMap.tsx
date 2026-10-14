@@ -41,8 +41,7 @@ export function MissionMap(props: MapProps) {
   const [tileError, setTileError] = useState(false);
   const [layer, setLayer] = useState<'plan' | 'satellite' | 'occupation'>('plan');
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [showRestrictions, setShowRestrictions] = useState(true);
-  const occupancy = useOccupancyOverlay(mapInstance, layer === 'occupation', !props.drawing && !props.placingDroneId, showRestrictions);
+  const occupancy = useOccupancyOverlay(mapInstance, layer === 'occupation', !props.drawing && !props.placingDroneId);
   const overlayId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const geometryKey = JSON.stringify(props.operationZone?.geometry ?? null);
   const [longitude, latitude] = props.center;
@@ -179,9 +178,7 @@ export function MissionMap(props: MapProps) {
     <div className="map-toolbar" aria-label="Fond cartographique"><button aria-pressed={layer === 'plan'} disabled={props.drawing} onClick={() => setLayer('plan')}>Plan</button><button aria-pressed={layer === 'satellite'} disabled={props.drawing} onClick={() => setLayer('satellite')}>Satellite</button><button aria-pressed={layer === 'occupation'} disabled={props.drawing} onClick={() => setLayer('occupation')} title="Où un télépilote peut décoller (données ouvertes, à vérifier sur le terrain)">Occupation</button></div>
     {layer === 'occupation' && <div className="occupancy-status" role="status">
       <strong>Occupation au décollage</strong>
-      {occupancy.precomputed && <span>Précalculé : {occupancy.precomputed}</span>}
-      <label className="occupancy-toggle"><input type="checkbox" checked={showRestrictions} onChange={event => setShowRestrictions(event.target.checked)} />Zones de restriction drones (Géoportail)</label>
-      {occupancy.liveAvailable && <span className="occupancy-hint">Clic sur une couleur : cause, qualité et retour terrain{occupancy.feedbackCount ? ` · ${occupancy.feedbackCount} retour(s)` : ''}</span>}
+      {occupancy.precomputed && <span>{occupancy.precomputed} : carte précalculée</span>}
       {!occupancy.liveAvailable ? <span>Calcul en direct non configuré.</span>
         : occupancy.pending > 0 ? <span>Calcul en cours · {occupancy.pending} tuile(s) (pointillés), ~15 s chacune, centre d’abord</span>
         : occupancy.toCompute > 0 ? <span>{occupancy.toCompute} tuile(s) visible(s) non calculée(s){occupancy.tooWide ? ' · vue large : les 24 plus proches du centre' : ''}</span>
@@ -193,7 +190,7 @@ export function MissionMap(props: MapProps) {
     {tileError && <div className="tile-notice" role="status">{layer === 'satellite' ? 'Imagerie IGN indisponible sur ce secteur.' : 'Fond cartographique indisponible.'} Les zones restent accessibles.{layer === 'satellite' && <button disabled={props.drawing} onClick={() => setLayer('plan')}>Revenir au plan</button>}</div>}
     <div ref={container} className={`mission-map ${props.drawing || props.placingDroneId ? 'drawing' : ''}`} role="region" aria-label="Carte de mission" />
     {layer === 'occupation'
-      ? <div className="map-legend" aria-label="Légende de l’occupation"><strong>Occupation</strong>{(['free', 'free_unconfirmed', 'light_vegetation', 'no_access', 'steep', 'obstacle_buffer', 'occupied'] as const).map(status => <span key={status}><i className="legend-swatch" style={{ background: OCCUPANCY_STYLES[status].color, borderColor: OCCUPANCY_STYLES[status].color }} />{OCCUPANCY_STYLES[status].label}</span>)}<span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>
+      ? <div className="map-legend" aria-label="Légende de l’occupation"><strong>Occupation</strong>{(['free', 'free_unconfirmed', 'no_access', 'steep', 'obstacle_buffer', 'occupied'] as const).map(status => <span key={status}><i className="legend-swatch" style={{ background: OCCUPANCY_STYLES[status].color, borderColor: OCCUPANCY_STYLES[status].color }} />{OCCUPANCY_STYLES[status].label}</span>)}<span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>
       : <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span className="lost-legend"><i className="legend-swatch lost-swatch" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>}
   </div>;
 }
