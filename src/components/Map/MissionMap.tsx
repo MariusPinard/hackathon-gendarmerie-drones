@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import type { Coordinates, OperationZone, PriorityZone } from '../../types/geo';
 import type { DroneInstance, Pilot } from '../../types/drone';
 import { coveragePolygon, hasCoverage } from '../../engines/geometry/index.ts';
+import { MAP_SOURCES } from './mapSources';
 
 interface MapProps {
   center: Coordinates;
@@ -38,8 +39,9 @@ export function MissionMap(props: MapProps) {
   useEffect(() => {
     if (!container.current) return;
     const map = L.map(container.current, { doubleClickZoom: false }).setView(latLng(callbacks.current.center), 12);
-    const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    const source = MAP_SOURCES.plan;
+    const tiles = L.tileLayer(source.urlTemplate, {
+      maxZoom: source.maxZoom, attribution: source.attribution,
     }).addTo(map);
     tiles.on('tileerror', () => setTileError(true));
     mapRef.current = map;
