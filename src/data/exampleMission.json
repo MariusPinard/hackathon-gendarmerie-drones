@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "id": "demo-rennes-001",
+    "name": "Exemple simulé — secteur Rennes",
+    "createdAt": "2026-10-14T09:00:00+02:00",
+    "updatedAt": "2026-10-14T09:00:00+02:00"
+  },
+  "scheduledAt": "2026-10-15T10:00:00+02:00",
+  "location": [-1.6778, 48.1173],
+  "operationZone": {
+    "type": "Feature",
+    "properties": { "id": "operation-1", "name": "Zone de démonstration", "kind": "operation" },
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[[-1.686, 48.113], [-1.67, 48.113], [-1.67, 48.122], [-1.686, 48.122], [-1.686, 48.113]]]
+    }
+  },
+  "priorityZones": [{
+    "type": "Feature",
+    "properties": { "id": "priority-1", "name": "Secteur prioritaire", "kind": "priority" },
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[[-1.68, 48.116], [-1.676, 48.116], [-1.676, 48.119], [-1.68, 48.119], [-1.68, 48.116]]]
+    }
+  }],
+  "weather": {
+    "status": "unavailable", "location": [-1.6778, 48.1173],
+    "dateTime": "2026-10-15T10:00:00+02:00",
+    "rainDetected": null, "dayNight": "unknown", "source": null
+  },
+  "constraints": {
+    "environment": "urban", "minimumVerticalSeparationMeters": 10, "defaultWorkingAngleDegrees": 360
+  },
+  "estimate": null,
+  "availableResources": {
+    "dronesByModel": { "dji-matrice-4t": 1, "dji-mavic-3-enterprise": 1, "dji-mini-5": 0 }
+  },
+  "pilots": [
+    { "id": "pilot-1", "name": "Télépilote A (fictif)", "qualification": "TP1", "pilotPosition": [-1.684, 48.114] },
+    { "id": "pilot-2", "name": "Télépilote B (fictif)", "qualification": "TP1", "pilotPosition": [-1.672, 48.114] }
+  ],
+  "drones": [
+    {
+      "id": "drone-1", "modelId": "dji-matrice-4t", "capabilityId": "tp1-out-of-sight", "pilotId": "pilot-1",
+      "dronePosition": [-1.68, 48.117], "altitudeMetersAgl": 50,
+      "coverage": { "center": [-1.68, 48.117], "radiusMeters": 300, "headingDegrees": 0, "workingAngleDegrees": 360 },
+      "status": "ready"
+    },
+    {
+      "id": "drone-2", "modelId": "dji-mavic-3-enterprise", "capabilityId": "tp1-out-of-sight", "pilotId": "pilot-2",
+      "dronePosition": [-1.675, 48.118], "altitudeMetersAgl": 60,
+      "coverage": { "center": [-1.675, 48.118], "radiusMeters": 300, "headingDegrees": 90, "workingAngleDegrees": 360 },
+      "status": "ready"
+    }
+  ],
+  "status": "draft"
+}
