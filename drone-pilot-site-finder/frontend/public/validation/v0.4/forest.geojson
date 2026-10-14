@@ -1,0 +1,455 @@
+{
+  "type": "FeatureCollection",
+  "features": [],
+  "metadata": {
+    "contract_version": "0.4",
+    "candidate_kind": "pilot_zone",
+    "mode": "analysis",
+    "is_demo": false,
+    "provider": "open_geodata",
+    "status": "no_candidates",
+    "sources": [
+      {
+        "id": "osm",
+        "name": "OpenStreetMap / Overpass",
+        "url": "https://overpass-api.de/api/interpreter",
+        "license": "ODbL 1.0",
+        "attribution": "© OpenStreetMap contributors",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.909977+00:00",
+        "acquisition_date": "2026-10-14T11:25:13Z",
+        "feature_count": 15,
+        "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+      },
+      {
+        "id": "ign:batiment",
+        "name": "IGN BD TOPO · batiment",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:53.304256+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": ""
+      },
+      {
+        "id": "ign:troncon_de_route",
+        "name": "IGN BD TOPO · troncon_de_route",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.105893+00:00",
+        "acquisition_date": null,
+        "feature_count": 22,
+        "detail": ""
+      },
+      {
+        "id": "ign:zone_de_vegetation",
+        "name": "IGN BD TOPO · zone_de_vegetation",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:53.844500+00:00",
+        "acquisition_date": null,
+        "feature_count": 2,
+        "detail": ""
+      },
+      {
+        "id": "ign:surface_hydrographique",
+        "name": "IGN BD TOPO · surface_hydrographique",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.500402+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": ""
+      },
+      {
+        "id": "ign:terrain_de_sport",
+        "name": "IGN BD TOPO · terrain_de_sport",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.300365+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": ""
+      },
+      {
+        "id": "ign:ligne_electrique",
+        "name": "IGN BD TOPO · ligne_electrique",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.632255+00:00",
+        "acquisition_date": null,
+        "feature_count": 2,
+        "detail": ""
+      },
+      {
+        "id": "ign:pylone",
+        "name": "IGN BD TOPO · pylone",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:54.767410+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": ""
+      },
+      {
+        "id": "ign:troncon_de_voie_ferree",
+        "name": "IGN BD TOPO · troncon_de_voie_ferree",
+        "url": "https://data.geopf.fr/wfs/ows",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD TOPO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:55.004608+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": ""
+      },
+      {
+        "id": "ign:ortho",
+        "name": "BD ORTHO",
+        "url": "https://data.geopf.fr/wms-r",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · BD ORTHO",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:53.733127+00:00",
+        "acquisition_date": null,
+        "feature_count": 1044480,
+        "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+      },
+      {
+        "id": "ign:lidar",
+        "name": "LiDAR HD MNT/MNS",
+        "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · LiDAR HD MNT/MNS",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:58.337677+00:00",
+        "acquisition_date": null,
+        "feature_count": 1681,
+        "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+      },
+      {
+        "id": "ign:roof_alti",
+        "name": "Toitures LiDAR MNT/MNS",
+        "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+        "license": "Licence Ouverte 2.0",
+        "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+        "status": "available",
+        "fetched_at": "2026-10-14T11:26:58.691614+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": "No sufficiently large eligible building footprint in search area."
+      },
+      {
+        "id": "panoramax",
+        "name": "Panoramax",
+        "url": "https://api.panoramax.xyz/api/search",
+        "license": "Per-image licence link",
+        "attribution": "Panoramax contributors",
+        "status": "disabled",
+        "fetched_at": "2026-10-14T11:26:58.693012+00:00",
+        "acquisition_date": null,
+        "feature_count": 0,
+        "detail": "Not queried: no candidates or Panoramax disabled."
+      }
+    ],
+    "search_area": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            2.6508102699459104,
+            48.39811147532444
+          ],
+          [
+            2.649189730054088,
+            48.39811147532444
+          ],
+          [
+            2.6489253261842816,
+            48.39812301356483
+          ],
+          [
+            2.648665445617761,
+            48.39815743460281
+          ],
+          [
+            2.6484145346534893,
+            48.398214149529956
+          ],
+          [
+            2.6481768861645523,
+            48.39829218800978
+          ],
+          [
+            2.647956566165307,
+            48.39839021487569
+          ],
+          [
+            2.647757344255453,
+            48.39850655296956
+          ],
+          [
+            2.6475826291305187,
+            48.39863921183109
+          ],
+          [
+            2.647435410261267,
+            48.39878592174711
+          ],
+          [
+            2.6473182067398713,
+            48.39894417257903
+          ],
+          [
+            2.6472330241682362,
+            48.39911125670468
+          ],
+          [
+            2.6471813203268115,
+            48.399284315340005
+          ],
+          [
+            2.647163980212273,
+            48.39946038744884
+          ],
+          [
+            2.6471639202260713,
+            48.40053954259705
+          ],
+          [
+            2.6471812412523708,
+            48.40071561551899
+          ],
+          [
+            2.647232927772771,
+            48.400888676615395
+          ],
+          [
+            2.6473180957462725,
+            48.40105576471787
+          ],
+          [
+            2.6474352882083263,
+            48.401214020830956
+          ],
+          [
+            2.6475825001806705,
+            48.40136073705531
+          ],
+          [
+            2.647757212962213,
+            48.40149340292687
+          ],
+          [
+            2.6479564372154494,
+            48.40160974837903
+          ],
+          [
+            2.6481767641116134,
+            48.401707782592155
+          ],
+          [
+            2.6484144236598905,
+            48.40178582806486
+          ],
+          [
+            2.6486653492223144,
+            48.40184254932405
+          ],
+          [
+            2.6489252471098377,
+            48.40187697578159
+          ],
+          [
+            2.6491896700678903,
+            48.401888518346176
+          ],
+          [
+            2.65081032993211,
+            48.40188851834616
+          ],
+          [
+            2.6510747528901626,
+            48.4018769757816
+          ],
+          [
+            2.6513346507776934,
+            48.40184254932406
+          ],
+          [
+            2.65158557634011,
+            48.40178582806486
+          ],
+          [
+            2.651823235888387,
+            48.401707782592155
+          ],
+          [
+            2.652043562784543,
+            48.40160974837904
+          ],
+          [
+            2.652242787037783,
+            48.40149340292687
+          ],
+          [
+            2.6524174998193297,
+            48.40136073705531
+          ],
+          [
+            2.6525647117916784,
+            48.40121402083095
+          ],
+          [
+            2.652681904253732,
+            48.40105576471787
+          ],
+          [
+            2.652767072227225,
+            48.400888676615395
+          ],
+          [
+            2.6528187587476344,
+            48.40071561551899
+          ],
+          [
+            2.6528360797739268,
+            48.40053954259705
+          ],
+          [
+            2.652836019787727,
+            48.39946038744884
+          ],
+          [
+            2.6528186796731936,
+            48.39928431533999
+          ],
+          [
+            2.65276697583176,
+            48.39911125670468
+          ],
+          [
+            2.652681793260134,
+            48.398944172579036
+          ],
+          [
+            2.6525645897387378,
+            48.39878592174711
+          ],
+          [
+            2.652417370869486,
+            48.39863921183109
+          ],
+          [
+            2.6522426557445433,
+            48.39850655296956
+          ],
+          [
+            2.6520434338346974,
+            48.39839021487569
+          ],
+          [
+            2.651823113835452,
+            48.39829218800978
+          ],
+          [
+            2.651585465346511,
+            48.398214149529956
+          ],
+          [
+            2.651334554382235,
+            48.39815743460281
+          ],
+          [
+            2.6510746738157223,
+            48.39812301356483
+          ],
+          [
+            2.6508102699459104,
+            48.39811147532444
+          ]
+        ]
+      ]
+    },
+    "metric_crs": "+proj=aeqd +lat_0=48.39999999902351 +lon_0=2.650000000000001 +datum=WGS84 +units=m +type=crs",
+    "terrain_sampling_m": 10.500000000018147,
+    "elapsed_seconds": 6.09,
+    "phase_seconds": {
+      "acquisition": 5.72,
+      "ground_geometry": 0.35,
+      "local_3d": 0.0,
+      "scoring_visibility": 0.0,
+      "photos": 0.0
+    },
+    "diagnostics": {
+      "roof_buildings_eligible": 0,
+      "roof_buildings_sampled": 0,
+      "roof_without_surface_data": 0,
+      "roof_no_suitable_portion": 0,
+      "ground_shortlisted": 0,
+      "rooftop_portions": 0
+    },
+    "ranking": "interleaved_by_surface_type",
+    "validation_status": "awaiting_operator_review",
+    "excluded_area_m2": 0.0,
+    "options": {
+      "search_radius_m": 150.0,
+      "surroundings_only": false,
+      "min_area_m2": 60.0,
+      "min_width_m": 4.0,
+      "obstacle_buffer_m": 10.0,
+      "max_access_distance_m": 100.0,
+      "max_slope_deg": 12.0,
+      "terrain_spacing_m": 10.0,
+      "observer_height_m": 1.7,
+      "target_height_agl_m": 30.0,
+      "use_osm": true,
+      "use_ign": true,
+      "use_imagery": true,
+      "use_lidar": true,
+      "use_panoramax": true,
+      "require_terrain": false,
+      "include_ground": true,
+      "include_rooftops": true,
+      "roof_edge_setback_m": 3.0,
+      "max_roof_slope_deg": 8.0,
+      "roof_sample_spacing_m": 3.0,
+      "roof_shortlist_limit": 12,
+      "weights": {
+        "accessibility": 0.2,
+        "area": 0.15,
+        "slope": 0.2,
+        "obstacles": 0.15,
+        "openness": 0.2,
+        "proximity": 0.1
+      }
+    },
+    "count": 0,
+    "requested_count": 6,
+    "warnings": [
+      "Aucune surface ne satisfait les contraintes avec les éléments disponibles. Une absence de résultat n’est pas une absence de terrain utilisable."
+    ],
+    "limitations": [
+      "Aide à la décision, jamais une validation de sécurité ou une autorisation opérationnelle.",
+      "Données datées/incomplètes, obstacles fins et temporaires, personnes et occupations non garantis.",
+      "RGB et texture sont des indices visuels, sans modèle sémantique entraîné ni validation terrain.",
+      "Visibilité géométrique échantillonnée ≠ VLOS réelle ≠ qualité de liaison radio.",
+      "Toitures : accès, portance, protections contre les chutes et autorisations non validés. Scores sol/toiture issus de profils distincts ; classement alterné.",
+      "Les services publics reçoivent l’emprise de recherche ; ne pas soumettre de géographie confidentielle sans infrastructure approuvée."
+    ]
+  }
+}

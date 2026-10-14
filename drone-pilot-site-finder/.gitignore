@@ -1,0 +1,27 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node / Vite
+node_modules/
+*.tsbuildinfo
+
+# Local configuration, data and logs
+.env
+.env.*
+!.env.example
+*.log
+data/
+artifacts/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

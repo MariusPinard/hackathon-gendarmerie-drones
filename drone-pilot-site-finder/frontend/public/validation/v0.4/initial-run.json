@@ -1,0 +1,1649 @@
+{
+  "recorded_at": "2026-10-14T11:09:01.716717+00:00",
+  "validation_status": "awaiting_operator_review",
+  "cases": [
+    {
+      "id": "urban",
+      "label": "Urbain dense · Paris, BnF",
+      "http_status": 200,
+      "elapsed_seconds": 31.02,
+      "issues": [],
+      "counts": {
+        "ground": 3,
+        "rooftop": 3
+      },
+      "phases": {
+        "acquisition": 5.51,
+        "ground_geometry": 18.81,
+        "local_3d": 5.23,
+        "scoring_visibility": 0.85,
+        "photos": 0.53
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 33,
+        "roof_buildings_sampled": 12,
+        "roof_without_surface_data": 0,
+        "roof_no_suitable_portion": 3,
+        "ground_shortlisted": 3,
+        "rooftop_portions": 16
+      },
+      "status": "complete",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:33.672862+00:00",
+          "acquisition_date": "2026-10-14T11:05:51Z",
+          "feature_count": 1030,
+          "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:28.881286+00:00",
+          "acquisition_date": null,
+          "feature_count": 55,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:29.021612+00:00",
+          "acquisition_date": null,
+          "feature_count": 80,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:29.250034+00:00",
+          "acquisition_date": null,
+          "feature_count": 13,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:29.481644+00:00",
+          "acquisition_date": null,
+          "feature_count": 1,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:30.976688+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:29.956564+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:30.200918+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:30.478061+00:00",
+          "acquisition_date": null,
+          "feature_count": 11,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:29.368346+00:00",
+          "acquisition_date": null,
+          "feature_count": 1045504,
+          "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:33.677452+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:local_alti",
+          "name": "Relief local LiDAR / RGE ALTI",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Relief local LiDAR / RGE ALTI",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:52.776253+00:00",
+          "acquisition_date": null,
+          "feature_count": 24,
+          "detail": "24/24 local ground samples; 0 failed batches. Triangulated slopes inside each zone; sub-sample microrelief unknown."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:57.710954+00:00",
+          "acquisition_date": null,
+          "feature_count": 2067,
+          "detail": "2067/2067 paired local MNT/MNS samples; 0 failed batches. 12/33 building portions sampled. Bounded shortlist, equipment/edge proxies only; no access, structural capacity or fall-protection validation."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:58.922884+00:00",
+          "acquisition_date": null,
+          "feature_count": 360,
+          "detail": "Queries within 200 m: 6 zones, 0 failures. Up to 60 images per query; dates and coverage vary."
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone-860fecdd18c1",
+          "type": "ground",
+          "area_m2": 279.51,
+          "score": 75.4,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "roof-1f8af7ccad44",
+          "type": "rooftop",
+          "area_m2": 3022.18,
+          "score": 63.4,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 43.47,
+            "height_above_ground_m": 17.369999999999997,
+            "slope_deg": 0.0,
+            "sample_spacing_m": 22.66781884932531,
+            "valid_sample_fraction": 0.8771929824561403,
+            "surface_samples": 7,
+            "roughness_m": 0.8039999999999978,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "zone-68501a4c77a5",
+          "type": "ground",
+          "area_m2": 159.95,
+          "score": 69.9,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "roof-6188ae3d8650",
+          "type": "rooftop",
+          "area_m2": 2155.07,
+          "score": 63.4,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 43.42,
+            "height_above_ground_m": 6.760000000000005,
+            "slope_deg": 0.03996527751429989,
+            "sample_spacing_m": 22.66781884932531,
+            "valid_sample_fraction": 0.8771929824561403,
+            "surface_samples": 5,
+            "roughness_m": 0.8039999999999978,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "zone-c565f17aab54",
+          "type": "ground",
+          "area_m2": 71.03,
+          "score": 62.9,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "roof-970c1a5be424",
+          "type": "rooftop",
+          "area_m2": 860.64,
+          "score": 62.6,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 56.0,
+            "height_above_ground_m": 12.774999999999999,
+            "slope_deg": 0.01256403124537863,
+            "sample_spacing_m": 11.400755353848426,
+            "valid_sample_fraction": 0.8888888888888888,
+            "surface_samples": 8,
+            "roughness_m": 1.154000000000001,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "residential",
+      "label": "Résidentiel · Avon",
+      "http_status": 200,
+      "elapsed_seconds": 18.17,
+      "issues": [],
+      "counts": {
+        "ground": 2,
+        "rooftop": 4
+      },
+      "phases": {
+        "acquisition": 6.83,
+        "ground_geometry": 4.17,
+        "local_3d": 5.74,
+        "scoring_visibility": 0.96,
+        "photos": 0.45
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 21,
+        "roof_buildings_sampled": 12,
+        "roof_without_surface_data": 0,
+        "roof_no_suitable_portion": 6,
+        "ground_shortlisted": 2,
+        "rooftop_portions": 8
+      },
+      "status": "complete",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:01.377201+00:00",
+          "acquisition_date": "2026-10-14T11:06:51Z",
+          "feature_count": 460,
+          "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:07:59.963782+00:00",
+          "acquisition_date": null,
+          "feature_count": 293,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:00.149655+00:00",
+          "acquisition_date": null,
+          "feature_count": 91,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:00.333064+00:00",
+          "acquisition_date": null,
+          "feature_count": 5,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:00.548696+00:00",
+          "acquisition_date": null,
+          "feature_count": 1,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:00.848143+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:01.004959+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:01.951907+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:02.004562+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:00.636589+00:00",
+          "acquisition_date": null,
+          "feature_count": 1044480,
+          "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:05.974027+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:local_alti",
+          "name": "Relief local LiDAR / RGE ALTI",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Relief local LiDAR / RGE ALTI",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:10.660127+00:00",
+          "acquisition_date": null,
+          "feature_count": 12,
+          "detail": "12/12 local ground samples; 0 failed batches. Triangulated slopes inside each zone; sub-sample microrelief unknown."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:15.879370+00:00",
+          "acquisition_date": null,
+          "feature_count": 1558,
+          "detail": "1558/1558 paired local MNT/MNS samples; 0 failed batches. 12/21 building portions sampled. Bounded shortlist, equipment/edge proxies only; no access, structural capacity or fall-protection validation."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:17.165964+00:00",
+          "acquisition_date": null,
+          "feature_count": 360,
+          "detail": "Queries within 200 m: 6 zones, 0 failures. Up to 60 images per query; dates and coverage vary."
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone-ae5a17a68841",
+          "type": "ground",
+          "area_m2": 82.98,
+          "score": 60.8,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "roof-7a047b8d583a",
+          "type": "rooftop",
+          "area_m2": 204.25,
+          "score": 58.0,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 90.88,
+            "height_above_ground_m": 13.880000000000003,
+            "slope_deg": 0.2864765102770853,
+            "sample_spacing_m": 3.0,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 24,
+            "roughness_m": 0.24200000000000482,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "zone-5a5a95468f30",
+          "type": "ground",
+          "area_m2": 114.27,
+          "score": 60.1,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "roof-1b5e97416fb8",
+          "type": "rooftop",
+          "area_m2": 82.74,
+          "score": 52.1,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 90.88,
+            "height_above_ground_m": 13.950000000000003,
+            "slope_deg": 0.2864765102770853,
+            "sample_spacing_m": 3.0,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 11,
+            "roughness_m": 0.24200000000000482,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-7de5b4017aeb",
+          "type": "rooftop",
+          "area_m2": 86.21,
+          "score": 48.1,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 90.61,
+            "height_above_ground_m": 13.64,
+            "slope_deg": 0.0,
+            "sample_spacing_m": 3.0,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 11,
+            "roughness_m": 0.7199999999999989,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-6575ade350ed",
+          "type": "rooftop",
+          "area_m2": 115.23,
+          "score": 46.2,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 84.97,
+            "height_above_ground_m": 16.58,
+            "slope_deg": 0.0,
+            "sample_spacing_m": 6.0586212516991065,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 5,
+            "roughness_m": 3.210000000000008,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rural",
+      "label": "Rural · Janville-en-Beauce",
+      "http_status": 200,
+      "elapsed_seconds": 17.06,
+      "issues": [],
+      "counts": {
+        "ground": 4,
+        "rooftop": 0
+      },
+      "phases": {
+        "acquisition": 6.59,
+        "ground_geometry": 5.32,
+        "local_3d": 4.55,
+        "scoring_visibility": 0.23,
+        "photos": 0.34
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 23,
+        "roof_buildings_sampled": 12,
+        "roof_without_surface_data": 12,
+        "roof_no_suitable_portion": 0,
+        "ground_shortlisted": 4,
+        "rooftop_portions": 0
+      },
+      "status": "partial",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:19.813419+00:00",
+          "acquisition_date": "2026-10-14T11:06:51Z",
+          "feature_count": 584,
+          "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:18.159614+00:00",
+          "acquisition_date": null,
+          "feature_count": 483,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:18.254365+00:00",
+          "acquisition_date": null,
+          "feature_count": 89,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:18.508405+00:00",
+          "acquisition_date": null,
+          "feature_count": 6,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:18.706371+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:19.139222+00:00",
+          "acquisition_date": null,
+          "feature_count": 4,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:19.188376+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:19.413508+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:19.790184+00:00",
+          "acquisition_date": null,
+          "feature_count": 3,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:18.604980+00:00",
+          "acquisition_date": null,
+          "feature_count": 1044480,
+          "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "unavailable",
+          "fetched_at": "2026-10-14T11:08:22.424499+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 0/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:alti",
+          "name": "RGE ALTI",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · RGE ALTI",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:23.902676+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Ground-only fallback: 1681/1681 samples; 0 failed batches. No surface obstacles invented."
+        },
+        {
+          "id": "ign:local_alti",
+          "name": "Relief local LiDAR / RGE ALTI",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Relief local LiDAR / RGE ALTI",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:30.108161+00:00",
+          "acquisition_date": null,
+          "feature_count": 30,
+          "detail": "30/30 local ground samples; 0 failed batches. Triangulated slopes inside each zone; sub-sample microrelief unknown."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "unavailable",
+          "fetched_at": "2026-10-14T11:08:33.778115+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "0/1215 paired local MNT/MNS samples; 0 failed batches. 12/23 building portions sampled. Bounded shortlist, equipment/edge proxies only; no access, structural capacity or fall-protection validation."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:34.333067+00:00",
+          "acquisition_date": null,
+          "feature_count": 240,
+          "detail": "Queries within 200 m: 4 zones, 0 failures. Up to 60 images per query; dates and coverage vary."
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone-01e8a7e23819",
+          "type": "ground",
+          "area_m2": 446.82,
+          "score": 80.5,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "zone-c9a51d7249df",
+          "type": "ground",
+          "area_m2": 654.41,
+          "score": 77.9,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "zone-9e4f74e9b563",
+          "type": "ground",
+          "area_m2": 402.18,
+          "score": 76.0,
+          "missing": [],
+          "roof": null
+        },
+        {
+          "id": "zone-e178193d9a6f",
+          "type": "ground",
+          "area_m2": 295.01,
+          "score": 71.1,
+          "missing": [],
+          "roof": null
+        }
+      ]
+    },
+    {
+      "id": "forest",
+      "label": "Forestier · Fontainebleau",
+      "http_status": 200,
+      "elapsed_seconds": 6.06,
+      "issues": [],
+      "counts": {
+        "ground": 0,
+        "rooftop": 0
+      },
+      "phases": {
+        "acquisition": 5.28,
+        "ground_geometry": 0.77,
+        "local_3d": 0.0,
+        "scoring_visibility": 0.0,
+        "photos": 0.0
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 0,
+        "roof_buildings_sampled": 0,
+        "roof_without_surface_data": 0,
+        "roof_no_suitable_portion": 0,
+        "ground_shortlisted": 0,
+        "rooftop_portions": 0
+      },
+      "status": "no_candidates",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:36.773915+00:00",
+          "acquisition_date": "2026-10-14T11:06:51Z",
+          "feature_count": 15,
+          "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.031337+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.177457+00:00",
+          "acquisition_date": null,
+          "feature_count": 22,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.438095+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.641672+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.878356+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:36.133140+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:36.353302+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:36.591834+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:35.274763+00:00",
+          "acquisition_date": null,
+          "feature_count": 1044480,
+          "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:39.645118+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:40.415470+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "No sufficiently large eligible building footprint in search area."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "disabled",
+          "fetched_at": "2026-10-14T11:08:40.416137+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "Not queried: no candidates or Panoramax disabled."
+        }
+      ],
+      "zones": []
+    },
+    {
+      "id": "relief",
+      "label": "Relief · Chamonix, versant",
+      "http_status": 200,
+      "elapsed_seconds": 7.41,
+      "issues": [],
+      "counts": {
+        "ground": 0,
+        "rooftop": 0
+      },
+      "phases": {
+        "acquisition": 7.38,
+        "ground_geometry": 0.01,
+        "local_3d": 0.0,
+        "scoring_visibility": 0.0,
+        "photos": 0.0
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 0,
+        "roof_buildings_sampled": 0,
+        "roof_without_surface_data": 0,
+        "roof_no_suitable_portion": 0,
+        "ground_shortlisted": 0,
+        "rooftop_portions": 0
+      },
+      "status": "no_candidates",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:47.807043+00:00",
+          "acquisition_date": "2026-10-14T11:06:51Z",
+          "feature_count": 8,
+          "detail": "OSM is not an exhaustive obstacle/access inventory. Skipped: 0."
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:41.111865+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:41.224739+00:00",
+          "acquisition_date": null,
+          "feature_count": 2,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:41.573854+00:00",
+          "acquisition_date": null,
+          "feature_count": 4,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:41.783611+00:00",
+          "acquisition_date": null,
+          "feature_count": 1,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:41.969488+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:42.173286+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:42.408572+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:42.661475+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "unavailable",
+          "fetched_at": "2026-10-14T11:08:40.615289+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "HTTPStatusError: source request failed"
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:46.678371+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:47.821334+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "No sufficiently large eligible building footprint in search area."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "disabled",
+          "fetched_at": "2026-10-14T11:08:47.822203+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "Not queried: no candidates or Panoramax disabled."
+        }
+      ],
+      "zones": []
+    },
+    {
+      "id": "mixed",
+      "label": "Mixte · Campus de Grenoble",
+      "http_status": 200,
+      "elapsed_seconds": 13.88,
+      "issues": [],
+      "counts": {
+        "ground": 0,
+        "rooftop": 6
+      },
+      "phases": {
+        "acquisition": 9.35,
+        "ground_geometry": 0.68,
+        "local_3d": 3.09,
+        "scoring_visibility": 0.27,
+        "photos": 0.48
+      },
+      "diagnostics": {
+        "roof_buildings_eligible": 25,
+        "roof_buildings_sampled": 12,
+        "roof_without_surface_data": 0,
+        "roof_no_suitable_portion": 2,
+        "ground_shortlisted": 0,
+        "rooftop_portions": 13
+      },
+      "status": "partial",
+      "sources": [
+        {
+          "id": "osm",
+          "name": "OpenStreetMap / Overpass",
+          "url": "https://overpass-api.de/api/interpreter",
+          "license": "ODbL 1.0",
+          "attribution": "© OpenStreetMap contributors",
+          "status": "unavailable",
+          "fetched_at": "2026-10-14T11:08:57.180963+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": "HTTPStatusError: source request failed"
+        },
+        {
+          "id": "ign:batiment",
+          "name": "IGN BD TOPO · batiment",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:48.595688+00:00",
+          "acquisition_date": null,
+          "feature_count": 59,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_route",
+          "name": "IGN BD TOPO · troncon_de_route",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:48.705878+00:00",
+          "acquisition_date": null,
+          "feature_count": 137,
+          "detail": ""
+        },
+        {
+          "id": "ign:zone_de_vegetation",
+          "name": "IGN BD TOPO · zone_de_vegetation",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:48.932208+00:00",
+          "acquisition_date": null,
+          "feature_count": 24,
+          "detail": ""
+        },
+        {
+          "id": "ign:surface_hydrographique",
+          "name": "IGN BD TOPO · surface_hydrographique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:49.162272+00:00",
+          "acquisition_date": null,
+          "feature_count": 1,
+          "detail": ""
+        },
+        {
+          "id": "ign:terrain_de_sport",
+          "name": "IGN BD TOPO · terrain_de_sport",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:49.385121+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:ligne_electrique",
+          "name": "IGN BD TOPO · ligne_electrique",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:49.612863+00:00",
+          "acquisition_date": null,
+          "feature_count": 3,
+          "detail": ""
+        },
+        {
+          "id": "ign:pylone",
+          "name": "IGN BD TOPO · pylone",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:49.857542+00:00",
+          "acquisition_date": null,
+          "feature_count": 0,
+          "detail": ""
+        },
+        {
+          "id": "ign:troncon_de_voie_ferree",
+          "name": "IGN BD TOPO · troncon_de_voie_ferree",
+          "url": "https://data.geopf.fr/wfs/ows",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD TOPO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:50.127020+00:00",
+          "acquisition_date": null,
+          "feature_count": 3,
+          "detail": ""
+        },
+        {
+          "id": "ign:ortho",
+          "name": "BD ORTHO",
+          "url": "https://data.geopf.fr/wms-r",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · BD ORTHO",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:48.664538+00:00",
+          "acquisition_date": null,
+          "feature_count": 1044480,
+          "detail": "RGB/texture proxies only; ~0.41 m/pixel. Capture date unknown; shadows/clouds/season can mislead."
+        },
+        {
+          "id": "ign:lidar",
+          "name": "LiDAR HD MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · LiDAR HD MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:08:53.808057+00:00",
+          "acquisition_date": null,
+          "feature_count": 1681,
+          "detail": "Derived MNT/MNS sampled every 10.5 m; not raw points. 1681/1681 paired samples; 0 failed batches."
+        },
+        {
+          "id": "ign:roof_alti",
+          "name": "Toitures LiDAR MNT/MNS",
+          "url": "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json",
+          "license": "Licence Ouverte 2.0",
+          "attribution": "© IGN · Toitures LiDAR MNT/MNS",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:09:00.949844+00:00",
+          "acquisition_date": null,
+          "feature_count": 1297,
+          "detail": "1297/1297 paired local MNT/MNS samples; 0 failed batches. 12/25 building portions sampled. Bounded shortlist, equipment/edge proxies only; no access, structural capacity or fall-protection validation."
+        },
+        {
+          "id": "panoramax",
+          "name": "Panoramax",
+          "url": "https://api.panoramax.xyz/api/search",
+          "license": "Per-image licence link",
+          "attribution": "Panoramax contributors",
+          "status": "available",
+          "fetched_at": "2026-10-14T11:09:01.576200+00:00",
+          "acquisition_date": null,
+          "feature_count": 360,
+          "detail": "Queries within 200 m: 6 zones, 0 failures. Up to 60 images per query; dates and coverage vary."
+        }
+      ],
+      "zones": [
+        {
+          "id": "roof-e221e19f0327",
+          "type": "rooftop",
+          "area_m2": 204.76,
+          "score": 66.1,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 224.91,
+            "height_above_ground_m": 10.165000000000006,
+            "slope_deg": 0.0763586834217394,
+            "sample_spacing_m": 5.627625735308754,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 8,
+            "roughness_m": 2.447499999999991,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-b0f31e3160ae",
+          "type": "rooftop",
+          "area_m2": 427.77,
+          "score": 60.4,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 226.93,
+            "height_above_ground_m": 12.97999999999999,
+            "slope_deg": 1.5275254422128945,
+            "sample_spacing_m": 3.0,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 51,
+            "roughness_m": 0.05899999999997759,
+            "equipment_status": "not_resolved",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-119fe21ca2e0",
+          "type": "rooftop",
+          "area_m2": 881.52,
+          "score": 60.0,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 218.47,
+            "height_above_ground_m": 4.680000000000007,
+            "slope_deg": 2.128656484795857,
+            "sample_spacing_m": 6.456964700717466,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 25,
+            "roughness_m": 9.22999999999999,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-3a8cdc4419a5",
+          "type": "rooftop",
+          "area_m2": 809.3,
+          "score": 57.6,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 225.77,
+            "height_above_ground_m": 12.105000000000004,
+            "slope_deg": 2.9189949338348247,
+            "sample_spacing_m": 3.0,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 100,
+            "roughness_m": 0.11800000000000647,
+            "equipment_status": "not_resolved",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-38ba7e8bf5a9",
+          "type": "rooftop",
+          "area_m2": 64.97,
+          "score": 52.8,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 228.29500000000002,
+            "height_above_ground_m": 13.409999999999997,
+            "slope_deg": 0.0,
+            "sample_spacing_m": 4.050547794482482,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 4,
+            "roughness_m": 2.4239999999999813,
+            "equipment_status": "not_resolved",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        },
+        {
+          "id": "roof-8dc9ee671b7c",
+          "type": "rooftop",
+          "area_m2": 502.53,
+          "score": 50.5,
+          "missing": [
+            "accessibility"
+          ],
+          "roof": {
+            "building_source": "ign:batiment",
+            "surface_elevation_m": 224.52,
+            "height_above_ground_m": 11.110000000000014,
+            "slope_deg": 7.746418155671756,
+            "sample_spacing_m": 4.211788327625326,
+            "valid_sample_fraction": 1.0,
+            "surface_samples": 31,
+            "roughness_m": 1.1060000000000125,
+            "equipment_status": "suspected",
+            "access_status": "unknown",
+            "structural_capacity": "not_assessed",
+            "fall_protection": "not_assessed",
+            "permission": "not_assessed",
+            "edge_setback_m": 3.0,
+            "checks_required": [
+              "Accès réel au toit et autorisation du propriétaire.",
+              "Capacité portante et état de la couverture, à vérifier par une personne compétente.",
+              "Protections contre les chutes, cheminement et évacuation.",
+              "Équipements, câbles, verrières, personnes et obstacles temporaires."
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

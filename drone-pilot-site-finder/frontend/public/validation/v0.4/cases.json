@@ -1,0 +1,272 @@
+[
+  {
+    "id": "urban",
+    "label": "Urbain dense · Paris, BnF",
+    "environment": "urban",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              2.377617253758111,
+              48.83266046029494
+            ],
+            [
+              2.377617271309368,
+              48.833739533860836
+            ],
+            [
+              2.3759827286906314,
+              48.833739533860836
+            ],
+            [
+              2.3759827462418883,
+              48.83266046029494
+            ],
+            [
+              2.377617253758111,
+              48.83266046029494
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  },
+  {
+    "id": "residential",
+    "label": "Résidentiel · Avon",
+    "environment": "residential",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              2.724810497899092,
+              48.4124604207708
+            ],
+            [
+              2.7248105150501924,
+              48.41353957346935
+            ],
+            [
+              2.723189484949808,
+              48.41353957346935
+            ],
+            [
+              2.7231895021009085,
+              48.4124604207708
+            ],
+            [
+              2.724810497899092,
+              48.4124604207708
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  },
+  {
+    "id": "rural",
+    "label": "Rural · Janville-en-Beauce",
+    "environment": "rural",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1.8848071638693078,
+              48.2014604008967
+            ],
+            [
+              1.884807180823897,
+              48.20253959338532
+            ],
+            [
+              1.8831928191761027,
+              48.20253959338532
+            ],
+            [
+              1.8831928361306918,
+              48.2014604008967
+            ],
+            [
+              1.8848071638693078,
+              48.2014604008967
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  },
+  {
+    "id": "forest",
+    "label": "Forestier · Fontainebleau",
+    "environment": "forest",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              2.650810291368262,
+              48.39946041954684
+            ],
+            [
+              2.6508103085071757,
+              48.400539574695905
+            ],
+            [
+              2.6491896914928246,
+              48.400539574695905
+            ],
+            [
+              2.649189708631739,
+              48.39946041954684
+            ],
+            [
+              2.650810291368262,
+              48.39946041954684
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  },
+  {
+    "id": "relief",
+    "label": "Relief · Chamonix, versant",
+    "environment": "relief",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              6.897773466717909,
+              45.92146018529338
+            ],
+            [
+              6.89777348172034,
+              45.92253980942026
+            ],
+            [
+              6.8962265182796605,
+              45.92253980942026
+            ],
+            [
+              6.896226533282091,
+              45.92146018529338
+            ],
+            [
+              6.897773466717909,
+              45.92146018529338
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  },
+  {
+    "id": "mixed",
+    "label": "Mixte · Grenoble, campus STAPS",
+    "environment": "mixed",
+    "request": {
+      "operation_area": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              5.777063564263835,
+              45.195060116411476
+            ],
+            [
+              5.777063578703922,
+              45.196139878432376
+            ],
+            [
+              5.775536421296077,
+              45.196139878432376
+            ],
+            [
+              5.775536435736164,
+              45.195060116411476
+            ],
+            [
+              5.777063564263835,
+              45.195060116411476
+            ]
+          ]
+        ]
+      },
+      "max_candidates": 6,
+      "options": {
+        "search_radius_m": 150,
+        "surroundings_only": false,
+        "min_area_m2": 60,
+        "min_width_m": 4,
+        "terrain_spacing_m": 10,
+        "include_ground": true,
+        "include_rooftops": true,
+        "roof_shortlist_limit": 12
+      }
+    }
+  }
+]
