@@ -64,7 +64,7 @@ export interface Candidate {
   }
 }
 
-export type OccupancyStatus = 'free' | 'free_unconfirmed' | 'limited_range' | 'no_access' | 'masked' |
+export type OccupancyStatus = 'free' | 'free_unconfirmed' | 'light_vegetation' | 'limited_range' | 'no_access' | 'masked' |
   'out_of_range' | 'steep' | 'obstacle_buffer' | 'occupied'
 export type TakeoffVerdict = 'possible' | 'conditional' | 'impossible'
 
@@ -74,6 +74,7 @@ export interface OccupancyZone {
   label: string
   reason_label: string | null
   takeoff: TakeoffVerdict
+  quality?: 'A' | 'B' | 'C' | null
   area_m2: number
   geometry: MultiPolygonGeometry
 }

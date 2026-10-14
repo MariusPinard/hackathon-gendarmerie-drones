@@ -45,8 +45,10 @@ def clean_geometry(geometry):
     return geometry if geometry.is_valid else make_valid(geometry)
 
 
-async def ign_layer(http, bbox, layer):
-    id = f"ign:{layer}"
+async def ign_layer(http, bbox, layer, kind=None, id=None):
+    id = id or f"ign:{layer}"
+    kind = kind or IGN_LAYERS[layer]
+    type_name = layer if ":" in layer else f"BDTOPO_V3:{layer}"
     records = []
     try:
         for start in (0, 1000, 2000):
@@ -56,7 +58,7 @@ async def ign_layer(http, bbox, layer):
                     "service": "WFS",
                     "version": "2.0.0",
                     "request": "GetFeature",
-                    "typeNames": f"BDTOPO_V3:{layer}",
+                    "typeNames": type_name,
                     "srsName": "urn:ogc:def:crs:OGC:1.3:CRS84",
                     "bbox": ",".join(map(str, bbox)) + ",urn:ogc:def:crs:OGC:1.3:CRS84",
                     "outputFormat": "application/json",
@@ -71,9 +73,7 @@ async def ign_layer(http, bbox, layer):
                 if item.get("geometry"):
                     geom = clean_geometry(shape(item["geometry"]))
                     if not geom.is_empty:
-                        records.append(
-                            GeoRecord(geom, IGN_LAYERS[layer], id, item.get("properties", {}))
-                        )
+                        records.append(GeoRecord(geom, kind, id, item.get("properties", {})))
             matched = data.get("numberMatched", "unknown")
             if len(features) < 1000 or isinstance(matched, int) and start + 1000 >= matched:
                 return records, source_report(id, count=len(records))
@@ -92,10 +92,9 @@ def osm_kind(tags):
         return "restricted"
     if tags.get("natural") in {"water", "wetland"} or "waterway" in tags:
         return "water"
-    if (
-        tags.get("natural") in {"wood", "scrub", "tree", "tree_row"}
-        or tags.get("landuse") == "forest"
-    ):
+    if tags.get("natural") in {"wood", "scrub", "tree", "tree_row", "heath"} or tags.get(
+        "landuse"
+    ) in {"forest", "orchard", "vineyard"}:
         return "vegetation"
     if (
         tags.get("power") in {"line", "minor_line", "tower", "pole", "generator"}
@@ -193,9 +192,22 @@ async def osm(http, bbox):
         return [], source_report("osm", "unavailable", str(exc))
 
 
+RPG_LAYER = "IGNF_RPG_PARCELLES-AGRICOLES-CATEGORISEES_2024:parcelles_agricole_categorisees_2024"
+
+
+async def rpg_layer(http, bbox):
+    """Registre parcellaire graphique 2024: declared agricultural parcels and crop category."""
+    records, report = await ign_layer(http, bbox, RPG_LAYER, kind="farmland", id="ign:rpg")
+    report.name = "IGN RPG 2024 · parcelles agricoles"
+    report.detail = (report.detail + " Catégorie de culture déclarée (PAC 2024).").strip()
+    return records, report
+
+
 async def fetch_vectors(http, bbox, options):
     jobs = ([osm(http, bbox)] if options.use_osm else []) + (
-        [ign_layer(http, bbox, layer) for layer in IGN_LAYERS] if options.use_ign else []
+        [ign_layer(http, bbox, layer) for layer in IGN_LAYERS] + [rpg_layer(http, bbox)]
+        if options.use_ign
+        else []
     )
     results = await asyncio.gather(*jobs)
     return [record for records, _ in results for record in records], [

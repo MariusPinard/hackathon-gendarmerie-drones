@@ -71,7 +71,7 @@ export function distanceM(a: LonLat, b: LonLat): number {
 export function sampleSites(occupancy: OccupancyMap, bbox: Bbox, stepM: number, statuses: OccupancyStatus[]) {
   const latStep = stepM / (RAD * EARTH)
   const lonStep = latStep / Math.cos((bbox[1] + bbox[3]) / 2 * RAD)
-  const sites: { position: LonLat; status: OccupancyStatus }[] = []
+  const sites: { position: LonLat; status: OccupancyStatus; quality: 'A' | 'B' | 'C' | null }[] = []
   for (const zone of occupancy.zones) {
     if (!statuses.includes(zone.status)) continue
     for (const polygon of polygonsOf(zone)) {
@@ -81,7 +81,7 @@ export function sampleSites(occupancy: OccupancyMap, bbox: Bbox, stepM: number, 
       // Global lattice alignment: no duplicates between neighbouring polygons.
       for (let y = Math.ceil(s / latStep) * latStep; y <= n; y += latStep) {
         for (let x = Math.ceil(w / lonStep) * lonStep; x <= e; x += lonStep) {
-          if (inPolygon(x, y, polygon.rings)) sites.push({ position: [x, y], status: zone.status })
+          if (inPolygon(x, y, polygon.rings)) sites.push({ position: [x, y], status: zone.status, quality: zone.quality ?? null })
         }
       }
     }
@@ -90,11 +90,11 @@ export function sampleSites(occupancy: OccupancyMap, bbox: Bbox, stepM: number, 
 }
 
 /** Closest point with takeoff « possible » (else conditional), within maxDistance metres. */
-export function nearestFreeSite(occupancy: OccupancyMap, point: LonLat, maxDistanceM = 600): { position: LonLat; status: OccupancyStatus; distance: number } | null {
+export function nearestFreeSite(occupancy: OccupancyMap, point: LonLat, maxDistanceM = 600): { position: LonLat; status: OccupancyStatus; quality: 'A' | 'B' | 'C' | null; distance: number } | null {
   const dLat = maxDistanceM / (RAD * EARTH), dLon = dLat / Math.cos(point[1] * RAD)
   const bbox: Bbox = [point[0] - dLon, point[1] - dLat, point[0] + dLon, point[1] + dLat]
   for (const statuses of [['free'], AUTO_STATUSES] as OccupancyStatus[][]) {
-    let best: { position: LonLat; status: OccupancyStatus; distance: number } | null = null
+    let best: { position: LonLat; status: OccupancyStatus; quality: 'A' | 'B' | 'C' | null; distance: number } | null = null
     for (const site of sampleSites(occupancy, bbox, 5, statuses)) {
       const distance = distanceM(point, site.position)
       if (distance <= maxDistanceM && (!best || distance < best.distance)) best = { ...site, distance }
@@ -125,39 +125,64 @@ export function coverage(targets: LonLat[], pilots: PilotPlacement[]): number {
   return targets.filter(t => pilots.some(p => distanceM(t, p.position) <= RANGE_M[p.qualification])).length / targets.length
 }
 
+export type PlacementMode = Qualification | 'mixed'
+/** Minimum distance between two remote pilots (m). */
+export const PILOT_SEPARATION_M = 50
+/** A TP2 is chosen only when it covers this much more than the best TP1 (TP1 preferred). */
+const TP2_ADVANTAGE = 1.5
+
 /**
- * Greedy placement: each new pilot goes to the free cell covering the most still-uncovered points
- * of the operation area (ties: « libre » before « libre non confirmé », then closer to the area).
- * Existing pilots are kept. Stops at 98 % coverage, maxPilots, or when no cell adds coverage.
+ * Greedy placement then pruning. Each new pilot goes to the free cell covering the most
+ * still-uncovered points of the operation area (bonus: « libre » and quality A/B), at least
+ * PILOT_SEPARATION_M from other pilots. « mixed » tries TP1 and TP2 and keeps a TP2 only when it
+ * clearly saves pilots. Afterwards, any automatically placed pilot whose removal keeps the
+ * coverage is removed. Existing pilots are kept. Stops at 98 % coverage or maxPilots.
  */
-export function autoPlace(area: PolygonGeometry, occupancy: OccupancyMap, existing: PilotPlacement[], qualification: Qualification, maxPilots: number) {
-  const range = RANGE_M[qualification]
+export function autoPlace(area: PolygonGeometry, occupancy: OccupancyMap, existing: PilotPlacement[], mode: PlacementMode, maxPilots: number) {
+  const classes: Qualification[] = mode === 'mixed' ? ['TP1', 'TP2'] : [mode]
+  const maxRange = Math.max(...classes.map(q => RANGE_M[q]))
   const targets = operationTargets(area)
   const ring = area.coordinates[0]!
   const lat = ring.reduce((sum, p) => sum + p[1]!, 0) / ring.length
-  const dLat = range / (RAD * EARTH), dLon = dLat / Math.cos(lat * RAD)
+  const dLat = maxRange / (RAD * EARTH), dLon = dLat / Math.cos(lat * RAD)
   const xs = ring.map(p => p[0]!), ys = ring.map(p => p[1]!)
   const bbox: Bbox = [Math.min(...xs) - dLon, Math.min(...ys) - dLat, Math.max(...xs) + dLon, Math.max(...ys) + dLat]
-  // Cap candidates around 4000 for responsiveness.
+  // Cap candidates around 5000 for responsiveness.
   const extentM = Math.max((bbox[2] - bbox[0]) * Math.cos(lat * RAD), bbox[3] - bbox[1]) * RAD * EARTH
-  let candidates = sampleSites(occupancy, bbox, Math.max(20, extentM / 70), AUTO_STATUSES)
+  const candidates = sampleSites(occupancy, bbox, Math.max(20, extentM / 70), AUTO_STATUSES)
+  const reachOf = (position: LonLat, q: Qualification) => targets.flatMap((t, i) => distanceM(position, t) <= RANGE_M[q] ? [i] : [])
+  const reach = Object.fromEntries(classes.map(q => [q, candidates.map(c => reachOf(c.position, q))])) as Record<Qualification, number[][]>
   const covered = targets.map(t => existing.some(p => distanceM(t, p.position) <= RANGE_M[p.qualification]))
-  const reach = candidates.map(c => targets.flatMap((t, i) => distanceM(c.position, t) <= range ? [i] : []))
   const placed: PilotPlacement[] = []
-  const start = existing.length
+  const used = new Set<number>()
+  const separated = (position: LonLat) => [...existing, ...placed].every(p => distanceM(p.position, position) >= PILOT_SEPARATION_M)
   while (placed.length < maxPilots && covered.filter(Boolean).length / targets.length < 0.98) {
-    let best = -1, bestScore = 0
-    candidates.forEach((candidate, i) => {
-      const gain = reach[i]!.reduce((sum, t) => sum + (covered[t] ? 0 : 1), 0)
-      if (!gain) return
-      const score = gain + (candidate.status === 'free' ? 0.5 : 0) + 0.25 * reach[i]!.length / targets.length
-      if (score > bestScore) { bestScore = score; best = i }
-    })
-    if (best < 0) break
-    reach[best]!.forEach(t => { covered[t] = true })
-    placed.push({ id: crypto.randomUUID(), name: `T${start + placed.length + 1}`, qualification, position: candidates[best]!.position, auto: true })
-    candidates = candidates.map((c, i) => i === best ? { ...c, status: 'occupied' as OccupancyStatus } : c)
-    reach[best] = []
+    const best: Partial<Record<Qualification, { index: number; score: number; gain: number }>> = {}
+    for (const q of classes) {
+      candidates.forEach((candidate, i) => {
+        if (used.has(i)) return
+        const gain = reach[q][i]!.reduce((sum, t) => sum + (covered[t] ? 0 : 1), 0)
+        if (!gain || !separated(candidate.position)) return
+        const bonus = (candidate.status === 'free' ? 0.5 : 0) + (candidate.quality === 'A' ? 0.4 : candidate.quality === 'B' ? 0.2 : 0)
+        const score = gain + bonus + 0.25 * reach[q][i]!.length / targets.length
+        if (score > (best[q]?.score ?? 0)) best[q] = { index: i, score, gain }
+      })
+    }
+    const pick: Qualification | null = best.TP2 && (!best.TP1 || best.TP2.gain > TP2_ADVANTAGE * best.TP1.gain) ? 'TP2' : best.TP1 ? 'TP1' : null
+    if (!pick) break
+    const { index } = best[pick]!
+    reach[pick][index]!.forEach(t => { covered[t] = true })
+    used.add(index)
+    placed.push({ id: crypto.randomUUID(), name: '', qualification: pick, position: candidates[index]!.position, auto: true })
   }
-  return { placed, coverage: covered.filter(Boolean).length / targets.length, candidates: candidates.length }
+  // Pruning: drop automatic pilots made redundant by later ones (greedy can over-place).
+  const coveredBy = (pilots: PilotPlacement[]) => targets.filter(t => pilots.some(p => distanceM(t, p.position) <= RANGE_M[p.qualification])).length
+  let kept = [...placed]
+  const reference = coveredBy([...existing, ...kept])
+  for (const pilot of placed) {
+    const without = kept.filter(p => p !== pilot)
+    if (coveredBy([...existing, ...without]) >= reference) kept = without
+  }
+  kept.forEach((pilot, i) => { pilot.name = `T${existing.length + i + 1}` })
+  return { placed: kept, pruned: placed.length - kept.length, coverage: coveredBy([...existing, ...kept]) / targets.length, candidates: candidates.length }
 }

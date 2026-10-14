@@ -53,7 +53,11 @@ def extract_candidates(context, bundle, options):
         if geom.is_empty or not geom.intersects(context.search):
             continue
         kind = record.kind
-        if kind == "open":
+        if kind == "open" or (
+            kind == "farmland"
+            and str(record.properties.get("cat_cult_p", "")).upper() in {"PP", "PT"}
+        ):
+            # Mapped open surfaces and declared grassland (RPG) are positive evidence.
             positives.extend(polygon_parts(geom))
             evidence.add(record.source_id)
         elif kind == "road":

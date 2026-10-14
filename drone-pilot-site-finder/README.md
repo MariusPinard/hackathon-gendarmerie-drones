@@ -26,6 +26,19 @@ to keep at most 90 000 cells) receives one primary status, in priority order:
 | `free_unconfirmed` | conditional | No known occupation, but no mapped open surface either |
 | `free` | possible | Mapped open surface with none of the above |
 
+Algorithm v2 additions: IGN RPG 2024 parcels (declared grassland PP/PT counts as open, arable land
+is « libre non confirmé · selon la saison », vines/orchards are low vegetation); new conditional
+status `light_vegetation` (hedges, heath, orchards, vines) instead of « occupied »; « libre » needs an
+open patch of at least 3×3 cells; access is a walking distance around buildings, water and rails
+(« accès coupé » when the detour is too long, « voie privée » when only a private road is near);
+free cells carry a quality A/B/C from a 0–100 score (walking access, clearance, slope, obstacle
+distance, stopping place within 50 m, plus visibility and range in operation mode); masking uses
+up to 12 targets; orthophoto requests are retried once; tiles are cached in memory and on disk
+(`backend/.cache`, `DRONE_TILE_CACHE`); field checks are recorded with
+`POST/GET /api/v1/occupancy/feedback` (`backend/.data`, `DRONE_FEEDBACK_FILE`). The UI adds the
+Géoportail « restrictions UAS » overlay and mixed TP1/TP2 automatic placement with 50 m separation
+and pruning of redundant pilots.
+
 Surfaces occupy a cell above one third of its area (3× supersampling); thin features occupy every
 cell they cross. Missing relief/MNS/imagery/access inputs are reported in `assessed` and `notes`,
 never converted into free or blocked cells. « Possible » remains screening, not permission.
