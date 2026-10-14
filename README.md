@@ -40,7 +40,10 @@ La mission fictive intégrée se charge depuis l’écran d’import pour une d�
 
 Troisième fond de carte à côté de Plan et Satellite. Il colore la carte cellule par cellule (~10 m) : libre, libre non confirmé, accès éloigné (> 100 m d’une voie), pente > 12°, marge obstacle (< 10 m) ou occupé (bâti, chaussée, eau, végétation, sursol LiDAR, ligne/pylône…). Un clic sur une couleur donne la cause. C’est un tri sur données ouvertes (OSM, IGN BD TOPO, LiDAR HD, BD ORTHO), **jamais une autorisation** : l’emplacement est vérifié sur le terrain.
 
-- **Mirepoix (09194)** : carte précalculée de la commune entière, `public/occupancy/commune-09194.json`, affichée immédiatement.
+- **Communes précalculées** (Mirepoix et voisines, liste dans `public/occupancy/index.json`) : chargées seulement quand elles sont à l’écran, affichage immédiat.
+- **Algorithme v2** : parcelles agricoles RPG 2024 (prairies = libre, cultures = selon la saison), végétation basse (haie, lande, verger, vigne) en « sous conditions », îlot libre d’au moins 30 m, accès à pied en contournant eau et bâti, voies privées signalées, qualité A/B/C des cellules libres.
+- **Restrictions drones** : couche officielle Géoportail (catégorie Ouverte), cochée par défaut en mode Occupation.
+- **Retour terrain** : dans la bulle d’une cellule, « Vérifié OK » ou « Impossible en vrai » ; les retours sont enregistrés par le backend et réaffichés pour tous.
 - **Ailleurs** : bouton **Lancer le calcul** quand la vue est prête. La zone visible est calculée par tuiles fixes d’environ 800 m (10–20 s par tuile, deux à la fois, centre de l’écran d’abord, 24 tuiles au plus par lancement, cache de session). Les tuiles en attente sont en pointillés ; après un déplacement, relancer pour la nouvelle vue. Ce calcul utilise le backend Python du module *drone-pilot-site-finder* (branche `feature/drone-pilot-site-finder-occupancy`, `POST /api/v1/occupancy/tile`) :
 
 ```sh

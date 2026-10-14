@@ -416,3 +416,8 @@ input[type="file"]::file-selector-button { font: inherit; padding: 8px 12px; mar
 @media (max-width: 650px) { .occupancy-status { top: 140px; right: 12px; left: 62px; max-width: none; } }
 .occupancy-status .occupancy-start { margin: 4px 0 2px; padding: 7px 12px; font-size: 11px; font-weight: 700; background: var(--primary); color: var(--on-primary); border: 1px solid var(--primary-ink); border-radius: var(--radius); cursor: pointer; align-self: flex-start; }
 .leaflet-occupancy-pane { opacity: .55; }
+.occupancy-status .occupancy-toggle { display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 2px 0; font-size: 11px; font-weight: 500; }
+.occupancy-status .occupancy-toggle input { width: auto; margin: 0; }
+.occupancy-status .occupancy-hint { color: var(--text-muted); font-size: 10px; }
+.occupancy-popup .occupancy-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; font-size: 10px; }
+.occupancy-popup .occupancy-feedback button { padding: 3px 7px; font-size: 10px; }
