@@ -1,7 +1,7 @@
 import type { CoverageMetrics, PlanningInput, PlanningResult, ResourceEstimate } from '../../types/planning';
 import type { DroneCapability, DroneModel, DroneModelId, AvailableResources, DroneInstance } from '../../types/drone';
 import type { Coordinates, CoverageArea } from '../../types/geo';
-import { coverageMetrics, samplePolygon, pointInPolygon, coveragesOverlap, validatePolygon, project, unproject, hasCoverage } from '../geometry/index.ts';
+import { coverageMetrics, samplePolygon, pointInPolygon, coveragesOverlap, validatePolygon, project, unproject, hasCoverage, snapWorkingAngle } from '../geometry/index.ts';
 import { inspectAuthorization } from './authorization.ts';
 
 const PRIORITY_WEIGHT = 4;
@@ -157,8 +157,8 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
     if (capability.pilotQualification === 'TP2' && radius <= 1000) return undefined;
     // Try the useful angular envelope and progressively narrower directions when overlap is constrained.
     const widths = thorough
-      ? [...new Set([angleLimit, Math.min(angleLimit, envelope.angle), Math.min(angleLimit, 180), Math.min(angleLimit, 90), Math.min(angleLimit, 45)])]
-      : [...new Set([angleLimit, Math.min(angleLimit, envelope.angle)])];
+      ? [...new Set([angleLimit, Math.min(angleLimit, envelope.angle), Math.min(angleLimit, 180), Math.min(angleLimit, 90), Math.min(angleLimit, 45)].map(snapWorkingAngle))]
+      : [...new Set([angleLimit, Math.min(angleLimit, envelope.angle)].map(snapWorkingAngle))];
     const headings = [envelope.heading];
     if (thorough && (angleLimit < envelope.angle || maximumOverlap < 100)) {
       const centroid = useful.reduce((sum, point) => [sum[0] + Math.sin(point.bearing * RAD), sum[1] + Math.cos(point.bearing * RAD)] as [number, number], [0, 0] as [number, number]);
@@ -536,7 +536,7 @@ export function adjustPlanningCoverage(input: PlanningInput, source: PlanningRes
   if (!pilot) throw new Error('Télépilote de la proposition inconnu.');
   pilot.qualification = capability.pilotQualification;
   drone.coverage = { center: [...drone.dronePosition], radiusMeters: change.radiusMeters, headingDegrees: change.headingDegrees,
-    workingAngleDegrees: change.workingAngleDegrees, clipPolygon: structuredClone(input.operationZone.geometry) };
+    workingAngleDegrees: snapWorkingAngle(change.workingAngleDegrees), clipPolygon: structuredClone(input.operationZone.geometry) };
   result.warnings = result.warnings.filter(warning => !warning.includes('aucune altitude') && !warning.startsWith('Couverture partielle')
     && !warning.startsWith('Chevauchement '));
   result.warnings.push(...assignAltitudes(result.drones.filter(hasCoverage), input.catalog, input));

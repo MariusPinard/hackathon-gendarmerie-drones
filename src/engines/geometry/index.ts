@@ -7,6 +7,14 @@ export * from './primitives.ts';
 export { intersectPolygons, outsidePolygonOutline } from './clipping.ts';
 const RAD = Math.PI / 180;
 
+/** Working angles above this threshold are treated as a full circle. */
+export const FULL_CIRCLE_ABOVE_DEGREES = 330;
+
+/** A sector wider than 330° leaves a negligible gap: use the full 360° circle instead. */
+export function snapWorkingAngle(angle: number): number {
+  return angle > FULL_CIRCLE_ABOVE_DEGREES ? 360 : angle;
+}
+
 export function pointInCoverage(point: Coordinates, coverage: CoverageArea): boolean {
   if (coverage.clipPolygon && !pointInPolygon(point, coverage.clipPolygon)) return false;
   const [x, y] = project(point, coverage.center);

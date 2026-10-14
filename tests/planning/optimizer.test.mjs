@@ -81,3 +81,18 @@ test('optimisation is deterministic and fast enough for the planning button', ()
   assertValid(source, first);
   assert.ok(first.estimate.assumptions[0].includes('Compromis'));
 });
+
+test('working angles above 330° become a full 360° circle (planning, manual edit, operations)', async () => {
+  const { adjustPlanningCoverage } = await import('../../src/engines/planning/index.ts');
+  const { snapWorkingAngle } = await import('../../src/engines/geometry/index.ts');
+  assert.equal(snapWorkingAngle(331), 360);
+  assert.equal(snapWorkingAngle(330), 330);
+  assert.equal(snapWorkingAngle(90), 90);
+  const source = input(rect(4000, 3000)), plan = generatePlan(source);
+  assert.ok(plan.drones.every(drone => drone.coverage.workingAngleDegrees <= 330 || drone.coverage.workingAngleDegrees === 360));
+  const drone = plan.drones[0];
+  const edited = adjustPlanningCoverage(source, plan, drone.id, { headingDegrees: 10, workingAngleDegrees: 345, radiusMeters: drone.coverage.radiusMeters });
+  assert.equal(edited.drones[0].coverage.workingAngleDegrees, 360);
+  const kept = adjustPlanningCoverage(source, plan, drone.id, { headingDegrees: 10, workingAngleDegrees: 300, radiusMeters: drone.coverage.radiusMeters });
+  assert.equal(kept.drones[0].coverage.workingAngleDegrees, 300);
+});

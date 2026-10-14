@@ -124,3 +124,9 @@ test('optional authorization blocks launching outside its period or above its co
   assert.ok(detectConflicts(source).some(conflict => conflict.id === 'authorization-window'));
   assert.throws(() => startMission(source), /conflits/);
 });
+test('a working angle above 330° set during operations becomes a full 360° circle', () => {
+  const wide = recalculateMission(mission(), { type: 'set_coverage', droneId: 'drone-1', headingDegrees: 90, workingAngleDegrees: 340 });
+  assert.equal(wide.mission.drones[0].coverage.workingAngleDegrees, 360);
+  const sector = recalculateMission(mission(), { type: 'set_coverage', droneId: 'drone-1', headingDegrees: 90, workingAngleDegrees: 330 });
+  assert.equal(sector.mission.drones[0].coverage.workingAngleDegrees, 330);
+});

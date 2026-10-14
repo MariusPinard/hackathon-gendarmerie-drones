@@ -2,7 +2,7 @@ import type { Mission } from '../../types/mission';
 import type { Conflict, MissionChange, OperationsResult } from '../../types/operations';
 import type { Coordinates } from '../../types/geo';
 import { DRONE_CATALOG } from '../../data/droneCatalog.ts';
-import { assertCoordinates, distanceMeters, hasCoverage, coveragesOverlap, coverageMetrics } from '../geometry/index.ts';
+import { assertCoordinates, distanceMeters, hasCoverage, coveragesOverlap, coverageMetrics, snapWorkingAngle } from '../geometry/index.ts';
 import { inspectAuthorization } from '../planning/authorization.ts';
 
 export function detectConflicts(mission: Mission): Conflict[] {
@@ -110,7 +110,7 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
       case 'set_coverage':
         if (!Number.isFinite(change.headingDegrees) || change.headingDegrees < 0 || change.headingDegrees >= 360
           || !Number.isFinite(change.workingAngleDegrees) || change.workingAngleDegrees < 1 || change.workingAngleDegrees > 360) throw new Error('Cap : 0–359° ; angle : 1–360°.');
-        drone.coverage.headingDegrees = change.headingDegrees; drone.coverage.workingAngleDegrees = change.workingAngleDegrees; break;
+        drone.coverage.headingDegrees = change.headingDegrees; drone.coverage.workingAngleDegrees = snapWorkingAngle(change.workingAngleDegrees); break;
       case 'set_availability':
         if (!['active', 'reserve', 'unavailable'].includes(change.status) || !['active', 'unavailable', 'reserve'].includes(drone.status)) throw new Error('Transition de disponibilité invalide.');
         if (drone.status === 'reserve' && change.status === 'active') {
