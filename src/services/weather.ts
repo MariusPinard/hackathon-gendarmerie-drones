@@ -1,4 +1,5 @@
 import type { WeatherInfo } from '../types/weather';
+import { getDayNight, parseSolarInstant } from './solar.ts';
 
 interface WeatherOptions { now?: number; fetcher?: typeof fetch; signal?: AbortSignal }
 
@@ -6,12 +7,12 @@ interface WeatherOptions { now?: number; fetcher?: typeof fetch; signal?: AbortS
 export async function getWeather(latitude: number, longitude: number, dateTime: string, options: WeatherOptions = {}): Promise<WeatherInfo> {
   const unavailable: WeatherInfo = {
     status: 'unavailable', location: [longitude, latitude], dateTime,
-    rainDetected: null, dayNight: 'unknown', source: null,
+    rainDetected: null, dayNight: getDayNight(latitude, longitude, dateTime), source: null,
   };
-  const target = Date.parse(dateTime);
+  const target = parseSolarInstant(dateTime);
   const now = options.now ?? Date.now();
   const day = Math.floor(now / 86400000) * 86400000;
-  if (!Number.isFinite(target) || !Number.isFinite(latitude) || !Number.isFinite(longitude)
+  if (target === null || !Number.isFinite(now) || !Number.isFinite(latitude) || !Number.isFinite(longitude)
     || Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || target < now || target >= day + 16 * 86400000) return unavailable;
   try {
     const url = new URL('https://api.open-meteo.com/v1/forecast');

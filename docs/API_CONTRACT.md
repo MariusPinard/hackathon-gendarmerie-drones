@@ -14,7 +14,7 @@ Coordonnées WGS84 `[longitude, latitude]`, deux nombres finis. Distances/rayons
 | DroneModel / DroneCapability | Catalogue et scénarios TP/mode/portée nullable/plafonds rural-urbain |
 | DroneInstance / Pilot | Identités mission, associations par IDs, positions indépendantes, altitude/couverture/état |
 | AvailableResources / ResourceEstimate | Comptes par chacun des trois modèles ; estimation avec nombre de télépilotes et hypothèses |
-| MissionConstraints | Environnement, séparation >= 10 m, angle initial 360°, `capabilityId` optionnel pour anciens fichiers |
+| MissionConstraints | Environnement, séparation >= 10 m, défaut30 m, angle initial 360°, `capabilityId` optionnel pour anciens fichiers |
 | PlanningInput | Localisation, date, zones, météo, contraintes, catalogue, ressources et `capabilityId` optionnel |
 | PlanningResult | Mission ID, estimation des moyens utilisés, télépilotes/drones proposés, zones et avertissements |
 | CoverageMetrics | Surfaces et pourcentages total/priorité/chevauchement, compte drones, nombre et maille des échantillons et points perdus bornés |
@@ -23,7 +23,7 @@ Coordonnées WGS84 `[longitude, latitude]`, deux nombres finis. Distances/rayons
 | OperationsResult | Nouvelle mission, métriques, conflits et avertissements |
 | WeatherInfo | Disponibilité, localisation/date, pluie boolean ou null, statut jour/nuit et source nullable |
 
-DroneStatus : `ready`, `active`, `unavailable`, `returning`, `emergency_landing`, `completed`. MissionStatus : `draft`, `planned`, `ready`, `active`, `emergency`, `returning`, `completed`. DayNightStatus : `day`, `night`, `unknown` (cette version n’émet que unknown).
+DroneStatus : `ready`, `active`, `unavailable`, `returning`, `emergency_landing`, `completed`. MissionStatus : `draft`, `planned`, `ready`, `active`, `emergency`, `returning`, `completed`. DayNightStatus : `day`, `night`, `unknown` (calcul astronomique ouunknown pour entrées invalides/anciensimports).
 
 ## API métier
 
@@ -48,20 +48,18 @@ Les exports geometry incluent projection/inverse, distance haversine, point-in-p
 
 ## Heuristique de planification
 
-1. Valider la géométrie et le domaine local. Projeter en mètres par projection équirectangulaire centrée sur la bounding box.
-2. Construire une grille cible de 44 subdivisions sur le plus grand côté (<= 1 936 points), gardant les points dans le polygone et hors trous. Candidats : grille de 16 subdivisions (<= 256).
-3. Pré-calculer les cibles couvertes par chaque candidat/rayon. Priorité : union des zones prioritaires à l’intérieur de l’opération, poids 4 contre 1 ailleurs.
-4. Sélection gloutonne : nouveau point prioritaire +4, autre nouveau point +1 ; point déjà couvert hors priorité −0,3. Un point prioritaire couvert une seule fois peut apporter +0,1 de redondance, puis est pénalisé.
-5. Modèles compatibles sélectionnés par rotation dans l’ordre du catalogue. Choisir le candidat au meilleur gain ; les égalités suivent l’ordre fixe de la grille. Au moins un point nouveau requis.
-6. Arrêt : ressources épuisées, gain non positif, 32 drones, ou couverture totale >= 98 % et priorité >= 99 %. Un arrêt avant cible est expliqué comme couverture partielle.
+1. Valider catalogue, quantités, météo, contraintes et géométrie locale. Échantillonner l’opération et les priorités sur une grille bornée, avec une grille de repli pour les zones très étroites.
+2. Explorer les emplacements candidats et profils TP1/TP2 compatibles. Ajuster le rayon aux cibles utiles et l’enveloppe angulaire ; tester des secteurs réduits si le chevauchement doit être limité.
+3. Scorer les nouvelles surfaces (priorité ×4), pénaliser la redondance et préférer TP1 à bénéfice équivalent. TP2 exige un rayon >1km ; les rayons n’excèdent pas la portée du scénario.
+4. Respecter inventaire, limite globale32, autorisation éventuelle et pourcentage maximal de chevauchement. Supprimer les drones devenus redondants.
+5. Découper chaque zone de travail à l’opération (concavités/trous/morceaux disjoints compris), puis affecter les altitudes par graphe de conflits, recherche DSatur bornée à20 000nœuds.
+6. Produire métriques, modèles utilisés, couples drone/télépilote, facteurs limitants et avertissements. Si aucune altitude séparée n’est trouvée, le résultat reste inspectable et le lancement est bloqué par les conflits.
 
-`estimateResources` explore un budget de 32 unités par modèle, avec limite totale 32, sans tenir compte de l’inventaire réel. `generatePlan` respecte les quantités reçues et exclut Mini si pluie. La première configuration n’est pas une combinaison optimale de modèles : leurs capacités sont identiques pour un même scénario dans le brief. Le rayon initial est la portée du scénario (1 km / 2 km). Le scénario en vue sans portée et un angle initial différent de 360° sont refusés explicitement.
-
-Un télépilote par drone, initialement à la même position. Altitudes : essayer 10 m, puis incréments de la séparation configurée ; retenir le premier niveau sans conflit avec les drones précédents, sous le plafond. Si aucun ne convient, garder le plafond (sans le dépasser), produire un avertissement puis un conflit qui bloque le lancement.
+`estimateResources` utilise un budget virtuel32 par modèle ; `generatePlan` respecte l’inventaire réel. Les modèles non compatibles sont exclus si pluie ou nuit. Le rayon n’est pas une empreinte de capteur constructeur. TP1en vue500m/plafond120m est une règle du scénario fournie dans le brief ; les catalogues historiques à portée null restent lisibles mais ne sont pas calculables dans ce mode. L’heuristique ne garantit pas un minimum mathématique de drones. Voir [ALGORITHMES.md](ALGORITHMES.md) pour les formules, bornes et approximations.
 
 ## Couverture et conflits
 
-Chaque point de la grille cible représente une cellule carrée. Surface totale approximative = nombre de points × surface cellule. Couverture = cellules touchées par au moins un drone ready/active ; priorité = cellules dans l’union des priorités ; chevauchement = cellules couvertes au moins deux fois (comptées une seule fois). Les pourcentages total et chevauchement ont pour dénominateur la surface opération, donc restent [0,100]. Priorité sans point : null, affichée « — ». `uncoveredPoints` contient au plus 120 points répartis pour l’affichage ; ce ne sont pas des contours exacts de zones perdues.
+Chaque point de la grille cible représente une cellule carrée. Surface totale approximative = nombre de points × surface cellule. Couverture = cellules touchées par au moins un drone ready/active ; priorité = cellules dans l’union des priorités ; chevauchement = cellules couvertes au moins deux fois (comptées une seule fois). Les pourcentages total et chevauchement ont pour dénominateur la surface opération, donc restent [0,100]. Priorité sans point : null, affichée « — ». `uncoveredPoints` conserve les centres de toutes les cellules non couvertes de la grille bornée ; l’interface dessine leurs surfaces hachurées, découpées à l’opération. Ces cellules restent une approximation, pas une limite physique exacte.
 
 Disque : test distance projetée <= rayon. Secteur : même test plus cap relatif, nord = 0°, sens horaire. Chevauchement disque/disque par distance entre centres ; secteurs par sommets et intersection de segments, arcs approximés par pas <= 5°. Les conflits peuvent être détectés hors de la zone opération si les couvertures s’y chevauchent. La position de conflit vertical est un milieu des centres, seulement un indicateur approximatif (pas un polygone d’intersection exact).
 
@@ -88,9 +86,9 @@ importMission(file: Blob): Promise<Mission>
 exportMission(mission: Mission): void
 ```
 
-L’adaptateur [Open-Meteo](https://open-meteo.com/en/docs) demande `rain,showers`, 16 jours, temps Unix et GMT. Il sélectionne la fin d’heure supérieure ou égale au créneau demandé, correspondant au cumul de l’heure précédente ; pluie si rain + showers > 0 mm. Date passée/hors horizon, HTTP/réseau, timeout 7 s, données nulles/malformées ou heure manquante -> unavailable, pluie null. Aucune prévision inventée. `options` permet horloge/fetch injectés pour tests et signal d’annulation ; le fournisseur reste invisible aux pages et moteurs. Jour/nuit reste unknown.
+L’adaptateur [Open-Meteo](https://open-meteo.com/en/docs) demande `rain,showers`, 16 jours, temps Unix et GMT. Il sélectionne la fin d’heure supérieure ou égale au créneau demandé, correspondant au cumul de l’heure précédente ; pluie si rain + showers > 0 mm. Date passée/hors horizon, HTTP/réseau, timeout 7 s, données nulles/malformées ou heure manquante -> unavailable, pluie null. Aucune prévision inventée. `options` permet horloge/fetch injectés pour tests et signal d’annulation ; le fournisseur reste invisible aux pages et moteurs. Jour/nuit est calculé localement par solar au seuil−6° même si la prévision pluie est indisponible.
 
-JSON requis : schemaVersion 1.0 ; metadata (id/name/createdAt/updatedAt) ; scheduledAt ; location ; operationZone ; priorityZones ; weather ; constraints ; estimate nullable ; availableResources ; pilots ; drones ; status. Exemple : `src/data/exampleMission.json`. Champs supplémentaires tolérés et conservés, sans signification métier automatique. Les anciennes couvertures sauvegardées restent lisibles ; le nouveau placement utilise les rayons scénario.
+JSON requis : schemaVersion 1.0 ; metadata (id/name/createdAt/updatedAt) ; scheduledAt ; location ; operationZone ; priorityZones ; weather ; constraints ; estimate nullable ; availableResources ; pilots ; drones ; status. Exemple : `src/data/exampleMission.json`. Champs supplémentaires tolérés et conservés, sans signification métier automatique. Les anciennes couvertures sauvegardées restent lisibles ; le nouveau placement adapte rayons et secteurs.
 
 Validation : objets/listes/enums/champs critiques, coordonnées/unités finies, calendrier/date avec fuseau, références et IDs uniques, anneaux fermés non dégénérés/non croisés, trous contenus et disjoints, centre égal à dronePosition, bornes d’interactivité et domaine géographique. Une mission sans zone reste un formulaire, pas un JSON 1.0. Le stockage n’exige pas un plan exempt de conflits : le moteur les détecte avant lancement.
 
@@ -101,3 +99,11 @@ Parser et sérialiser revalident ; erreurs visibles dans l’UI sans crash. Fich
 `searchAddresses(query, { signal?, fetcher? })` retourne au plus cinq `{ id, label, coordinates }` validés depuis le géocodage IGN/BAN. Requête de 4 à 200 caractères, timeout 7 s, erreurs lisibles ; aucun appel réseau depuis les moteurs. Les coordonnées suivent toujours `[longitude, latitude]`.
 
 `closeDrawnPolygon(vertices)` clone les sommets, ferme l’anneau (sans doubler un sommet déjà fermé), valide la géométrie et les bornes locales, puis retourne un Polygon. Un échec ne termine pas le dessin. Batteries fictives et état des panneaux sont exclusivement UI : aucun champ JSON obligatoire ajouté, schéma 1.0 inchangé.
+
+## Extensions opérationnelles compatibles
+
+Champs facultatifs1.0 : Mission.droneCatalog, constraints.maximumOverlapPercent (0–100), constraints.authorization (reference/maximumDrones/startAt/endAt), coverage.clipPolygon (géométrie opération). Nouveaux défauts : séparation30m, chevauchement20%, scénario mixed. Catalogue personnalisable, objets/URLs/références/bornes validés. Les formats détaillés et comportements des imports sont dans FORMAT_JSON ; les étapes anciennes de l’heuristique ci-dessus sont remplacées pour les nouveaux plans par ALGORITHMES.
+
+adjustPlanningCoverage(input, plan, droneId, { headingDegrees, workingAngleDegrees, radiusMeters }) produit une copie validée, conserve les positions, convertit TP1/TP2 en mixed selon le rayon puis réaffecte les altitudes. coveragePolygons(coverage) retourne les différentes intersections (Polygon[]) pour l’affichage.
+
+exportMission(mission, filename?) accepte un nom Unicode normalisé et ajoute .json ; les chemins, contrôles et noms trop longs sont nettoyés. Le popup de nommage est distinct de la sérialisation.

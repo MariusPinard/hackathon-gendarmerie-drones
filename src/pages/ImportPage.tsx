@@ -5,11 +5,11 @@ import exampleMission from '../data/exampleMission.json';
 import type { Mission } from '../types/mission';
 
 export function ImportPage({ onImported }: { onImported: () => void }) {
-  const { setMission } = useMission();
+  const { setMission, setDraftAuthorization } = useMission();
   const [json, setJson] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  function accept(mission: Mission) { setMission(mission); setError(''); onImported(); }
+  function accept(mission: Mission) { setMission(mission); setDraftAuthorization(mission.constraints.authorization); setError(''); onImported(); }
   function parse() { try { if (json.length > 2000000) throw new Error('JSON trop volumineux (maximum 2 Mo).'); accept(parseMission(json)); }
     catch (err) { setError(err instanceof Error ? err.message : 'Mission JSON invalide.'); } }
   return <section className="import-page"><p className="eyebrow">IMPORT MISSION</p><h1>Reprendre une mission</h1><p>Importez un JSON 1.0 puis vérifiez les ressources disponibles avant de lancer la simulation.</p>

@@ -5,7 +5,7 @@ import type { PlanningInput, PlanningResult } from '../types/planning';
 export function missionPlanningInput(mission: Mission): PlanningInput {
   return { missionId: mission.metadata.id, location: mission.location, scheduledAt: mission.scheduledAt,
     operationZone: mission.operationZone, priorityZones: mission.priorityZones, weather: mission.weather,
-    constraints: mission.constraints, availableResources: mission.availableResources, catalog: DRONE_CATALOG,
+    constraints: mission.constraints, availableResources: mission.availableResources, catalog: mission.droneCatalog ?? DRONE_CATALOG,
     capabilityId: mission.constraints.capabilityId ?? mission.drones[0]?.capabilityId ?? 'tp1-out-of-sight' };
 }
 

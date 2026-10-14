@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { performance } from 'node:perf_hooks';
 import { detectConflicts, recalculateMission, triggerEmergencyLanding, triggerReturnToHome, startMission, advanceSimulation, inspectMission, proposeLocalReorganization } from '../../src/engines/operations/index.ts';
+import { DRONE_CATALOG } from '../../src/data/droneCatalog.ts';
 const example = JSON.parse(readFileSync(new URL('../../src/data/exampleMission.json', import.meta.url), 'utf8'));
 function mission() { const m = structuredClone(example); m.status = 'active'; m.drones.forEach(d => d.status = 'active'); return m; }
 
@@ -77,4 +78,44 @@ test('typical recalculation remains below one second', () => {
   const source = mission(); const start = performance.now();
   const result = recalculateMission(source, { type: 'set_altitude', droneId: 'drone-1', altitudeMetersAgl: 40 });
   assert.ok(Number.isFinite(result.coverage.totalCoveragePercent)); assert.ok(performance.now() - start < 1000);
+});
+
+test('operations use embedded custom catalogue for capacities, resources and weather restrictions', () => {
+  const source = mission(), custom = { ...DRONE_CATALOG[0], id: 'custom-model', name: 'Drone de test', nightCapable: true, incompatibleWithRain: false,
+    capabilities: DRONE_CATALOG[0].capabilities.map(capability => ({ ...capability, maxAltitudeMetersAgl: { rural: 35, urban: 35 } })) };
+  source.droneCatalog = [...DRONE_CATALOG, custom];
+  source.drones[0].modelId = custom.id;
+  source.availableResources.dronesByModel[custom.id] = 1;
+  const edited = recalculateMission(source, { type: 'set_altitude', droneId: source.drones[0].id, altitudeMetersAgl: 30 });
+  assert.equal(edited.mission.drones[0].altitudeMetersAgl, 30);
+  assert.throws(() => recalculateMission(source, { type: 'set_altitude', droneId: source.drones[0].id, altitudeMetersAgl: 40 }), /35/);
+  source.availableResources.dronesByModel[custom.id] = 0;
+  assert.ok(detectConflicts(source).some(conflict => conflict.type === 'resource_shortage' && conflict.message.includes(custom.name)));
+  source.weather.dayNight = 'night'; source.droneCatalog = [...DRONE_CATALOG, { ...custom, nightCapable: false }];
+  assert.ok(detectConflicts(source).some(conflict => conflict.message.includes('mission de nuit') && conflict.droneIds.includes(source.drones[0].id)));
+});
+
+test('configured overlap limit produces an explicit launch conflict without modifying the mission', () => {
+  const source = mission(), before = structuredClone(source);
+  source.constraints.maximumOverlapPercent = 0;
+  const conflicts = detectConflicts(source);
+  assert.ok(conflicts.some(conflict => conflict.id === 'maximum-overlap' && conflict.message.includes('autorisés')));
+  assert.deepEqual(source.drones, before.drones);
+  source.status = 'ready'; source.drones.forEach(drone => { drone.status = 'ready'; });
+  assert.throws(() => startMission(source), /conflits/);
+});
+
+test('optional authorization blocks launching outside its period or above its configured count', () => {
+  const source = mission(), scheduled = Date.parse(source.scheduledAt);
+  source.constraints.authorization = { reference: 'SIM-001', maximumDrones: 2,
+    startAt: new Date(scheduled - 3600000).toISOString(), endAt: new Date(scheduled + 3600000).toISOString() };
+  assert.ok(!detectConflicts(source).some(conflict => conflict.id.startsWith('authorization-')));
+  source.constraints.authorization.maximumDrones = 1;
+  assert.ok(detectConflicts(source).some(conflict => conflict.id === 'authorization-count'));
+  source.status = 'ready'; source.drones.forEach(drone => { drone.status = 'ready'; });
+  assert.throws(() => startMission(source), /conflits/);
+  source.constraints.authorization.maximumDrones = 2;
+  source.scheduledAt = new Date(scheduled + 7200000).toISOString();
+  assert.ok(detectConflicts(source).some(conflict => conflict.id === 'authorization-window'));
+  assert.throws(() => startMission(source), /conflits/);
 });

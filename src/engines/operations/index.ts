@@ -3,18 +3,28 @@ import type { Conflict, MissionChange, OperationsResult } from '../../types/oper
 import type { Coordinates } from '../../types/geo';
 import { DRONE_CATALOG } from '../../data/droneCatalog.ts';
 import { assertCoordinates, distanceMeters, hasCoverage, coveragesOverlap, coverageMetrics } from '../geometry/index.ts';
+import { inspectAuthorization } from '../planning/authorization.ts';
 
 export function detectConflicts(mission: Mission): Conflict[] {
   const conflicts: Conflict[] = [];
   const active = mission.drones.filter(hasCoverage);
+  const catalog = mission.droneCatalog ?? DRONE_CATALOG;
+  const workAreas = active.map(drone => ({ ...drone.coverage, clipPolygon: mission.operationZone.geometry }));
+  const authorization = inspectAuthorization(mission.constraints, mission.scheduledAt);
+  if (authorization.outsideWindow) conflicts.push({ id: 'authorization-window', type: 'capability_limit', droneIds: active.map(drone => drone.id),
+    message: 'Hors période autorisée : la date de mission dépasse le créneau saisi.' });
+  if (active.length > authorization.maximumDrones) conflicts.push({ id: 'authorization-count', type: 'capability_limit', droneIds: active.map(drone => drone.id),
+    message: `Autorisation saisie : ${active.length} drones engagés > ${authorization.maximumDrones} autorisés.` });
   for (let i = 0; i < active.length; i++) {
     const drone = active[i]!;
-    const model = DRONE_CATALOG.find(m => m.id === drone.modelId);
+    const model = catalog.find(m => m.id === drone.modelId);
     const capability = model?.capabilities.find(c => c.id === drone.capabilityId);
     const pilot = mission.pilots.find(p => p.id === drone.pilotId);
     const add = (type: Conflict['type'], message: string) => conflicts.push({ id: `${type}-${drone.id}`, type, droneIds: [drone.id], message, approximatePosition: [...drone.dronePosition] });
     if (model?.incompatibleWithRain && mission.weather.rainDetected === true)
-      add('rain_incompatibility', `${drone.id} : DJI Mini 5 incompatible avec la pluie détectée.`);
+      add('rain_incompatibility', `${drone.id} : ${model.name} non autorisé sous la pluie prévue.`);
+    if (model && model.nightCapable !== true && mission.weather.dayNight === 'night')
+      add('capability_limit', `${drone.id} : ${model.name} non autorisé pour une mission de nuit.`);
     if (!capability || !pilot) add('capability_limit', `${drone.id} : modèle, scénario ou télépilote inconnu.`);
     else {
       const altitudeMax = capability.maxAltitudeMetersAgl[mission.constraints.environment];
@@ -30,16 +40,22 @@ export function detectConflicts(mission: Mission): Conflict[] {
     for (let j = i + 1; j < active.length; j++) {
       const other = active[j]!;
       const delta = Math.abs(drone.altitudeMetersAgl - other.altitudeMetersAgl);
-      if (delta < mission.constraints.minimumVerticalSeparationMeters && coveragesOverlap(drone.coverage, other.coverage))
+      if (delta < mission.constraints.minimumVerticalSeparationMeters && coveragesOverlap(workAreas[i]!, workAreas[j]!))
         conflicts.push({ id: `vertical-${drone.id}-${other.id}`, type: 'vertical_separation', droneIds: [drone.id, other.id],
           altitudeDifferenceMeters: delta, approximatePosition: [(drone.dronePosition[0] + other.dronePosition[0]) / 2, (drone.dronePosition[1] + other.dronePosition[1]) / 2],
           message: `${drone.id} / ${other.id} : couvertures en chevauchement, séparation ${delta.toFixed(1)} m < ${mission.constraints.minimumVerticalSeparationMeters} m.` });
     }
   }
-  for (const model of DRONE_CATALOG) {
+  for (const model of catalog) {
     const count = active.filter(d => d.modelId === model.id).length;
-    if (count > mission.availableResources.dronesByModel[model.id]) conflicts.push({ id: `resource-${model.id}`, type: 'resource_shortage',
-      droneIds: active.filter(d => d.modelId === model.id).map(d => d.id), message: `${model.name} : ${count} drones engagés pour ${mission.availableResources.dronesByModel[model.id]} disponibles.` });
+    const available = mission.availableResources.dronesByModel[model.id] ?? 0;
+    if (count > available) conflicts.push({ id: `resource-${model.id}`, type: 'resource_shortage',
+      droneIds: active.filter(d => d.modelId === model.id).map(d => d.id), message: `${model.name} : ${count} drones engagés pour ${available} disponibles.` });
+  }
+  if (mission.constraints.maximumOverlapPercent !== undefined) {
+    const overlap = coverageMetrics(mission.operationZone.geometry, mission.priorityZones, active).overlapPercent;
+    if (overlap > mission.constraints.maximumOverlapPercent + 1e-6) conflicts.push({ id: 'maximum-overlap', type: 'capability_limit',
+      droneIds: active.map(drone => drone.id), message: `Chevauchement ${overlap.toFixed(1)} % > ${mission.constraints.maximumOverlapPercent} % autorisés.` });
   }
   return conflicts;
 }
@@ -77,8 +93,9 @@ export function recalculateMission(source: Mission, change: MissionChange): Oper
     switch (change.type) {
       case 'move_drone': assertCoordinates(change.dronePosition); drone.dronePosition = [...change.dronePosition]; drone.coverage.center = [...change.dronePosition]; break;
       case 'set_altitude': {
-        const model = DRONE_CATALOG.find(m => m.id === drone.modelId)!;
-        const capability = model.capabilities.find(c => c.id === drone.capabilityId)!;
+        const model = (mission.droneCatalog ?? DRONE_CATALOG).find(m => m.id === drone.modelId);
+        const capability = model?.capabilities.find(c => c.id === drone.capabilityId);
+        if (!capability) throw new Error('Modèle ou scénario de ce drone inconnu.');
         const max = capability.maxAltitudeMetersAgl[mission.constraints.environment];
         if (!Number.isFinite(change.altitudeMetersAgl) || change.altitudeMetersAgl < 0 || change.altitudeMetersAgl > max) throw new Error(`Altitude attendue : 0 à ${max} m.`);
         drone.altitudeMetersAgl = change.altitudeMetersAgl; break;
@@ -105,7 +122,8 @@ export function proposeLocalReorganization(source: Mission): OperationsResult {
   const targets = before.coverage.uncoveredPoints.filter((_, i) => i % 8 === 0).slice(0, 5);
   for (const drone of source.drones.filter(d => d.status === 'active').slice(0, 8)) for (const point of targets) {
     const pilot = source.pilots.find(p => p.id === drone.pilotId)!;
-    const capability = DRONE_CATALOG.find(m => m.id === drone.modelId)!.capabilities.find(c => c.id === drone.capabilityId)!;
+    const capability = (source.droneCatalog ?? DRONE_CATALOG).find(m => m.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId);
+    if (!capability) continue;
     if (capability.rangeMeters === null || distanceMeters(point, pilot.pilotPosition) > capability.rangeMeters) continue;
     const result = recalculateMission(source, { type: 'move_drone', droneId: drone.id, dronePosition: point });
     const gain = result.coverage.totalCoveragePercent - before.coverage.totalCoveragePercent
