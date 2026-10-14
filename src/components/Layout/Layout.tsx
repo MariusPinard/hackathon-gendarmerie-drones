@@ -5,10 +5,10 @@ export function Layout({ children, mode, onHome, mapMode = false, locked = false
   return <div className={`app-layout ${mapMode ? 'map-layout' : ''} ${mode === 'ACCUEIL' ? 'home-layout' : ''}`}>
     <header className="app-header">
       <button className="brand" disabled={locked} onClick={onHome} aria-label="Retour à l’accueil">
-        <img className="brand-logo" src="/image/log_GN.webp" alt="Gendarmerie nationale" />
+        <img className="brand-logo" src="/image/gendarmerie-transparent.png" alt="Gendarmerie nationale" />
         <span>DISPOSITIF DRONES<small>Coordination opérationnelle</small></span>
       </button>
-      <span className="header-mode">{mode}</span><span className="simulation-badge">SIMULATION</span><ThemeToggle disabled={locked} />
+      <span className="header-mode">{mode}</span><span className="simulation-badge">SIMULATION</span><img className="division-header-logo" src="/image/division-drone-transparent.png" alt="Division Drone" /><ThemeToggle disabled={locked} />
     </header>
     <main className={mapMode ? 'map-main' : ''}>{children}</main>
     {!mapMode && <footer>Prototype d’aide à la décision · Aucune commande réelle envoyée aux drones.</footer>}

@@ -450,3 +450,59 @@ input:disabled, select:disabled, textarea:disabled { background: #d9d9d9; color:
   .entry-symbol { width: 32px; height: 38px; }
   .entry-action { grid-column: 2; justify-content: space-between; }
 }
+
+:root, [data-theme="dark"] { --map-exterior: #ffb52e; }
+.exterior-swatch { background: transparent; height: 0; border: 0; border-top: 2px dashed var(--map-exterior); box-shadow: 0 1px var(--map-contrast-dark); }
+.legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--map-lost); display: inline-block; margin: 0 5px; }
+/* Occupancy map imported independently from feature/occupancy-map-mode. */
+.occupancy-status { position: absolute; z-index: 4; top: 76px; right: 106px; max-width: 300px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); font-size: 12px; color: var(--text); }
+.occupancy-status strong { font-size: 13px; }
+.occupancy-status small { color: var(--text-muted); font-size: 10px; line-height: 1.5; }
+.occupancy-status .occupancy-error { color: var(--danger); }
+.occupancy-status button { margin-left: 6px; padding: 5px 8px; font-size: 11px; }
+.occupancy-status .occupancy-start { margin: 4px 0 2px; padding: 9px 12px; background: var(--primary); color: var(--on-primary); border-color: var(--primary-ink); align-self: flex-start; }
+.leaflet-occupancy-pane { opacity: .55; }
+.occupancy-legend { gap: 5px; }
+.app-header { height: 88px; }
+.division-header-logo { width: 68px; height: 68px; object-fit: contain; border-radius: 4px; flex-shrink: 0; }
+.home-layout::before { top: 88px; }
+.operations-home { width: min(1120px, 100%); margin: 18px auto 30px; }
+.home-command-header { display: grid; grid-template-columns: minmax(0,1fr) 290px; align-items: center; gap: 54px; padding: 0 0 32px; border-bottom: 1px solid var(--border); }
+.institution-signature { display: inline-flex; background: #ffffff; padding: 10px 18px; margin-bottom: 24px; border: 1px solid #e0e0e0; }
+.institution-signature img { width: 248px; height: 156px; object-fit: contain; }
+.home-command-intro .eyebrow { margin-bottom: 10px; font-size: 10px; }
+.home-command-intro h1 { font-size: 35px; margin: 0 0 12px; letter-spacing: -.035em; }
+.home-command-description { margin: 0 0 20px; font-size: 16px; line-height: 1.65; color: var(--text-muted); }
+.home-division-logo { width: 100%; max-width: 290px; height: auto; border: 1px solid #284060; border-radius: 8px; box-shadow: 0 12px 32px #00000020; justify-self: end; align-self: start; margin-top: 10px; }
+.home-access-heading { padding: 22px 0 18px; border-bottom: 0; }
+.mission-access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.mission-access-grid .mission-entry { grid-template-columns: 44px minmax(0,1fr); gap: 14px 18px; padding: 23px; border: 1px solid var(--border); border-top: 3px solid var(--primary); background: var(--surface); transition: background .15s, border-color .15s; }
+.mission-access-grid .mission-entry:hover { background: var(--primary-soft); border-color: var(--primary-ink); }
+.mission-access-grid .entry-symbol { width: 44px; height: 44px; margin-top: 6px; align-self: start; }
+.mission-access-grid .entry-content strong { font-size: 18px; margin: 5px 0 9px; }
+.mission-access-grid .entry-category { letter-spacing: .1em; color: var(--primary-ink); font-size: 9px; font-weight: 700; margin: 0; }
+.mission-access-grid .entry-action { grid-column: 2; justify-content: space-between; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
+.home-tools-note { display: flex; align-items: center; gap: 14px; padding: 19px 0 0; color: var(--text-muted); }
+.home-tools-note > span { color: var(--primary-ink); font-size: 26px; }
+.home-tools-note p { margin: 0; font-size: 12px; line-height: 1.6; }
+.home-tools-note strong { color: var(--text); font-weight: 600; }
+@media (max-width: 800px) {
+  .home-command-header { grid-template-columns: minmax(0,1fr) 230px; gap: 24px; }
+  .institution-signature { padding: 8px 10px; }
+  .institution-signature img { width: 210px; height: 140px; }
+}
+
+@media (min-width: 1100px) {
+  .home-command-intro { display: grid; grid-template-columns: 286px minmax(0,1fr); column-gap: 28px; align-content: center; }
+  .home-command-intro .institution-signature { grid-column: 1; grid-row: 1 / 6; margin: 0; align-self: center; }
+  .home-command-intro > :not(.institution-signature) { grid-column: 2; }
+  .home-command-intro h1 { font-size: 32px; }
+  .home-command-intro .home-command-description { font-size: 14px; }
+}
+
+/* Transparent marks sit directly on the interface, without rectangular plaques. */
+.institution-signature { background: transparent; border: 0; padding: 0; }
+.home-division-logo, .division-header-logo { border: 0; border-radius: 0; box-shadow: none; }
+.home-division-logo, .division-header-logo { filter: brightness(.3); }
+[data-theme="dark"] .home-division-logo, [data-theme="dark"] .division-header-logo { filter: none; }
+[data-theme="dark"] .institution-signature img, [data-theme="dark"] .brand-logo { filter: brightness(0) invert(1); }

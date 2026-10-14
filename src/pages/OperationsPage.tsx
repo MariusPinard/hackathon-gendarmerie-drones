@@ -89,7 +89,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
           catch (error) { setConfirmation(null); notify('error', error instanceof Error ? error.message : 'Action impossible.'); }
         }} />}
     </>}>
-    <MissionMap center={mission.location} operationZone={mission.operationZone} priorityZones={mission.priorityZones} drones={result.mission.drones} pilots={mission.pilots}
+    <MissionMap center={mission.location} operationZone={mission.operationZone} priorityZones={mission.priorityZones} uncoveredPoints={result.coverage.uncoveredPoints} drones={result.mission.drones} pilots={mission.pilots}
       selected={selected} editable={active} placingDroneId={active ? placingDroneId : null}
       conflictDroneIds={result.conflicts.flatMap(c => c.droneIds)} onSelect={select}
       onMoveDrone={(id, point) => change({ type: 'move_drone', droneId: id, dronePosition: point })}

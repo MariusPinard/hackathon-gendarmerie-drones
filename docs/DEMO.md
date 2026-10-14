@@ -32,7 +32,7 @@ La carte occupe la fenêtre sous l’en-tête. Les boutons carrés à flèche ou
 ## Nouveaux contrôles de démonstration
 
 - Terminer le dessin : le panneau Zones se rouvre. Le calcul et la préparation sont en bas de carte.
-- Centrer la carte : bouton en haut à gauche ; légende verticale en bas à droite, contours contrastés et arcs extérieurs en pointillés.
+- Centrer la carte : bouton en haut à gauche ; légende verticale en bas à droite, contours contrastés et arcs extérieurs ambre en pointillés, limités au secteur de travail, et points rouges non couverts.
 - Paramètres, accessibles dans le planificateur : séparation30m/chevauchement20% initiaux ; réduire la tolérance et recalculer. Une absence d’altitudes valides ou un conflit bloque le lancement. Une autorisation facultative plafonne l’effectif et signale un créneau hors période.
 - Ressources réelles : ajouter un modèle fictif, renseigner pluie/nuit/vent/zoom, régler la quantité et recalculer ; exporter/importer conserve le catalogue. Ajouter un modèle par défaut dans Paramètres puis recharger pour vérifier sa mémorisation.
 
@@ -40,3 +40,6 @@ Le Matrice4T est déclaré compatible pluie dans cette simulation, mais DJI le d
 
 - Ajouter une unité au-delà du besoin, recalculer et ouvrir la flotte : elle reste visible en réserve. La placer, l’engager et vérifier les métriques avant lancement.
 - Déclencher l’urgence puis attendre quatre secondes : « Relancer l’opération » rétablit le dispositif et ses altitudes.
+
+- Sur Mirepoix, choisir « Occupation » : carte précalculée et légende ; cliquer une couleur pour afficher la cause et le verdict. Le calcul d’autres secteurs nécessite le service d’occupation configuré et se lance explicitement.
+- L’accueil ordinateur affiche les deux grands logos transparents et les accès Planificateur/Conduite.

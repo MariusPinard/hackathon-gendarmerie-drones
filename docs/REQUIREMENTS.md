@@ -1,58 +1,47 @@
-# Exigences et état de réalisation
+# Parcours de démonstration
 
-Règles de simulation du hackathon. Aucune commande réelle, aucun SDK drone, aucun backend, aucune zone interdite et aucun Street View.
+## Préparation
 
-## Fonctionnel
+npm install, puis npm run dev ; ouvrir l’URL HTTP de Vite. Réseau utile pour fonds OSM/IGN, adresses et météo, aucune clé nécessaire. Exporter avant de recharger. Les labels D et T distinguent drone et télépilote même quand les positions initiales sont identiques.
 
-| Besoin | Réalisation |
-| --- | --- |
-| Planification et lancement direct | Accueil à deux actions ; import fichier/texte puis ressources |
-| Nom, localisation, date et heure | Nom, adresse française ou latitude/longitude, Mirepoix initial, date/heure locale -> ISO avec fuseau |
-| Carte plan / satellite | Leaflet plein écran sans scroll de page, OSM / orthophotos IGN avec attribution |
-| Panneaux / flotte | Boutons carrés à flèche, panneaux coulissants, un drone par ligne à droite, état et hauteur, sans batterie |
-| Zone opération / plusieurs priorités | Dessin par clics, fermeture au premier sommet ou automatique par Terminer, annulation et suppression ; actions verrouillées, notifications et validation |
-| Météo simple | Météo automatique, pluie horaire Open-Meteo et jour/nuit astronomique local |
-| Moyens estimés / disponibles | Estimation par modèle, compteurs manuels, comparaison et recalcul |
-| Configuration expliquée | Heuristique déterministe, métriques et hypothèses visibles |
-| Couverture | Secteurs/rayons adaptés et découpés à l’opération, réglage planning/conduite |
-| Positions drone/télépilote | Références distinctes, marqueurs D/T sélectionnables et déplaçables ; drone par drag/drop ou clic puis destination, recalcul automatique |
-| Altitude / conflits | Plafond scénario, séparation configurable, 30 m par défaut en chevauchement, alerte explicite |
-| Indisponibilité | Retrait couverture, affichage des pertes, réparation locale facultative |
-| Fin / urgence | Confirmation, retour à chaque télépilote ou atterrissage sur place |
-| JSON | Schéma 1.0, validation et export/import sauvegardable |
+## Parcours dessiné
 
-## Scénarios et modèles
+1. Planifier une mission, ouvrir le panneau Mission et saisir nom/date à venir en JJ/MM/AAAA et heure 24 h. Mirepoix est le centre initial. Chercher « Place du Capitole Toulouse » dans la barre Adresse puis sélectionner la proposition, ou basculer sur Coordonnées.
+2. Centrer la carte, dessiner un rectangle d’environ 4–6 km. Ouvrir Zones puis « Dessiner la zone d’opération ». Clic = sommet ; clic sur le premier sommet ou Terminer = fermeture. La barre Terminer/Annuler est sur la carte ; aucune autre action métier n’est accessible avant la fin. Un dessin incomplet/croisé est refusé avec notification et reste ouvert ; Annuler conserve les zones validées.
+3. Dessiner une priorité au centre. Les priorités orange sont pondérées quatre fois plus.
+4. Renseigner la date et l’heure dans Mission : la météo arrive automatiquement, avec Jour/Nuit calculé même hors horizon météo. Avec une date éloignée : message d’indisponibilité. Avec pluie ou nuit : Mini et Mavic exclus ; seuls Matrice parmi les modèles standards sont retenus selon la règle de simulation.
+5. Calculer l’estimation. Le résultat s’ouvre à droite. Lire couverture totale/prioritaire, chevauchement, mix TP1/TP2, hypothèses et limites. Cliquer un drone pour modifier cap/angle/rayon dès la planification. Exporter et nommer le fichier JSON.
+6. Préparer l’opération, réduire un modèle, recalculer. Couverture partielle autorisée ; lancement bloqué seulement en cas de dispositif vide ou de conflits.
+7. Lancer ; sélectionner D1 dans la flotte de droite (une ligne par drone avec hauteur, sans batterie). Changer cap à 90° et angle à 90° : le secteur apparaît immédiatement sur la carte. Appliquer pour sauvegarder. Sur petit écran, un seul panneau est ouvert à la fois.
+8. Glisser un drone ou un télépilote. Pour un drone, essayer aussi « Déplacer le drone sur la carte » puis cliquer la destination. Observer le journal de recalcul ; les autres positions ne sont pas réorganisées.
+9. Rapprocher deux disques puis leur donner la même altitude pour montrer le conflit, sans dépasser les plafonds. Rétablir 30 m de séparation ou déplacer le drone pour résoudre.
+10. Rendre un drone indisponible : sa couverture disparaît et les points perdus apparaissent. Essayer la réorganisation locale facultative ; elle peut expliquer qu’aucun gain limité n’est possible.
+11. Fin de mission : annuler une fois pour montrer la confirmation, puis confirmer. Les drones engagés reviennent vers leur télépilote et la mission devient terminée en environ quatre secondes.
+12. Préparer un nouveau dispositif et recalculer pour recommencer. Confirmer l’arrêt d’urgence : descente sur place, mission urgence persistante. Exporter l’état final.
 
-DJI Matrice 4T, DJI Mavic 3 Enterprise, DJI Mini 5. Capacités hackathon partagées, sans caractéristiques commerciales inventées.
+## Parcours import
 
-| Scénario | Portée | Hauteur max rural | Hauteur max urbain |
-| --- | --- | --- | --- |
-| TP1 en vue | 500 m (règle de simulation du brief) | 120 m/sol | 120 m/sol |
-| TP1 hors vue | 1 000 m | 50 m/sol | 80 m/sol |
-| TP2 hors vue | 2 000 m | 120 m/sol | 120 m/sol |
+Accueil -> Lancer une opération -> importer le JSON exporté (fichier ou texte) -> ressources -> recalcul -> lancement. L’estimation initiale est conservée pour comparer. Un JSON invalide affiche un message sans crash. Le bouton de mission fictive permet un parcours court avec la zone intégrée ; un seul drone peut suffire pour ce petit secteur.
 
-Scénario et environnement sélectionnables. Mavic et Mini sont exclus sous pluie ou de nuit selon la politique demandée ; Matrice est retenu par la simulation, distinctement de sa non-étanchéité constructeur. Pluie inconnue : avertissement, sans inventer une prévision. Pas d’effet vent, température ou visibilité.
+## Limites à expliquer au jury
 
-Jour/nuit : `day`, `night`, `unknown`. Calcul solaire local au seuil −6° pour les dates valides ; `unknown` réservé aux entrées invalides/imports historiques. Satellite : orthophotos IGN publiques en France, retour au plan en cas d’indisponibilité.
+Configuration proposée et métriques approximatives, sans promesse d’optimalité. Rayon de simulation lié au scénario, pas au capteur. Positions télépilotes non validées sur terrain, relief absent et jour/nuit inconnu. La vue satellite IGN est une orthophoto française ; aucune télémétrie drone n’est disponible. Toutes les actions sont simulées.
 
-## Simplifications explicites
+La carte occupe la fenêtre sous l’en-tête. Les boutons carrés à flèche ouvrent les panneaux par-dessus la carte ; seuls les panneaux longs défilent. Basculer Plan/Satellite pour montrer le vrai fond IGN.
 
-Rayon simulé ≤ portée du scénario ; ne décrit pas une empreinte réelle de capteur. Un télépilote proposé par drone, initialement au même point au sol. Les altitudes sont attribuées sur des niveaux 10 m + multiples de la séparation (30 m par défaut), bornée par le scénario et vérifiée contre les couvertures déjà placées. Une impossibilité est signalée et bloque le lancement via les conflits.
+## Nouveaux contrôles de démonstration
 
-Projection locale, opérations <= 50 km de côté, hors pôles et antiméridien. Surfaces par grille régulière, priorités limitées à leur intersection avec la zone opération. Une priorité trop fine peut ne recevoir aucun échantillon : avertissement explicite. Les secteurs sont dessinés par segments d’arc <= 5° ; de minuscules intersections près des limites peuvent être approximées.
+- Terminer le dessin : le panneau Zones se rouvre. Le calcul et la préparation sont en bas de carte.
+- Centrer la carte : bouton en haut à gauche ; légende verticale en bas à droite, contours contrastés et arcs extérieurs ambre en pointillés, limités au secteur de travail, et points rouges non couverts.
+- Paramètres, accessibles dans le planificateur : séparation30m/chevauchement20% initiaux ; réduire la tolérance et recalculer. Une absence d’altitudes valides ou un conflit bloque le lancement. Une autorisation facultative plafonne l’effectif et signale un créneau hors période.
+- Ressources réelles : ajouter un modèle fictif, renseigner pluie/nuit/vent/zoom, régler la quantité et recalculer ; exporter/importer conserve le catalogue. Ajouter un modèle par défaut dans Paramètres puis recharger pour vérifier sa mémorisation.
 
-Le recalcul normal préserve les positions des autres éléments. Le calcul initial teste TP1/TP2, évite les drones redondants et préfère TP1 à bénéfice équivalent, sans garantie d’optimalité. La réorganisation demandée explore au plus 8 drones actifs et 5 points perdus ; elle applique au plus un déplacement si le gain pondéré progresse sans augmenter le nombre de conflits. Aucun placement optimal garanti.
+Le Matrice4T est déclaré compatible pluie dans cette simulation, mais DJI le déclare non étanche. Montrer les caractéristiques sourcées avant d’expliquer cette règle.
 
-En retour/urgence, les drones cessent immédiatement de contribuer à la couverture. Interpolation de 4 s, sans physique. Les indisponibles restent indisponibles et sont exclus des mouvements. Le retour finit en mission `completed` ; après atterrissage d’urgence la mission reste `emergency`, drones engagés `completed` à 0 m. Les positions indisponibles ne sont pas déplacées.
+- Ajouter une unité au-delà du besoin, recalculer et ouvrir la flotte : elle reste visible en réserve. La placer, l’engager et vérifier les métriques avant lancement.
+- Déclencher l’urgence puis attendre quatre secondes : « Relancer l’opération » rétablit le dispositif et ses altitudes.
 
-## Bornes et sujets restant ouverts
+- Sur Mirepoix, choisir « Occupation » : carte précalculée et légende ; cliquer une couleur pour afficher la cause et le verdict. Le calcul d’autres secteurs nécessite le service d’occupation configuré et se lance explicitement.
+- L’accueil ordinateur affiche les deux grands logos transparents et les accès Planificateur/Conduite.
 
-20 priorités, 20 anneaux par polygone, 300 sommets par anneau, JSON <= 2 Mo. Les limites servent l’interactivité, pas une règle opérationnelle.
-
-À décider avant une utilisation élargie : validation des critères en vue, qualification hiérarchique TP2/TP1 (aucune équivalence supposée), rayon réel de capteur, vérification de positions télépilotes sur terrain, relief/altitudes absolues, conditions d’usage des services externes, politique météo inconnue, finesse adaptative pour zones très étroites et stratégie de résolution de conflits complexes.
-
-Les transitions acceptées par les moteurs et le schéma sont décrits dans API_CONTRACT. Toute évolution incompatible devra prévoir une version/migration coordonnée.
-
-Catalogue étendu dans les ressources : nom, pluie/nuit déclarés, vent et zoom ; fiches DJI sourcées. Paramètres persistés et catalogue de20modèles max. Autorisation facultative référence/effectif entier positif ou nul/périodeISO : contrôles déclaratifs, aucune vérification juridique. Schéma1.0 étendu de champs facultatifs et imports historiques conservés.
-
-Rectification 3 : aucune limite fixe du nombre de drones ou télépilotes ; quantités entières sûres positives ou nulles. Les ressources supplémentaires sont conservées en réserve, placées/engagées manuellement et contrôlées avant lancement. Relance après urgence avec restitution du dispositif précédent. Paramètres dans le planificateur seulement. Logo et icône de flotte fournis, accueil opérationnel, champs clairs, indication de zone validée sans nombre de sommets. Calque de pertes en carrés supprimé ; contours de portée extérieurs en pointillés et tuiles IGN avec fond de secours.
+Itération occupation/accueil : import ciblé du seul mode Occupation depuis `feature/occupancy-map-mode` ; données précalculées de Mirepoix et interface facultative de calcul en direct. Arcs de portée extérieurs restreints à l’angle de travail, ambre et plus fins ; points rouges V1 rétablis. Logos fournis, grands et transparents, accueil ordinateur renouvelé. Aucun développement supplémentaire de version téléphone demandé.

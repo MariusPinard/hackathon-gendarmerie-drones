@@ -1,6 +1,6 @@
 # Hackathon Gendarmerie — missions multi-drones
 
-Prototype web d’aide à la décision pour planifier puis conduire une opération multi-drones **simulée**. Aucune commande réelle, aucun SDK drone, aucun backend.
+Prototype web d’aide à la décision pour planifier puis conduire une opération multi-drones **simulée**. Aucune commande réelle, aucun SDK drone et aucun backend intégré ; le calcul d’occupation en direct utilise un service facultatif séparé.
 
 
 ## Installation et lancement
@@ -79,4 +79,12 @@ Les unités disponibles en supplément sont conservées dans la carte et la flot
 
 Après l’atterrissage d’urgence simulé, « Relancer l’opération » restaure les positions, altitudes, secteurs et disponibilités précédents. L’instantané est exporté dans les nouvelles missions en urgence ; les anciens fichiers sans instantané nécessitent un nouveau calcul. Les paramètres sont accessibles uniquement dans le planificateur. Les champs sont gris clair avec texte noir dans les deux thèmes.
 
-L’accueil utilise une console d’accès aux missions, le logo et les icônes de `/public/image`. La carte montre les arcs de portée 360° en pointillés uniquement hors de l’opération, garde les zones de travail découpées et supprime le calque de cellules non couvertes. Les métriques et les cibles de réorganisation restent calculées. Les orthophotos IGN utilisent la matrice publiée PM_0_19 ; le plan reste affiché sous les tuiles en chargement ou en erreur.
+L’accueil utilise une console d’accès aux missions, le logo et les icônes de `/public/image`. La carte montre les arcs de portée en pointillés uniquement hors de l’opération et dans l’angle du secteur de travail, garde les zones de travail découpées et supprime le calque de cellules non couvertes. Les métriques et les cibles de réorganisation restent calculées. Les orthophotos IGN utilisent la matrice publiée PM_0_19 ; le plan reste affiché sous les tuiles en chargement ou en erreur.
+
+### Occupation et présentation de l’accueil
+
+Reprise ciblée depuis `feature/occupancy-map-mode` (`a322a93`) : service d’occupation, calque Leaflet, carte précalculée de Mirepoix et tests. Aucune fusion de la branche complète ni ajout du moteur de recherche d’emplacements. Le troisième bouton « Occupation » affiche les couleurs du terrain et leurs causes au clic. Les demandes en direct partent uniquement après « Lancer le calcul », avec deux requêtes simultanées, 24 tuiles par lancement et cache de session. Le nombre de tuiles énumérées reste borné lors d’un dézoom mondial pour éviter de bloquer l’interface.
+
+Mirepoix est disponible immédiatement depuis `public/occupancy/commune-09194.json`. Pour les autres secteurs, configurer `VITE_OCCUPANCY_API_URL` vers le service compatible `POST /api/v1/occupancy/tile` ; en développement l’adresse par défaut est `http://127.0.0.1:8000`. Sans service, la carte précalculée reste consultable. La légende et les fenêtres de détail signalent les possibilités et limites d’accès au terrain ; cette analyse aide au choix d’un emplacement et ne valide pas une autorisation.
+
+Les zones non couvertes sont de nouveau représentées par les petits points rouges de la V1, jamais par des cellules hachurées. Les arcs extérieurs ambre suivent uniquement l’angle de travail et les contours des drones sont plus fins. L’accueil ordinateur affiche les grands logos Gendarmerie et Division Drone, détourés sur fond transparent. L’icône de flotte reste distincte. Sources et prompts du détourage : [LOGOS.md](docs/LOGOS.md).

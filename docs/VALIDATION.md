@@ -1,78 +1,57 @@
-# Validation du prototype et de la carte
+# Parcours de démonstration
 
-Validation réalisée le 14 octobre 2026. Fondation présente sur main via le merge 8e51c6c ; aucune modification de main, aucun push/merge de cette itération.
+## Préparation
 
-## Contrôles automatisés
+npm install, puis npm run dev ; ouvrir l’URL HTTP de Vite. Réseau utile pour fonds OSM/IGN, adresses et météo, aucune clé nécessaire. Exporter avant de recharger. Les labels D et T distinguent drone et télépilote même quand les positions initiales sont identiques.
 
-`npm test` : **61 tests réussis**, sans test ignoré. `npm run build` : réussi, comprenant `tsc --noEmit`. `git diff --check` : réussi à chaque phase. `npm install` : réussi, aucune nouvelle dépendance directe, audit sans vulnérabilité détectée lors de cette validation.
+## Parcours dessiné
 
-Tests métier : rectangle, priorité centrale, ressources insuffisantes et nulles, estimation reproductible, altitude impossible explicite, conflits à même altitude / séparation 10 m, déplacement drone et télépilote, indisponibilité et réparation locale limitée, disques/secteurs, pluie + Mini, urgence, retour, états interdits, round-trip JSON et parcours complet sauvegardé/importé.
+1. Planifier une mission, ouvrir le panneau Mission et saisir nom/date à venir en JJ/MM/AAAA et heure 24 h. Mirepoix est le centre initial. Chercher « Place du Capitole Toulouse » dans la barre Adresse puis sélectionner la proposition, ou basculer sur Coordonnées.
+2. Centrer la carte, dessiner un rectangle d’environ 4–6 km. Ouvrir Zones puis « Dessiner la zone d’opération ». Clic = sommet ; clic sur le premier sommet ou Terminer = fermeture. La barre Terminer/Annuler est sur la carte ; aucune autre action métier n’est accessible avant la fin. Un dessin incomplet/croisé est refusé avec notification et reste ouvert ; Annuler conserve les zones validées.
+3. Dessiner une priorité au centre. Les priorités orange sont pondérées quatre fois plus.
+4. Renseigner la date et l’heure dans Mission : la météo arrive automatiquement, avec Jour/Nuit calculé même hors horizon météo. Avec une date éloignée : message d’indisponibilité. Avec pluie ou nuit : Mini et Mavic exclus ; seuls Matrice parmi les modèles standards sont retenus selon la règle de simulation.
+5. Calculer l’estimation. Le résultat s’ouvre à droite. Lire couverture totale/prioritaire, chevauchement, mix TP1/TP2, hypothèses et limites. Cliquer un drone pour modifier cap/angle/rayon dès la planification. Exporter et nommer le fichier JSON.
+6. Préparer l’opération, réduire un modèle, recalculer. Couverture partielle autorisée ; lancement bloqué seulement en cas de dispositif vide ou de conflits.
+7. Lancer ; sélectionner D1 dans la flotte de droite (une ligne par drone avec hauteur, sans batterie). Changer cap à 90° et angle à 90° : le secteur apparaît immédiatement sur la carte. Appliquer pour sauvegarder. Sur petit écran, un seul panneau est ouvert à la fois.
+8. Glisser un drone ou un télépilote. Pour un drone, essayer aussi « Déplacer le drone sur la carte » puis cliquer la destination. Observer le journal de recalcul ; les autres positions ne sont pas réorganisées.
+9. Rapprocher deux disques puis leur donner la même altitude pour montrer le conflit, sans dépasser les plafonds. Rétablir 30 m de séparation ou déplacer le drone pour résoudre.
+10. Rendre un drone indisponible : sa couverture disparaît et les points perdus apparaissent. Essayer la réorganisation locale facultative ; elle peut expliquer qu’aucun gain limité n’est possible.
+11. Fin de mission : annuler une fois pour montrer la confirmation, puis confirmer. Les drones engagés reviennent vers leur télépilote et la mission devient terminée en environ quatre secondes.
+12. Préparer un nouveau dispositif et recalculer pour recommencer. Confirmer l’arrêt d’urgence : descente sur place, mission urgence persistante. Exporter l’état final.
 
-Tests d’erreurs : coordonnées/valeurs non finies, plafonds/cap/angle, polygones croisés/dégénérés, version inconnue, références/IDs, calendrier, portée en vue inconnue, grande zone, effectifs/fichier trop grands. Météo avec fetch/horloge injectés : pluie/averses, sec, horizon, nulls, heure absente, HTTP/réseau.
+## Parcours import
 
-Environnement utilisé : Node 24.19.0, npm 12.2.0. Node/npm étaient absents du PATH initial ; un runtime temporaire a servi aux commandes. Les scripts sont standard et demandent seulement les prérequis du README. npm a bloqué le script optionnel fsevents ; le serveur, ses rechargements et le build ont fonctionné. Aucun changement de configuration globale de l’ordinateur.
+Accueil -> Lancer une opération -> importer le JSON exporté (fichier ou texte) -> ressources -> recalcul -> lancement. L’estimation initiale est conservée pour comparer. Un JSON invalide affiche un message sans crash. Le bouton de mission fictive permet un parcours court avec la zone intégrée ; un seul drone peut suffire pour ce petit secteur.
 
-## Contrôles navigateur manuels
+## Limites à expliquer au jury
 
-Parcours réellement effectué dans le navigateur intégré en HTTP via Vite :
+Configuration proposée et métriques approximatives, sans promesse d’optimalité. Rayon de simulation lié au scénario, pas au capteur. Positions télépilotes non validées sur terrain, relief absent et jour/nuit inconnu. La vue satellite IGN est une orthophoto française ; aucune télémétrie drone n’est disponible. Toutes les actions sont simulées.
 
-1. Accueil -> planification, nom et date/heure, fond Leaflet chargé.
-2. Échéance 2030 -> prévision indisponible ; échéance proche -> réponse réelle Open-Meteo disponible (pas de pluie sur le créneau testé).
-3. Rectangle dessiné par quatre clics, fermeture par Terminer, puis priorité centrale orange.
-4. Estimation : **12 drones (4 par modèle), 94,6 % total, 100 % priorité**, 1 584 échantillons, maille ~122 m. Résultat reproductible après import.
-5. Réduction d’un Mini puis recalcul : **11 drones, 92,6 % total, 100 % priorité** ; comparaison d’inventaire et avertissement partiel visibles.
-6. Lancement, drones D et télépilotes T distincts ; modification cap 90°/angle 90° -> secteur visible et métriques modifiées.
-7. Glisser-déposer drone puis télépilote ; messages et recalculs observés à **3–5 ms** sur ce scénario (mesure indicative locale).
-8. Conflit vertical provoqué et affiché avec IDs, écart et position approximative. Drone indisponible -> couverture supprimée, pertes visibles ; proposition de réparation limitée sans modification injustifiée.
-9. Fin de mission : confirmation annulée puis acceptée, état returning puis completed, drones à 0 m. Export final parsé et vérifié : chaque drone engagé est à la position de son télépilote.
-10. Nouveau dispositif, recalcul/lancement ; urgence : confirmation annulée puis acceptée, emergency_landing puis completed à 0 m, mission restant emergency.
-11. Export JSON natif téléchargé, accueil -> import de ce fichier -> ressources -> lancement. Version 2.0 invalide via texte : erreur propre sans crash.
-12. Retrait d’un sommet, annulation du dessin et fermeture d’un triangle par double clic vérifiés.
+La carte occupe la fenêtre sous l’en-tête. Les boutons carrés à flèche ouvrent les panneaux par-dessus la carte ; seuls les panneaux longs défilent. Basculer Plan/Satellite pour montrer le vrai fond IGN.
 
-Vues inspectées à 1 366 × 900, 1 024 × 768 et 760 × 900 : pas de débordement horizontal, carte redimensionnée, disposition empilée à largeur réduite. Panneau de conduite défile indépendamment sur laptop. Aucune erreur console ni warning React important observé.
+## Nouveaux contrôles de démonstration
 
-## Revue statique et limites
+- Terminer le dessin : le panneau Zones se rouvre. Le calcul et la préparation sont en bas de carte.
+- Centrer la carte : bouton en haut à gauche ; légende verticale en bas à droite, contours contrastés et arcs extérieurs ambre en pointillés, limités au secteur de travail, et points rouges non couverts.
+- Paramètres, accessibles dans le planificateur : séparation30m/chevauchement20% initiaux ; réduire la tolérance et recalculer. Une absence d’altitudes valides ou un conflit bloque le lancement. Une autorisation facultative plafonne l’effectif et signale un créneau hors période.
+- Ressources réelles : ajouter un modèle fictif, renseigner pluie/nuit/vent/zoom, régler la quantité et recalculer ; exporter/importer conserve le catalogue. Ajouter un modèle par défaut dans Paramètres puis recharger pour vérifier sa mémorisation.
 
-106 imports applicatifs vérifiés : chemins résolus, graphe sans cycle, aucun import externe React/Leaflet/UI dans engines. Recherche de secrets potentiels et de TODO/placeholders incohérents : aucun dans les sources finales. JSON exemple validé par les tests. node_modules/dist ignorés, aucun artefact de navigateur/téléchargement/screenshot versionné.
+Le Matrice4T est déclaré compatible pluie dans cette simulation, mais DJI le déclare non étanche. Montrer les caractéristiques sourcées avant d’expliquer cette règle.
 
-Les scénarios automatisés sont des tests métier, pas une suite Playwright ajoutée au dépôt. Les essais UI sont manuels et tracés ici. Les limites de géométrie locale, grille/secteurs, rayon de simulation, météo/horizon, jour/nuit inconnu, satellite non configuré et stockage en mémoire sont documentées dans README, REQUIREMENTS et API_CONTRACT.
+- Ajouter une unité au-delà du besoin, recalculer et ouvrir la flotte : elle reste visible en réserve. La placer, l’engager et vérifier les métriques avant lancement.
+- Déclencher l’urgence puis attendre quatre secondes : « Relancer l’opération » rétablit le dispositif et ses altitudes.
 
-## Itération map-workspace — 14 octobre 2026
+- Sur Mirepoix, choisir « Occupation » : carte précalculée et légende ; cliquer une couleur pour afficher la cause et le verdict. Le calcul d’autres secteurs nécessite le service d’occupation configuré et se lance explicitement.
+- L’accueil ordinateur affiche les deux grands logos transparents et les accès Planificateur/Conduite.
 
-Branche `codex/map-workspace` depuis `main` `f0e0e57`. Aucune nouvelle dépendance ni évolution du schéma JSON. Les validations historiques ci-dessus décrivent l’ancienne interface ; retrait de sommet supprimé et satellite désormais implémenté.
+Itération occupation/accueil : import ciblé du seul mode Occupation depuis `feature/occupancy-map-mode` ; données précalculées de Mirepoix et interface facultative de calcul en direct. Arcs de portée extérieurs restreints à l’angle de travail, ambre et plus fins ; points rouges V1 rétablis. Logos fournis, grands et transparents, accueil ordinateur renouvelé. Aucun développement supplémentaire de version téléphone demandé.
 
-`npm test` : **68 tests réussis** (61 existants + 4 géocodage + 3 dessin). Build avec TypeScript strict réussi. Nouveaux tests : mapping et URL IGN, entrées malformées, erreurs HTTP/réseau, fermeture/non-mutation, premier sommet sans duplication, anneau croisé/incomplet et bornes.
+## Occupation, arcs et accueil — 14 octobre 2026
 
-Essais navigateur réels : Toulouse par défaut, recherche du Capitole via IGN, saisie coordonnée, chargement de 24/24 tuiles IGN et attribution correctement remplacée, dessin fermé par le premier sommet et par Terminer, deux sommets refusés, polygone croisé refusé sans déverrouiller, Annuler libérant les commandes. Prévision réelle affichée « Beau temps ». Rectangle/priorité : 7 drones, 94,1 % total, 100 % priorité, 17,4 % chevauchement, 1 672 points. Export JSON puis import fichier et recalcul reproductibles.
+136 tests réussis, TypeScript strict et build Vite réussis. Tests nouveaux/importés : grille d’occupation stable, couverture d’une tuile par la commune, trous et concavités, dézoom mondial sans énumération non bornée, validation des géométries/statuts/verdicts, chargement du fichier précalculé et requêtes en direct sur fetch simulé (annulation, panne, erreurs du service). Arcs extérieurs : secteurs traversant le nord, angles étroits, absence de côtés radiaux, aucun point hors de l’angle, cercle 360° et arc entièrement intérieur.
 
-En conduite : flotte avec batteries fictives dans les trois couleurs et hauteurs, aperçu 90°/90° avant validation avec flotte conservée sur ordinateur, déplacement au clic puis glisser-déposer et recalcul/conflict de portée. Carte à 1280 × 720, 1024 × 768 et 390 × 844 : dimensions du document égales au viewport, sans défilement de page. Les essais UI restent manuels, sans dépendance Playwright ajoutée.
+Navigateur sur ordinateur : carte colorée de Mirepoix affichée ; légende et avertissement de service en direct non configuré en preview production. Console sans erreurs. Sur le scénario Rennes, cap0°/angle45° produit1arc extérieur (2tracés de contraste) uniquement au nord et1277petits points rouges ; aucun remplissage en motif SVG et aucun défilement de page sur la carte. Les contours des drones sont affinés et les arcs sont ambre.
 
-Derniers contrôles : ouverture réciproque Informations/Flotte sur mobile fermant l’autre panneau, confirmation de retour jusqu’à Terminée (toutes les hauteurs à 0 m), nouveau dispositif lancé à nouveau. Aucune erreur ou alerte console. Revue statique : 137 imports résolus, graphe sans cycle, moteurs indépendants du navigateur. `git diff --check` réussi ; lockfile inchangé.
+Logos détourés via l’outil intégré imagegen : fichiers RGBA, coins de alpha0, fonds et plaques retirés. Rendu vérifié sur l’accueil dans les thèmes clair/sombre, lisibilité des textes et du symbole Division Drone. Les originaux sont conservés. La vérification et les ajustements supplémentaires pour téléphone ont été arrêtés à la demande de l’utilisateur ; toute taille temporaire de navigateur a été rétablie.
 
-À largeur <= 1100 px, les panneaux sont ouverts un à la fois pour préserver la carte ; choix d’un drone vérifié à la largeur réelle 903 px, flotte fermée et secteur 90°/90° visible.
-
-## Itération operational-planning — 14 octobre 2026
-
-Les sections précédentes décrivent les versions historiques. Cette itération traite la liste des changements puis les règles compatibles : mix TP1/TP2, zones non circulaires, jour/nuit, séparation30m, TP1en vue500m et autorisation déclarée facultative. Elle n’implémente pas les suggestions de patrouilles, machine de vol complète, découpage de puissance, StreetView, journal ou nouvelles démonstrations.
-
-Branche `codex/operational-planning` depuis `main` `5f6d220`. Aucune nouvelle dépendance ; sources constructeur dans DRONE_SPECS et format1.0 rétrocompatible dans FORMAT_JSON. Moteurs/algorithmes détaillés dans ALGORITHMES.
-
-Automatisation : **122 tests réussis**, build TypeScript/Vite et diffcheck réussis. Nouveaux tests : intersections concaves et trous, morceaux disjoints et contact frontière, secteurs, préférence TP1/promotion-conversion, ressources insuffisantes, grille étroite, séparation/plafonds, limite de chevauchement, pluie/nuit/customcatalog, autorisation/période/max0, soleil contre cas de référence NOAA/NREL, calendrier/offsets invalides, catalogue portable, préférences corrompues, URLs/pollutionprototype, exportnommé et anciennes missions.
-
-Essais UI réels en preview production : date française, 31février refusé puis correction, Nuit affichée automatiquement même horshorizon ; estimation nocturne4Matrice et0Mavic/Mini, 99,7%total/12,5%chevauchement. Fin dessinrouvreZones. Satellite IGN chargé18/18 ; contours contrastés et couvertures découpées strictement au rectangle. Édition45°/900m produit conversionTP1 et pertes hachurées ; retourResources/recalcul conserve le réglage manuel. Exportrefusechemin puis télécharge un nomaccentué exact ; Escapeferme le dialogue. Flotte affiche état/hauteur sans batterie. Formats métriquesfr-FR.
-
-Responsive1280×720,1024×768,390×844 : document cartographique égal auviewport, workspace sans défilement après autofocus, panneaux défilants seuls ; commandes/résultats/légende/notifications séparés. Les preuves sont conservées horsduGit. Aucun secret, artefactexporté ou nouvelle bibliothèque versionné.
-
-Contrôles finaux après reprise : ajout UI d’un modèle nocturne personnalisé (vent10m/s, zoomoptique3×), quantité1 réellement utilisée ; export avec nom accentué puis réimport restituant les quatre caractéristiques. Période d’autorisation excluant la mission : conflit explicite et bouton de lancement désactivé. Catalogue des imports historiques séparé des modèles par défaut locaux ; autorisation de brouillon remise à celle du fichier importé. Bilan restauré depuis Resources affichant les effectifs réellement placés.
-
-## Rectification 3 — 14 octobre 2026
-
-127 tests réussis ; TypeScript strict et build Vite réussis, `git diff --check` sans erreur. Nouveaux scénarios : surplus conservé en réserve et exportable ; placement/engagement avant et après lancement ; secteur/altitude personnalisés ; atterrissage puis restitution exacte du dispositif avec réserve et indisponibilité ; calcul/import au-delà de 32 drones et quantités supérieures à 100 ; arcs extérieurs découpés aux limites de l’opération, trous inclus.
-
-Essais navigateur en production locale : 12 unités disponibles donnent 1 drone prêt et 11 réserves visibles dans la carte/flotte. Placement par clic, engagement et lancement de deux drones ; arrêt d’urgence, bouton de relance désactivé pendant l’atterrissage puis restauration des deux actifs et des dix réserves. Export du dispositif relancé réussi. Version finale rechargée : trois unités, engagement d’une réserve à 40 m et secteur 90°, troisième unité conservée en réserve. Aperçu de secteur avant validation vérifié. Les unités en réserve sont réparties dans la zone pour éviter l’empilement des marqueurs.
-
-Satellite IGN : 20/20 tuiles chargées, matrice PM_0_19, aucun calque de cellules carrées. Fond plan conservé sous l’imagerie en chargement/erreur. L’indisponibilité du fournisseur reste signalée. Contours de portée extérieurs en pointillés et zone de travail intérieure découpée vérifiés visuellement. Logo fourni et icônes de flotte visibles. Paramètres absents de l’accueil/ressources/conduite, présents dans les outils du planificateur. Largeur 390 px : aucun débordement horizontal ; dialogue accessible. Champs dans les deux thèmes : fond rgb(237,237,237), texte rgb(17,17,17). La taille native de fenêtre a été rétablie après contrôle.
-
-Captures locales hors dépôt : `rectification3-accueil.png` et `rectification3-flotte-satellite.png`. La suppression du calque de pertes remplace le rendu hachuré des validations historiques ; les métriques et cibles de réparation restent calculées.
-
-Retour ressources → planificateur → édition du secteur → ressources : inventaire de trois unités conservé alors qu’une seule unité est estimée nécessaire. L’actualisation d’une pluie inconnue vers une absence de pluie conserve le dispositif, car les modèles compatibles restent les mêmes ; une nouvelle pluie incompatible continue d’invalider la proposition.
+Intégration ciblée : seuls service/calque/donnée/tests d’occupation ont été repris de `a322a93`, avec adaptation aux contrôles actuels. Aucun backend ou module de recherche d’emplacements ajouté. Le service réel de calcul en direct n’a pas été lancé dans cette itération ; ses requêtes et erreurs sont testées sur réponses simulées. Le build signale le franchissement de500ko du bundle principal ; aucune nouvelle dépendance.
