@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppProvider, useMission } from './AppContext';
 import { Layout } from '../components/Layout/Layout';
 import { HomePage } from '../pages/HomePage';
@@ -11,7 +11,8 @@ type Page = 'home' | 'planning' | 'import' | 'resources' | 'operations';
 function Application() {
   const [page, setPage] = useState<Page>('home');
   const { setMission } = useMission();
-  return <Layout mode={page === 'operations' ? 'CONDUITE DE L’OPÉRATION' : page === 'planning' ? 'PLANIFICATION' : page === 'resources' ? 'RESSOURCES' : 'ACCUEIL'} onHome={() => setPage('home')}>
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [page]);
+  return <Layout mode={page === 'operations' ? 'CONDUITE DE L’OPÉRATION' : page === 'planning' ? 'PLANIFICATION' : page === 'resources' ? 'RESSOURCES' : page === 'import' ? 'IMPORT MISSION' : 'ACCUEIL'} onHome={() => setPage('home')}>
     {page !== 'home' && <div className="workflow"><span className={page === 'planning' ? 'current' : ''}>01 Planification</span><span className={page === 'resources' ? 'current' : ''}>02 Ressources</span><span className={page === 'operations' ? 'current' : ''}>03 Conduite</span><button className="text-button" onClick={() => setPage('home')}>Retour à l’accueil</button></div>}
     {page === 'home' && <HomePage onPlan={() => { setMission(null); setPage('planning'); }} onLaunch={() => { setMission(null); setPage('import'); }} />}
     {page === 'import' && <ImportPage onImported={() => setPage('resources')} />}

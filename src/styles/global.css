@@ -1,7 +1,7 @@
 :root { font-family: Inter, system-ui, -apple-system, sans-serif; color: #20334a; background: #f1f4f7; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; }
-.app-header { background: #102d4a; color: white; padding: 16px 28px; display: flex; align-items: center; gap: 24px; min-height: 82px; }
+.app-header { background: #102d4a; color: white; padding: 16px 28px; display: flex; align-items: center; gap: 24px; min-height: 82px; position: sticky; top: 0; z-index: 1000; }
 .brand { display: flex; align-items: center; gap: 12px; background: none; border: 0; color: white; padding: 0; text-align: left; font-weight: 700; letter-spacing: .06em; }
 .brand small { display: block; font-weight: 400; letter-spacing: 0; color: #b9cbdc; font-size: 12px; margin-top: 5px; }
 .brand-mark { width: 34px; height: 42px; border: 1px solid #b8cadc; border-radius: 4px 4px 16px 16px; display: grid; place-items: center; font: 700 22px Georgia, serif; }
@@ -32,7 +32,7 @@ input, select { padding: 10px; width: 100%; min-width: 0; border: 1px solid #c5d
 .planning-panel h2:not(:first-child) { margin-top: 28px; padding-top: 20px; border-top: 1px solid #e3e9f0; }
 .planning-panel > button { display: block; margin: 8px 0; }
 .workspace { display: grid; grid-template-columns: 350px minmax(0, 1fr); align-items: start; gap: 20px; }
-.map-column { min-width: 0; display: grid; gap: 18px; position: sticky; top: 16px; }
+.map-column { min-width: 0; display: grid; gap: 18px; position: sticky; top: 98px; }
 .page-title { margin-bottom: 20px; }
 .page-title p { margin: 5px 0; font-size: 13px; }
 .map-wrap { border: 1px solid #d5e0ea; background: white; border-radius: 8px; overflow: hidden; }
@@ -90,11 +90,13 @@ textarea { width: 100%; border: 1px solid #c5d1df; border-radius: 5px; padding: 
 .drone-list button { display: flex; justify-content: space-between; gap: 12px; padding: 10px; font-size: 12px; }
 .drone-list .selected-row { background: #edf4fc; border-color: #477cac; }
 .operation-actions { display: grid; gap: 10px; margin-top: 24px; padding-top: 22px; border-top: 1px solid #e1e8ef; }
+.operation-panel { max-height: calc(100vh - 120px); overflow: auto; position: sticky; top: 98px; }
+.operations-workspace .map-column { position: static; }
 .event-log { background: #f1f5f9; padding: 12px; font-size: 12px; border-left: 3px solid #477cac; }
 .confirm-dialog { max-width: 480px; padding: 28px; border: 1px solid #ccd7e4; border-radius: 9px; color: #20334a; box-shadow: 0 15px 80px #102d4a33; }
 .confirm-dialog::backdrop { background: #102d4a99; }
 .confirm-dialog p { font-size: 14px; }
 @media (max-width: 1100px) { .operations-workspace { grid-template-columns: minmax(0, 1fr) 310px; } }
-@media (max-width: 800px) { .operations-workspace { grid-template-columns: 1fr; } .operation-title h1 { font-size: 24px; } }
+@media (max-width: 800px) { .operations-workspace { grid-template-columns: 1fr; } .operation-title h1 { font-size: 24px; } .operation-panel { max-height: none; overflow: visible; position: static; } }
 @media (max-width: 1100px) { .workspace { grid-template-columns: 310px minmax(0, 1fr); } .panel { padding: 18px; } .metrics { grid-template-columns: 1fr 1fr; } main { padding: 20px; } .mission-map { height: 490px; } }
 @media (max-width: 800px) { .workspace { grid-template-columns: 1fr; } .map-column { position: static; } .home-cards { grid-template-columns: 1fr; } .home { margin: 30px auto; } .home h1 { font-size: 34px; } .app-header { padding: 16px; gap: 12px; } .header-mode { font-size: 10px; } .brand { font-size: 11px; } .simulation-badge { display: none; } .workflow { gap: 12px; flex-wrap: wrap; } .mission-map { height: 430px; } }

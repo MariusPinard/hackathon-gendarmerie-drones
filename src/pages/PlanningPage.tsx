@@ -109,7 +109,7 @@ export function PlanningPage({ onPrepare }: { onPrepare: () => void }) {
         <div className="field-row"><label>Latitude<input type="number" step="any" value={latitude} onChange={e => { setLatitude(e.target.value); invalidateWeather(); }} /></label>
           <label>Longitude<input type="number" step="any" value={longitude} onChange={e => { setLongitude(e.target.value); invalidateWeather(); }} /></label></div>
         <button onClick={() => { try { setCenter(configuration().location); setError(''); } catch (err) { setError(message(err)); } }}>Centrer la carte</button>
-        <label>Date et heure<input type="datetime-local" value={when} onChange={e => { setWhen(e.target.value); invalidateWeather(); }} /></label>
+        <label>Date et heure<input type="datetime-local" value={when} onInput={e => { setWhen(e.currentTarget.value); invalidateWeather(); }} /></label>
         <p className="muted">Heure locale : {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
         <div className="field-row"><label>Environnement<select value={environment} onChange={e => { setEnvironment(e.target.value as Environment); invalidate(); }}><option value="urban">Urbain</option><option value="rural">Rural</option></select></label>
           <label>Scénario<select value={capabilityId} onChange={e => { setCapabilityId(e.target.value); invalidate(); }}><option value="tp1-out-of-sight">TP1 hors vue · 1 km</option><option value="tp2-out-of-sight">TP2 hors vue · 2 km</option><option value="tp1-in-sight">TP1 en vue · portée inconnue</option></select></label></div>

@@ -102,8 +102,8 @@ export function proposeLocalReorganization(source: Mission): OperationsResult {
   if (source.status !== 'active') throw new Error('Réorganisation réservée aux missions actives.');
   const before = inspectMission(source);
   let best = before, bestGain = 0;
-  const targets = before.coverage.uncoveredPoints.filter((_, i) => i % 8 === 0).slice(0, 15);
-  for (const drone of source.drones.filter(d => d.status === 'active')) for (const point of targets) {
+  const targets = before.coverage.uncoveredPoints.filter((_, i) => i % 8 === 0).slice(0, 5);
+  for (const drone of source.drones.filter(d => d.status === 'active').slice(0, 8)) for (const point of targets) {
     const pilot = source.pilots.find(p => p.id === drone.pilotId)!;
     const capability = DRONE_CATALOG.find(m => m.id === drone.modelId)!.capabilities.find(c => c.id === drone.capabilityId)!;
     if (capability.rangeMeters === null || distanceMeters(point, pilot.pilotPosition) > capability.rangeMeters) continue;

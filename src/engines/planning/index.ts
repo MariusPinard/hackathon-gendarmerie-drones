@@ -17,6 +17,7 @@ function plan(input: PlanningInput, available: AvailableResources): PlanningResu
   if (!Number.isFinite(input.constraints.minimumVerticalSeparationMeters)
     || input.constraints.minimumVerticalSeparationMeters < 10) throw new Error('Séparation verticale minimale : 10 m.');
   if (!['rural', 'urban'].includes(input.constraints.environment)) throw new Error('Environnement invalide.');
+  if (input.constraints.defaultWorkingAngleDegrees !== 360) throw new Error('Le dispositif initial utilise un angle de 360°. Les secteurs se règlent en conduite.');
   if (input.priorityZones.length > 20) throw new Error('Maximum 20 zones prioritaires.');
   input.priorityZones.forEach(zone => validatePolygon(zone.geometry));
   const eligible = input.catalog.filter(m => !(m.incompatibleWithRain && input.weather.rainDetected === true));

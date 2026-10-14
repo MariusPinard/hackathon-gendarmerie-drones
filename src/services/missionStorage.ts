@@ -35,6 +35,10 @@ function dateTime(value: unknown, path: string): void {
   text(value, path);
   requireValid(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
     && Number.isFinite(Date.parse(value)), path);
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  const calendar = new Date(Date.UTC(year!, month! - 1, day!));
+  requireValid(calendar.getUTCFullYear() === year && calendar.getUTCMonth() + 1 === month
+    && calendar.getUTCDate() === day, `${path} (date calendaire invalide)`);
 }
 
 function coordinates(value: unknown, path: string): void {
@@ -168,6 +172,7 @@ export function serializeMission(mission: Mission): string {
 }
 
 export function parseMission(json: string): Mission {
+  if (json.length > 2000000) throw new Error('JSON trop volumineux (maximum 2 Mo).');
   const value: unknown = JSON.parse(json);
   validateMission(value);
   return value;

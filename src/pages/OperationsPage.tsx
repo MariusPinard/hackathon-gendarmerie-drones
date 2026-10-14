@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMission } from '../app/AppContext';
 import { MissionMap } from '../components/Map/MissionMap';
 import { MetricsPanel } from '../components/Panels/MetricsPanel';
 import { DroneControls } from '../components/Controls/DroneControls';
 import { ConfirmDialog } from '../components/Controls/ConfirmDialog';
-import { advanceSimulation, inspectMission, recalculateMission, triggerEmergencyLanding, triggerReturnToHome, proposeLocalReorganization } from '../engines/operations';
+import { inspectMission, recalculateMission, triggerEmergencyLanding, triggerReturnToHome, proposeLocalReorganization } from '../engines/operations';
 import { exportMission } from '../services/missionStorage';
 import { DRONE_CATALOG } from '../data/droneCatalog';
 import type { MissionChange, OperationsResult } from '../types/operations';
@@ -22,21 +22,11 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
   const [extraWarnings, setExtraWarnings] = useState<string[]>([]);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const result = useMemo(() => mission ? inspectMission(mission) : null, [mission]);
-  const status = mission?.status;
-  useEffect(() => {
-    if (!mission || !['returning', 'emergency'].includes(mission.status)
-      || !mission.drones.some(d => d.status === 'returning' || d.status === 'emergency_landing')) return;
-    const initial = structuredClone(mission), started = performance.now();
-    const timer = setInterval(() => {
-      const progress = Math.min(1, (performance.now() - started) / 4000);
-      const next = advanceSimulation(initial, progress);
-      setMission(next.mission);
-      if (progress === 1) { clearInterval(timer); setEvent(initial.status === 'returning' ? 'Retour simulé terminé : chaque drone engagé a rejoint son télépilote.' : 'Atterrissage d’urgence simulé terminé. La mission reste en état d’urgence.'); }
-    }, 150);
-    return () => clearInterval(timer);
-  }, [status]);
   if (!mission || !result) return <p className="notice">Aucune mission en conduite. <button onClick={onResources}>Préparer les ressources</button></p>;
   const active = mission.status === 'active';
+  const eventMessage = mission.status === 'completed' ? 'Retour simulé terminé : chaque drone engagé a rejoint son télépilote.'
+    : mission.status === 'emergency' && !mission.drones.some(d => d.status === 'emergency_landing')
+      ? 'Atterrissage d’urgence simulé terminé. La mission reste en état d’urgence.' : event;
   const drone = mission.drones.find(d => `drone:${d.id}` === selected) ?? (selected?.startsWith('pilot:') ? undefined : mission.drones[0]);
   const pilot = mission.pilots.find(p => `pilot:${p.id}` === selected);
   const maxAltitude = drone ? DRONE_CATALOG.find(m => m.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId)?.maxAltitudeMetersAgl[mission.constraints.environment] ?? 0 : 0;
@@ -55,7 +45,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
       conflictDroneIds={result.conflicts.flatMap(c => c.droneIds)} onSelect={setSelected}
       onMoveDrone={(id, point) => change({ type: 'move_drone', droneId: id, dronePosition: point })}
       onMovePilot={(id, point) => change({ type: 'move_pilot', pilotId: id, pilotPosition: point })} />
-      <div className="panel"><MetricsPanel metrics={result.coverage} /><p className="event-log" role="status">{event}{elapsed !== null ? ` Recalcul : ${elapsed.toFixed(0)} ms.` : ''}</p>
+      <div className="panel"><MetricsPanel metrics={result.coverage} /><p className="event-log" role="status">{eventMessage}{elapsed !== null ? ` Recalcul : ${elapsed.toFixed(0)} ms.` : ''}</p>
         {[...new Set([...result.warnings, ...extraWarnings])].map(w => <p className="notice warning" key={w}>{w}</p>)}
         <h2>Conflits {result.conflicts.length ? `(${result.conflicts.length})` : '— aucun détecté'}</h2>
         {result.conflicts.map(c => <div className="notice error" key={c.id}><strong>{c.message}</strong>{c.approximatePosition && <p>Position approximative : {c.approximatePosition[1].toFixed(5)}, {c.approximatePosition[0].toFixed(5)}</p>}</div>)}
