@@ -36,6 +36,19 @@ Ouvrir l’URL HTTP indiquée par Vite, normalement `http://localhost:5173`. **N
 
 La mission fictive intégrée se charge depuis l’écran d’import pour une démonstration rapide. Pour un dispositif multi-drones plus étendu, dessiner un rectangle d’environ 4–6 km autour de Mirepoix et une priorité centrale. Voir [DEMO.md](docs/DEMO.md).
 
+## Mode carte « Occupation » (où décoller)
+
+Troisième fond de carte à côté de Plan et Satellite. Il colore la carte cellule par cellule (~10 m) : libre, libre non confirmé, accès éloigné (> 100 m d’une voie), pente > 12°, marge obstacle (< 10 m) ou occupé (bâti, chaussée, eau, végétation, sursol LiDAR, ligne/pylône…). Un clic sur une couleur donne la cause. C’est un tri sur données ouvertes (OSM, IGN BD TOPO, LiDAR HD, BD ORTHO), **jamais une autorisation** : l’emplacement est vérifié sur le terrain.
+
+- **Mirepoix (09194)** : carte précalculée de la commune entière, `public/occupancy/commune-09194.json`, affichée immédiatement.
+- **Ailleurs** : calcul en direct de la zone visible, par tuiles fixes d’environ 800 m (10–20 s par tuile, centre de l’écran d’abord, cache de session). Il faut zoomer à 20 tuiles visibles au plus. Ce calcul utilise le backend Python du module *drone-pilot-site-finder* (branche `feature/drone-pilot-site-finder-occupancy`, `POST /api/v1/occupancy/tile`) :
+
+```sh
+uv run uvicorn drone_site_finder.main:app --host 127.0.0.1 --port 8000
+```
+
+En développement, le site l’appelle sur `http://127.0.0.1:8000` ; sinon définir `VITE_OCCUPANCY_API_URL` (vide pour désactiver). Sans backend, seule la carte précalculée s’affiche et le reste de l’application est inchangé. Le backend accepte par défaut les origines `localhost:5173` (`DRONE_CORS_ORIGINS`).
+
 ## Simplifications du prototype
 
 Heuristique gloutonne, pas une optimisation exacte. Projection locale et surfaces estimées sur une grille bornée. Le rayon de travail est inférieur ou égal à la portée TP1 (1 km) / TP2 (2 km), sans représentation d’un capteur constructeur ; un TP2 de rayon ≤ 1 km est converti en TP1. Drones et télépilotes sont initialement à la même position, avec références distinctes ; les altitudes commencent à 10 m, séparées par défaut de 30 m lorsque les zones se chevauchent, sous le plafond.

@@ -407,3 +407,10 @@ input[type="file"]::file-selector-button { font: inherit; padding: 8px 12px; mar
 
 /* Focus and automatic scrolling stay inside drawers, never shift the map workspace. */
 .app-layout.map-layout, main.map-main, .map-workspace, .mission-map.leaflet-container { overflow: clip; }
+/* Occupancy map mode (takeoff screening) */
+.occupancy-status { position: absolute; z-index: 4; top: 76px; right: 106px; max-width: 300px; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); font-size: 11px; color: var(--text); }
+.occupancy-status strong { font-size: 11px; }
+.occupancy-status small { color: var(--text-muted); font-size: 10px; }
+.occupancy-status .occupancy-error { color: var(--map-conflict); }
+.occupancy-status button { margin-left: 6px; padding: 2px 8px; font-size: 10px; }
+@media (max-width: 650px) { .occupancy-status { top: 140px; right: 12px; left: 62px; max-width: none; } }

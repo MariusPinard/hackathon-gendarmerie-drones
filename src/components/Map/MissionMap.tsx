@@ -5,6 +5,8 @@ import type { Coordinates, OperationZone, PriorityZone } from '../../types/geo';
 import type { DroneInstance, Pilot } from '../../types/drone';
 import { coveragePolygon, coveragePolygons, hasCoverage, unproject } from '../../engines/geometry/index.ts';
 import { MAP_SOURCES } from './mapSources';
+import { useOccupancyOverlay } from './occupancyOverlay';
+import { OCCUPANCY_STYLES } from '../../services/occupancy';
 
 interface MapProps {
   center: Coordinates;
@@ -37,7 +39,9 @@ export function MissionMap(props: MapProps) {
   const callbacks = useRef(props);
   callbacks.current = props;
   const [tileError, setTileError] = useState(false);
-  const [layer, setLayer] = useState<'plan' | 'satellite'>('plan');
+  const [layer, setLayer] = useState<'plan' | 'satellite' | 'occupation'>('plan');
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const occupancy = useOccupancyOverlay(mapInstance, layer === 'occupation', !props.drawing && !props.placingDroneId);
   const overlayId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const geometryKey = JSON.stringify(props.operationZone?.geometry ?? null);
   const [longitude, latitude] = props.center;
@@ -46,6 +50,7 @@ export function MissionMap(props: MapProps) {
     const map = L.map(container.current, { doubleClickZoom: false, zoomControl: false }).setView(latLng(callbacks.current.center), 13);
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
     mapRef.current = map;
+    setMapInstance(map);
     layersRef.current = L.layerGroup().addTo(map);
     map.on('click', (event: L.LeafletMouseEvent) => {
       const current = callbacks.current;
@@ -55,11 +60,12 @@ export function MissionMap(props: MapProps) {
     map.on('dblclick', () => { if (callbacks.current.drawing) callbacks.current.onFinish?.(); });
     const resize = new ResizeObserver(() => map.invalidateSize());
     resize.observe(container.current);
-    return () => { resize.disconnect(); map.remove(); mapRef.current = null; layersRef.current = null; };
+    return () => { resize.disconnect(); map.remove(); mapRef.current = null; layersRef.current = null; setMapInstance(null); };
   }, []);
   useEffect(() => {
     const map = mapRef.current;
-    const source = MAP_SOURCES[layer];
+    // The occupancy mode draws its overlay on the plan background.
+    const source = MAP_SOURCES[layer === 'occupation' ? 'plan' : layer];
     if (!map || !source) return;
     setTileError(false);
     const tiles = L.tileLayer(source.urlTemplate, { maxZoom: source.maxZoom, attribution: source.attribution }).addTo(map);
@@ -169,9 +175,20 @@ export function MissionMap(props: MapProps) {
     <button className="map-center square-tool" disabled={props.drawing || !!props.placingDroneId || !props.operationZone} onClick={() => {
       if (props.operationZone) mapRef.current?.fitBounds(L.latLngBounds(props.operationZone.geometry.coordinates[0]!.map(latLng)), { padding: [100, 70], maxZoom: 15 });
     }} aria-label="Centrer la carte sur la zone d’opération" title="Centrer sur la zone d’opération"><span className="tool-icon" aria-hidden="true">⌖</span><span>Centrer la carte</span></button>
-    <div className="map-toolbar" aria-label="Fond cartographique"><button aria-pressed={layer === 'plan'} disabled={props.drawing} onClick={() => setLayer('plan')}>Plan</button><button aria-pressed={layer === 'satellite'} disabled={props.drawing} onClick={() => setLayer('satellite')}>Satellite</button></div>
+    <div className="map-toolbar" aria-label="Fond cartographique"><button aria-pressed={layer === 'plan'} disabled={props.drawing} onClick={() => setLayer('plan')}>Plan</button><button aria-pressed={layer === 'satellite'} disabled={props.drawing} onClick={() => setLayer('satellite')}>Satellite</button><button aria-pressed={layer === 'occupation'} disabled={props.drawing} onClick={() => setLayer('occupation')} title="Où un télépilote peut décoller (données ouvertes, à vérifier sur le terrain)">Occupation</button></div>
+    {layer === 'occupation' && <div className="occupancy-status" role="status">
+      <strong>Occupation au décollage</strong>
+      {occupancy.precomputed && <span>{occupancy.precomputed} : carte précalculée</span>}
+      {occupancy.tooWide ? <span>Zoomez pour calculer hors de la zone précalculée.</span>
+        : occupancy.pending > 0 ? <span>Calcul en cours · {occupancy.pending} tuile(s) restante(s), ~15 s chacune</span>
+        : !occupancy.liveAvailable && <span>Calcul en direct non configuré.</span>}
+      {occupancy.error && <span className="occupancy-error">{occupancy.error} <button onClick={occupancy.retry}>Réessayer</button></span>}
+      <small>Aide à la décision · vérification terrain obligatoire</small>
+    </div>}
     {tileError && <div className="tile-notice" role="status">{layer === 'satellite' ? 'Imagerie IGN indisponible sur ce secteur.' : 'Fond cartographique indisponible.'} Les zones restent accessibles.{layer === 'satellite' && <button disabled={props.drawing} onClick={() => setLayer('plan')}>Revenir au plan</button>}</div>}
     <div ref={container} className={`mission-map ${props.drawing || props.placingDroneId ? 'drawing' : ''}`} role="region" aria-label="Carte de mission" />
-    <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span className="lost-legend"><i className="legend-swatch lost-swatch" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>
+    {layer === 'occupation'
+      ? <div className="map-legend" aria-label="Légende de l’occupation"><strong>Occupation</strong>{(['free', 'free_unconfirmed', 'no_access', 'steep', 'obstacle_buffer', 'occupied'] as const).map(status => <span key={status}><i className="legend-swatch" style={{ background: OCCUPANCY_STYLES[status].color, borderColor: OCCUPANCY_STYLES[status].color }} />{OCCUPANCY_STYLES[status].label}</span>)}<span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>
+      : <div className="map-legend" aria-label="Légende cartographique"><strong>Légende</strong><span><i className="legend-swatch operation-swatch" />Zone d’opération</span><span><i className="legend-swatch coverage-swatch" />Zone de travail drone</span><span className="priority-legend"><i className="legend-swatch priority-swatch" />Zone prioritaire</span><span className="lost-legend"><i className="legend-swatch lost-swatch" />Non couvert · estimation</span><span className="legend-markers"><b>D</b> Drone <b>T</b> Télépilote</span></div>}
   </div>;
 }
