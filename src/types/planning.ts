@@ -13,6 +13,8 @@ export interface PlanningInput {
   constraints: MissionConstraints;
   catalog: readonly DroneModel[];
   availableResources: AvailableResources;
+  /** Defaults to TP1 out of sight. In-sight has no computable radius yet. */
+  capabilityId?: string;
 }
 
 export type { ResourceEstimate } from './drone';
@@ -23,6 +25,13 @@ export interface CoverageMetrics {
   priorityAreaSquareMeters: number;
   coveredPriorityAreaSquareMeters: number;
   overlapOutsidePrioritySquareMeters: number;
+  totalCoveragePercent: number;
+  priorityCoveragePercent: number | null;
+  overlapPercent: number;
+  usedDroneCount: number;
+  sampleCount: number;
+  sampleSpacingMeters: number;
+  uncoveredPoints: Coordinates[];
 }
 
 export interface PlanningResult {
