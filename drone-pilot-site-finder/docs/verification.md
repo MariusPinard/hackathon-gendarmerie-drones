@@ -19,6 +19,10 @@ All six recorded real results were inspected in the frontend over IGN imagery an
 roof via labels/boundaries, and unverified roof access/structure/fall protection from measurements.
 The rooftop building diagnostic keys count shortlisted **portions**, not unique buildings.
 The recorded example response is now a 0.4 snapshot; the 0.3 notes below are historical.
+The final browser live retry returned 3 ground/3 roof zones in 2.19 s using the source cache.
+Its downloaded GeoJSON was validated against the backend schema. No JavaScript console errors
+were reported in that check. An occasional IGN basemap tile load failed during map exploration;
+the visible warning did not prevent geometry/evidence inspection or export.
 
 See [the French report](validation-v0.4.md) for per-zone surfaces/scores, provenance, screenshots,
 observed limitations and exact reproduction commands. Tests do not constitute operational or human
