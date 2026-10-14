@@ -13,7 +13,7 @@ export function MapWorkspace({ children, tools, panel, onPanel, title, panelCont
       {tools.map(tool => <button key={tool.id} className={`square-tool ${panel === tool.id ? 'active' : ''}`} title={tool.label}
         aria-label={tool.label} aria-expanded={panel === tool.id} disabled={locked || tool.disabled}
         onClick={() => {
-          if (fleetOpen && window.matchMedia('(max-width: 900px)').matches) onFleet?.();
+          if (fleetOpen && window.matchMedia('(max-width: 1100px)').matches) onFleet?.();
           onPanel(panel === tool.id ? null : tool.id);
         }}><span className="tool-icon" aria-hidden="true">{tool.icon}</span><span>{tool.label}</span><span className="tool-arrow" aria-hidden="true">{panel === tool.id ? '‹' : '›'}</span></button>)}
     </div>
@@ -22,7 +22,7 @@ export function MapWorkspace({ children, tools, panel, onPanel, title, panelCont
       <div className="slide-panel-body">{panelContent}</div>
     </aside>}
     {onFleet && <button className={`fleet-toggle square-tool ${fleetOpen ? 'active' : ''}`} disabled={locked} aria-label="Afficher la flotte" aria-expanded={fleetOpen} onClick={() => {
-      if (!fleetOpen && window.matchMedia('(max-width: 900px)').matches) onPanel(null);
+      if (!fleetOpen && window.matchMedia('(max-width: 1100px)').matches) onPanel(null);
       onFleet();
     }}><span aria-hidden="true">▤</span><span>Flotte</span><span aria-hidden="true">{fleetOpen ? '›' : '‹'}</span></button>}
     {fleet && fleetOpen && <aside className="fleet-panel" aria-label="Flotte de drones" inert={locked}>{fleet}</aside>}

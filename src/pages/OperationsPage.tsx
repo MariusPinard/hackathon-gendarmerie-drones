@@ -41,7 +41,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
   const maxAltitude = drone ? DRONE_CATALOG.find(m => m.id === drone.modelId)?.capabilities.find(c => c.id === drone.capabilityId)?.maxAltitudeMetersAgl[mission.constraints.environment] ?? 0 : 0;
   const eventMessage = mission.status === 'completed' ? 'Retour simulé terminé : chaque drone engagé a rejoint son télépilote.'
     : mission.status === 'emergency' && !mission.drones.some(d => d.status === 'emergency_landing') ? 'Atterrissage d’urgence simulé terminé. La mission reste en état d’urgence.' : event;
-  function select(id: string) { setSelected(id); setPreview(null); setPlacingDroneId(null); setPanel('drone'); if (window.matchMedia('(max-width: 900px)').matches) setFleetOpen(false); }
+  function select(id: string) { setSelected(id); setPreview(null); setPlacingDroneId(null); setPanel('drone'); if (window.matchMedia('(max-width: 1100px)').matches) setFleetOpen(false); }
   function apply(next: OperationsResult, description: string, duration?: number) {
     setMission({ ...next.mission, metadata: { ...next.mission.metadata, updatedAt: new Date().toISOString() } });
     setEvent(description); setExtraWarnings(next.warnings); setElapsed(duration ?? null); setPreview(null); setPlacingDroneId(null);
@@ -54,7 +54,7 @@ export function OperationsPage({ onResources }: { onResources: () => void }) {
   const titles: Record<string, string> = { drone: 'Drone / télépilote', information: 'Informations & couverture', actions: 'Conduite & actions' };
   return <MapWorkspace tools={[{ id: 'drone', label: 'Réglages', icon: '⌖' }, { id: 'information', label: 'Informations', icon: 'i' }, { id: 'actions', label: 'Actions', icon: '⚑' }]}
     panel={panel} onPanel={next => { setPanel(next); if (next !== 'drone') setPreview(null); }} title={titles[panel ?? ''] ?? ''}
-    fleetOpen={fleetOpen} onFleet={() => { setFleetOpen(open => !open); if (window.matchMedia('(max-width: 900px)').matches) { setPanel(null); setPreview(null); } }}
+    fleetOpen={fleetOpen} onFleet={() => { setFleetOpen(open => !open); if (window.matchMedia('(max-width: 1100px)').matches) { setPanel(null); setPreview(null); } }}
     fleet={<FleetPanel drones={mission.drones} missionId={mission.metadata.id} selected={selected} onSelect={select} onClose={() => setFleetOpen(false)} />}
     status={<><strong>{mission.metadata.name}</strong><span className={`status-pill ${mission.status}`}>{labels[mission.status]}</span><WeatherBadge weather={mission.weather} />{canPreview && <span className="preview-badge">Aperçu du secteur</span>}{result.conflicts.length > 0 && <button className="conflict-badge" onClick={() => setPanel('information')}>{result.conflicts.length} conflit(s)</button>}</>}
     panelContent={<>

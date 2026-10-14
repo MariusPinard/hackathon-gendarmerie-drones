@@ -48,3 +48,5 @@ Essais navigateur réels : Toulouse par défaut, recherche du Capitole via IGN, 
 En conduite : flotte avec batteries fictives dans les trois couleurs et hauteurs, aperçu 90°/90° avant validation avec flotte conservée sur ordinateur, déplacement au clic puis glisser-déposer et recalcul/conflict de portée. Carte à 1280 × 720, 1024 × 768 et 390 × 844 : dimensions du document égales au viewport, sans défilement de page. Les essais UI restent manuels, sans dépendance Playwright ajoutée.
 
 Derniers contrôles : ouverture réciproque Informations/Flotte sur mobile fermant l’autre panneau, confirmation de retour jusqu’à Terminée (toutes les hauteurs à 0 m), nouveau dispositif lancé à nouveau. Aucune erreur ou alerte console. Revue statique : 137 imports résolus, graphe sans cycle, moteurs indépendants du navigateur. `git diff --check` réussi ; lockfile inchangé.
+
+À largeur <= 1100 px, les panneaux sont ouverts un à la fois pour préserver la carte ; choix d’un drone vérifié à la largeur réelle 903 px, flotte fermée et secteur 90°/90° visible.
