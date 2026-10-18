@@ -1,93 +1,95 @@
 <div align="center">
-  <img src="public/image/division-drone-transparent.png" alt="Emblème Division Drone" width="130" />
+  <img src="public/image/division-drone-transparent.png" alt="Division Drone emblem" width="130" />
 
   <h1>Division Drone</h1>
 
-  <p><strong>Planification et coordination simulée d’une flotte de drones</strong></p>
-  <p>🥇 1ʳᵉ place · Hackathon drones de la Gendarmerie nationale · UPSSITECH</p>
+  <p><strong>Drone fleet planning and mission simulation</strong></p>
+  <p>🥇 1st Place · French Gendarmerie Nationale Drone Hackathon · UPSSITECH</p>
+  <p>React · TypeScript · Vite · Leaflet</p>
 
   <p>
-    <a href="https://drone-planning.vercel.app/"><strong>Ouvrir la démonstration</strong></a>
-    · <a href="#démarrage-rapide">Installation</a>
-    · <a href="#moteur-de-planification">Algorithmes</a>
+    <a href="https://drone-planning.vercel.app/"><strong>Live demo</strong></a>
+    · <a href="#quick-start">Quick start</a>
+    · <a href="#planning-engine">Algorithms</a>
     · <a href="#documentation">Documentation</a>
   </p>
+  <p><strong>English</strong> · <a href="README.fr.md">Français</a></p>
 </div>
 
-![Interface de Division Drone : zone d’opération, zone prioritaire, positions des drones et métriques de couverture.](docs/images/mission-planning.jpg)
+![Division Drone interface showing an operation area, a priority zone, drone positions and coverage metrics.](docs/images/mission-planning.jpg)
 
-*Mission fictive de Rennes : un drone en couverture et une unité en réserve. Fond cartographique © [contributeurs OpenStreetMap](https://www.openstreetmap.org/copyright).*
+*Fictional mission in Rennes, France: one drone providing coverage and one reserve unit. Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).*
 
-## Le projet
+## Overview
 
-Développé en équipe en **9 heures**, le **14 octobre 2026**, lors du hackathon organisé par la Région de gendarmerie d’Occitanie, Division Drone répond à un problème concret : **comment répartir des moyens aériens sur une zone, en donnant la priorité aux secteurs critiques et en limitant les chevauchements ?**
+Built as a team in **9 hours** on **14 October 2026**, Division Drone won **first place** at the drone hackathon organized by the **Occitanie regional command of the French Gendarmerie Nationale**. The challenge: **allocate a drone fleet across an operation area, prioritize critical zones and limit unnecessary overlap.**
 
-L’opérateur dessine son périmètre, indique les contraintes de mission et les ressources disponibles, puis obtient une proposition de dispositif qu’il peut ajuster sur la carte. Le prototype accompagne la préparation, la comparaison des moyens et la conduite d’une **opération simulée**.
+Operators draw an area on the map, specify mission constraints and available resources, then review and adjust a proposed deployment. The prototype brings together geospatial computation, coverage optimization and an interactive mission simulation in a single desktop web interface.
 
-Cette version est une application web pour ordinateur, exécutée dans le navigateur. Elle ne pilote aucun drone réel. Ce README décrit les fonctionnalités présentes sur la branche **`main`**.
+This README documents the **`main`** branch. The application runs in the browser and simulates operations; it does not control real aircraft.
 
-## Fonctionnalités
+## Features
 
-| Domaine | Ce que permet l’application |
+| Area | Capabilities |
 | --- | --- |
-| **Cartographie** | Dessiner la zone d’opération et les zones prioritaires ; naviguer entre les fonds Plan, Satellite et Occupation. |
-| **Planification** | Estimer le nombre de drones et de télépilotes, proposer les positions et mesurer la couverture totale, prioritaire et les chevauchements. |
-| **Contraintes de mission** | Prendre en compte les scénarios TP1/TP2, l’environnement rural ou urbain, la pluie, le jour et la nuit, les stocks et les limites saisies par l’utilisateur. |
-| **Gestion des moyens** | Adapter les quantités disponibles, consulter ou enrichir le catalogue, conserver des unités en réserve et recalculer le dispositif. |
-| **Simulation** | Déplacer drones et télépilotes, ajuster les secteurs et altitudes, détecter les conflits, simuler un retour ou un arrêt d’urgence. |
-| **Sauvegarde** | Exporter une mission en JSON et la réimporter pour retrouver sa géométrie, ses ressources et son état. |
+| **Interactive mapping** | Draw operation and priority polygons; switch between street maps, aerial imagery and terrain occupancy overlays. |
+| **Fleet planning** | Estimate drone and remote pilot requirements, propose positions, and measure overall coverage, priority coverage and overlap. |
+| **Mission constraints** | Account for TP1/TP2 scenarios, rural or urban environments, rain, day/night conditions, available stock and user-entered limits. |
+| **Resource management** | Adjust available quantities, browse or extend the drone catalogue, retain reserve units and recalculate the deployment. |
+| **Mission simulation** | Move drones and pilots, adjust coverage sectors and altitudes, detect conflicts, and simulate return or emergency landing. |
+| **Import and export** | Save missions as JSON and restore their geometry, resources and state. |
 
-Les secteurs de travail sont découpés à la zone d’opération. La carte distingue les zones prioritaires, les surfaces couvertes par plusieurs drones et les lacunes de couverture. Les drones en réserve restent visibles sans contribuer à la couverture.
+Coverage sectors are clipped to the operation area. The map distinguishes priority zones, overlapping coverage and uncovered locations. Reserve drones remain visible without contributing to coverage.
 
-## Essayer la démonstration
+## Try the demo
 
-La [démonstration en ligne](https://drone-planning.vercel.app/) est accessible sans compte.
+The [live demo](https://drone-planning.vercel.app/) requires no account. **The application interface is currently in French.** The steps below retain the on-screen labels so they are easy to find.
 
-**Parcours immédiat :** sélectionner **Reprendre une mission → Charger la mission de démonstration**, puis **Recalculer avec les ressources réelles**. Un scénario fictif de Rennes permet d’explorer les ressources, la carte et la simulation sans créer de fichier.
+**Fastest route:** choose **Reprendre une mission** (resume a mission) → **Charger la mission de démonstration** (load the demo), then **Recalculer avec les ressources réelles** (recalculate using available resources). A fictional Rennes scenario lets you explore the map, resources and simulation without creating a file.
 
-Pour préparer sa propre mission :
+To create a mission:
 
-1. Ouvrir **Préparer une mission** et renseigner le nom, la date, l’heure et le scénario.
-2. Rechercher une adresse française ou saisir des coordonnées WGS84 dans l’ordre **longitude, latitude**. La carte est initialement centrée sur Mirepoix.
-3. Dessiner la zone d’opération, puis les éventuelles zones prioritaires. Fermer chaque polygone sur son premier sommet ou avec **Terminer**.
-4. Lancer **Calculer l’estimation**, examiner la couverture et ajuster les secteurs proposés.
-5. Préparer l’opération, renseigner les moyens réellement disponibles et recalculer. Les conflits doivent être résolus avant le lancement simulé.
-6. Ajuster le dispositif et utiliser **Export JSON** pour conserver la mission.
+1. Select **Préparer une mission** and enter a name, date, time and scenario.
+2. Search for a French address or enter WGS84 coordinates in **longitude, latitude** order. The map initially opens at Mirepoix, France.
+3. Draw the operation area and any priority zones. Close each polygon by clicking its first vertex or choosing **Terminer**.
+4. Select **Calculer l’estimation**, review coverage and adjust the proposed sectors.
+5. Prepare the operation, enter the resources actually available and recalculate. Resolve conflicts before starting the simulation.
+6. Adjust the deployment and use **Export JSON** to save the mission.
 
-**La mission courante reste en mémoire : exporter avant de recharger ou de quitter la page.** Seuls le thème et les préférences sont mémorisés automatiquement sur l’appareil.
+**The current mission is held in memory: export it before reloading or closing the page.** Only the theme and preferences are saved automatically on the device.
 
-## Moteur de planification
+## Planning engine
 
-Le moteur recherche un **compromis entre couverture, priorités et nombre de drones**. La version actuelle combine plusieurs stratégies de placement ; elle va au-delà de l’approche gloutonne initiale.
+The engine searches for a **trade-off between coverage, priority zones and fleet size**. It combines several placement strategies, extending the initial greedy approach.
 
-### Du périmètre au dispositif
+### From operation area to deployment
 
-1. **Filtrer les moyens admissibles** selon les modèles, les scénarios, la météo, les stocks et les contraintes déclarées.
-2. **Échantillonner la zone** sur une grille de points. Les points des zones prioritaires reçoivent un poids de **4**, contre **1** pour les autres.
-3. **Comparer plusieurs dispositions** pour des effectifs croissants : construction gloutonne, partitions en *k-centres* et amélioration locale des positions. Le raffinement complet est appliqué jusqu’à **12 drones** ; des dispositions en réseau hexagonal sont aussi évaluées pour les grands dispositifs.
-4. **Sélectionner un compromis de couverture** parmi les dispositions non dominées. Le moteur recherche d’abord **85 % de couverture totale** et **92 % de couverture prioritaire**, lorsque les moyens et les contraintes le permettent. Il évalue ensuite le gain par drone supplémentaire, avec un seuil par défaut plafonné à **3 points de couverture pondérée**, adapté à la baisse sur les très grandes zones.
-5. **Finaliser les moyens** : retirer les drones redondants, rééquilibrer les modèles standard interchangeables selon les stocks et attribuer les télépilotes.
-6. **Attribuer les altitudes** à partir d’un graphe de chevauchement et d’une recherche DSatur bornée, en respectant les plafonds et la séparation verticale. Une impossibilité est remontée sous forme d’avertissements et de conflits.
+1. **Filter eligible resources** by drone model, scenario, weather, stock and declared constraints.
+2. **Sample the operation polygon** on a point grid. Priority points receive a weight of **4**, compared with **1** for ordinary points.
+3. **Compare candidate layouts** for increasing fleet sizes using greedy construction, *k-center* partitions and local position refinement. Full refinement applies to layouts of up to **12 drones**; hexagonal lattice layouts are also evaluated for larger deployments.
+4. **Select a coverage trade-off** from non-dominated layouts. The engine first seeks **85% overall coverage** and **92% priority coverage**, where resources and constraints allow. It then evaluates the gain per additional drone, using a default threshold capped at **3 percentage points of weighted coverage**, reduced for very large areas.
+5. **Finalize resource allocation:** remove redundant drones, rebalance interchangeable standard models within stock limits and assign remote pilots.
+6. **Assign altitudes** using an overlap graph and a bounded DSatur search, subject to altitude ceilings and vertical separation. Infeasible assignments produce warnings and conflicts.
 
-Il s’agit d’une **heuristique déterministe**, sans garantie d’optimum global ni d’effectif minimal. Les pourcentages reposent sur un échantillonnage ; les objectifs de couverture peuvent rester inatteignables. Le moteur expose également les compromis calculés dans `result.tradeoff` ; leur sélecteur graphique expérimental n’est pas intégré à `main`.
+This is a **deterministic heuristic**, with no guarantee of a global optimum or a minimum fleet size. Coverage percentages are sampled estimates, and coverage targets may remain unattainable. The engine also exposes computed trade-offs through `result.tradeoff`; the experimental graphical selector is not integrated into `main`.
 
-Sources : [moteur de planification](src/engines/planning/index.ts), [géométrie](src/engines/geometry) et [tests de l’optimiseur](tests/planning/optimizer.test.mjs).
+Sources: [planning engine](src/engines/planning/index.ts), [geometry engine](src/engines/geometry) and [optimizer tests](tests/planning/optimizer.test.mjs).
 
-### Scénarios du prototype
+### Prototype flight scenarios
 
-| Scénario | Portée maximale | Plafond rural | Plafond urbain |
+| Scenario | Maximum range | Rural altitude ceiling | Urban altitude ceiling |
 | --- | --- | --- | --- |
-| TP1 en vue | 500 m | 120 m | 120 m |
-| TP1 hors vue | 1 000 m | 50 m | 80 m |
-| TP2 hors vue | 2 000 m | 120 m | 120 m |
+| TP1, in sight | 500 m | 120 m | 120 m |
+| TP1, out of sight | 1,000 m | 50 m | 80 m |
+| TP2, out of sight | 2,000 m | 120 m | 120 m |
 
-Le mode mixte adapte le rayon au besoin et privilégie TP1 à gain équivalent. Les paramètres initiaux sont une séparation verticale de **30 m** et un chevauchement maximal de **20 %**, modifiables dans les paramètres.
+Mixed mode adapts the radius to the coverage requirement and prefers TP1 when gains are equivalent. Default settings are **30 m** of vertical separation and **20%** maximum overlap, both adjustable in the settings.
 
-Ces valeurs constituent les règles de simulation du hackathon. La nuit ou sous la pluie, la politique du prototype retient exclusivement le **DJI Matrice 4T**, y compris en présence de modèles personnalisés. Cette règle ne constitue ni une validation réglementaire ni une certification constructeur pour le vol sous la pluie ; les caractéristiques sourcées figurent dans les [fiches drones](docs/DRONE_SPECS.md).
+These are the hackathon prototype’s simulation rules. At night or in rain, its eligibility policy retains only the **DJI Matrice 4T**, even when custom models are available. This policy is neither regulatory validation nor manufacturer certification for flight in rain; sourced specifications are available in the [drone reference](docs/DRONE_SPECS.md).
 
-## Démarrage rapide
+## Quick start
 
-**Prérequis :** Node.js **22.18 ou supérieur**, npm et Git. Les tests utilisent le support natif de TypeScript de Node.js.
+**Requirements:** Node.js **22.18 or later**, npm and Git. Tests use Node.js’s native TypeScript support.
 
 ```sh
 git clone https://github.com/MariusPinard/hackathon-gendarmerie-drones.git
@@ -96,77 +98,77 @@ npm ci
 npm run dev
 ```
 
-Ouvrir l’adresse indiquée par Vite, généralement **http://localhost:5173**. Les modules TypeScript doivent être servis par Vite ; l’ouverture directe de `index.html` ne suffit pas.
+Open the URL reported by Vite, usually **http://localhost:5173**. TypeScript modules must be served through Vite; opening `index.html` directly is insufficient.
 
-| Commande | Rôle |
+| Command | Purpose |
 | --- | --- |
-| `npm run dev` | Serveur de développement avec rechargement à chaud. |
-| `npm run typecheck` | Vérification des types TypeScript. |
-| `npm test` | Suite de tests avec `node:test`. |
-| `npm run build` | Vérification des types puis génération du site dans `dist/`. |
-| `npm run preview` | Prévisualisation locale du dernier build. |
+| `npm run dev` | Start the development server with hot reloading. |
+| `npm run typecheck` | Check TypeScript types. |
+| `npm test` | Run the `node:test` suite. |
+| `npm run build` | Check types and generate the static site in `dist/`. |
+| `npm run preview` | Preview the latest build locally. |
 
 ## Architecture
 
-**React 19 · TypeScript strict · Vite · Leaflet**
+**React 19 · Strict TypeScript · Vite · Leaflet**
 
-Les moteurs de géométrie, de planification et d’opérations sont séparés du rendu React. La branche `main` est un frontend autonome, sans backend métier ni SDK de commande de drones.
+Geometry, planning and operations engines are separate from React rendering. The `main` branch is a standalone frontend, without a business backend or drone control SDK.
 
 ```text
 src/
-├── app/                  Contexte de mission et horloge de simulation
-├── pages/                Accueil, import, planification, ressources, conduite
-├── components/           Carte Leaflet, panneaux, flotte et formulaires
+├── app/                  Mission context and simulation clock
+├── pages/                Home, import, planning, resources and operations
+├── components/           Leaflet map, panels, fleet and forms
 ├── engines/
-│   ├── geometry/         Projection, validation, intersections et couverture
-│   ├── planning/         Estimation, placement, modèles et altitudes
-│   └── operations/       Conflits, modifications et transitions simulées
-├── services/             Météo, géocodage, occupation, JSON et préférences
-├── types/                Contrats TypeScript
-├── data/                 Catalogue standard et mission de démonstration
-└── styles/               Mise en page et thèmes
-public/                   Images et données d’occupation précalculées
-tests/                    Tests unitaires et parcours métier
-docs/                     Documentation fonctionnelle et technique
+│   ├── geometry/         Projection, validation, intersections and coverage
+│   ├── planning/         Estimation, placement, models and altitudes
+│   └── operations/       Conflicts, edits and simulated state transitions
+├── services/             Weather, geocoding, occupancy, JSON and preferences
+├── types/                TypeScript contracts
+├── data/                 Standard catalogue and demo mission
+└── styles/               Layout and themes
+public/                   Images and precomputed occupancy data
+tests/                    Unit tests and workflow tests
+docs/                     Functional and technical documentation
 ```
 
-### Données et services
+### Data and external services
 
-| Source | Usage |
+| Source | Purpose |
 | --- | --- |
-| OpenStreetMap | Fond cartographique Plan. |
-| IGN | Orthophotographies en France et géocodage d’adresses françaises avec les données BAN. |
-| Open-Meteo | Prévision de pluie au lieu et au créneau choisis. |
-| Calcul astronomique local | Détermination du jour et de la nuit, même sans prévision disponible. |
-| Données d’occupation | Analyse précalculée de Mirepoix, complétée si besoin par un service externe compatible. |
+| OpenStreetMap | Street map tiles. |
+| IGN | Aerial imagery in France and French address geocoding using BAN data. |
+| Open-Meteo | Rain forecasts for the selected location and time. |
+| Local astronomical calculation | Day/night determination, including when no forecast is available. |
+| Occupancy data | Precomputed Mirepoix analysis, optionally supplemented by a compatible external service. |
 
-Le parcours standard ne nécessite pas de clé API. Les services distants dépendent du réseau ; une météo indisponible reste **inconnue**, sans être assimilée à un temps sec. Le vent et le zoom sont affichés dans le catalogue mais ne participent pas à l’optimisation.
+The standard workflow requires no API key. Remote services depend on network availability; missing weather remains **unknown**, rather than being treated as dry conditions. Wind resistance and zoom are catalogue attributes and are not used by the optimizer.
 
-Les fichiers de mission restent dans le navigateur jusqu’à leur export local. Les requêtes de carte, d’adresse et de météo transmettent aux fournisseurs le secteur consulté ou la recherche saisie.
+Mission files remain in the browser until exported locally. Map, address and weather requests disclose the viewed area or search query to the corresponding providers.
 
-### Occupation du terrain — configuration facultative
+### Terrain occupancy — optional configuration
 
-La carte précalculée de **Mirepoix — INSEE 09194** est fournie dans [`public/occupancy/commune-09194.json`](public/occupancy/commune-09194.json). Elle permet d’afficher les catégories de terrain et les indications de décollage sans service d’analyse en direct.
+A precomputed map for **Mirepoix — INSEE 09194** is included in [`public/occupancy/commune-09194.json`](public/occupancy/commune-09194.json). It displays terrain categories and takeoff suitability indicators without a live analysis service.
 
-Pour analyser d’autres secteurs, utiliser un service externe exposant **`POST /api/v1/occupancy/tile`**. Ce service n’est pas livré dans la branche `main`. Son URL peut être définie dans `.env.local` :
+To analyze other areas, use an external service exposing **`POST /api/v1/occupancy/tile`**. That service is not shipped in `main`. Its URL can be set in `.env.local`:
 
 ```dotenv
 VITE_OCCUPANCY_API_URL=http://127.0.0.1:8000
 ```
 
-En développement, cette adresse locale est utilisée par défaut. En production, sans URL configurée, seules les données précalculées sont disponibles. Redémarrer Vite après un changement et définir la variable avant de construire une version statique. Le service doit autoriser l’origine du frontend via CORS ; utiliser HTTPS avec une application servie en HTTPS.
+Development defaults to this local address. Production uses only precomputed data unless a service URL is configured. Restart Vite after changes and set the variable before building a static release. The service must allow the frontend’s origin through CORS; use HTTPS when the frontend is served over HTTPS.
 
-L’analyse est déclenchée par **Lancer le calcul**, avec au plus **24 tuiles par lancement**, **2 requêtes simultanées** et un cache de session. Ces indications nécessitent une vérification sur le terrain. Elles ne sont pas utilisées pour rechercher automatiquement les positions des télépilotes dans `main`.
+Analysis starts through **Lancer le calcul**, with up to **24 tiles per request batch**, **2 concurrent requests** and session caching. The indicators require verification on the ground. They are not used to search automatically for remote pilot positions in `main`.
 
-## Sauvegardes et préférences
+## Mission files and preferences
 
-- **Mission :** import/export JSON, `schemaVersion: "1.0"`, comprenant zones, catalogue, météo, ressources, positions et états. L’import valide les données puis passe par la vérification des ressources.
-- **Préférences :** catalogue par défaut, séparation verticale et chevauchement conservés dans le stockage local du navigateur, avec le thème.
-- **Urgence :** les exports récents peuvent inclure l’instantané permettant de restaurer le dispositif après un atterrissage d’urgence simulé.
+- **Mission data:** JSON import/export with `schemaVersion: "1.0"`, including zones, catalogue, weather, resources, positions and states. Import validates the data, then opens the resource review step.
+- **Preferences:** default catalogue, vertical separation and maximum overlap are stored locally in the browser, along with the theme.
+- **Emergency recovery:** recent exports can include a snapshot used to restore the deployment after a simulated emergency landing.
 
-Un [exemple de mission](src/data/exampleMission.json) et la [description du format JSON](docs/FORMAT_JSON.md) sont fournis dans le dépôt.
+A [sample mission](src/data/exampleMission.json) and the [JSON format reference](docs/FORMAT_JSON.md) are included.
 
-## Tests et qualité
+## Testing and quality
 
 ```sh
 npm test
@@ -174,50 +176,52 @@ npm run build
 git diff --check
 ```
 
-La suite couvre notamment la géométrie, les stratégies de placement, les priorités, les stocks, les scénarios TP1/TP2, la météo, les altitudes, les réserves, les conflits, l’import/export et les services externes. Des tests de parcours relient estimation, ressources insuffisantes, lancement, modification, retour et urgence.
+The test suite covers geometry, placement strategies, priority zones, stock limits, TP1/TP2 scenarios, weather, altitude assignment, reserves, conflicts, import/export and external services. Workflow tests connect estimation, resource shortages, launch, edits, return and emergency handling.
 
-Les tests importent directement les sources TypeScript. Le build effectue aussi la vérification des types ; les [contrôles visuels](docs/VALIDATION.md) complètent ces vérifications pour la carte et les interactions.
+Tests import TypeScript sources directly. The production build also checks types; [manual visual checks](docs/VALIDATION.md) complement automated verification for map rendering and interactions.
 
-## Déploiement
+## Deployment
 
 ```sh
 npm run build
 ```
 
-Publier **tout le contenu de `dist/`** sur un hébergement statique HTTP(S), en conservant les répertoires `image/` et `occupancy/`. La configuration actuelle attend un déploiement à la racine du domaine.
+Publish **all contents of `dist/`** to a static HTTP(S) host, retaining the `image/` and `occupancy/` directories. The current configuration expects deployment at the domain root.
 
-Pour Vercel : commande de build **`npm run build`**, répertoire de sortie **`dist`** et version de Node compatible avec le prérequis du projet. Le service d’occupation, s’il est utilisé, se déploie séparément. Les variables `VITE_` sont intégrées au code public du frontend et ne doivent contenir aucun secret. `npm run preview` sert à la vérification locale du build.
+For Vercel, use **`npm run build`** as the build command, **`dist`** as the output directory and a Node.js version meeting the project requirements. Deploy the occupancy service separately if needed. `VITE_` variables are bundled into public frontend code and must never contain secrets. Use `npm run preview` for local build verification.
 
-## Périmètre et limites
+## Scope and limitations
 
-- **Simulation :** pas de télémétrie, de commande matérielle, de trajectoires de vol physiques ni de liaison radio réelle. Les contrôles d’altitude et les scénarios ne remplacent pas une validation opérationnelle.
-- **Couverture :** projection locale, rayons simplifiés et métriques échantillonnées ; le moteur ne modélise pas le relief, le champ de vision des capteurs ou la propagation radio.
-- **Télépilotes :** drone et télépilote sont initialement placés au même endroit. La couche d’occupation apporte une aide visuelle distincte du calcul de placement.
-- **Géométrie et import :** emprise limitée à 50 km de côté, hors régions polaires et franchissement de l’antiméridien ; au plus 20 zones prioritaires, 300 sommets distincts par anneau et 2 Mo par fichier JSON.
-- **Effectifs :** aucune limite fixe à 32 drones ; le coût de calcul augmente avec la taille du dispositif, selon les stocks, les placements admissibles et les contraintes saisies.
-- **Persistance :** pas de sauvegarde automatique ou serveur de la mission ; conserver les fichiers JSON exportés pour reprendre le travail.
+- **Simulation:** no telemetry, hardware commands, physical flight trajectories or real radio link. Altitude checks and flight scenarios do not replace operational validation.
+- **Coverage model:** local projection, simplified radii and sampled metrics; no terrain elevation, sensor field-of-view or radio propagation model in the coverage engine.
+- **Remote pilots:** each drone and its pilot initially share a position. The occupancy layer provides a separate visual aid rather than driving placement.
+- **Geometry and imports:** operation bounds limited to 50 km per side, excluding polar regions and antimeridian crossings; up to 20 priority zones, 300 distinct vertices per ring and 2 MB per JSON file.
+- **Fleet size:** no fixed 32-drone limit; computation cost grows with deployment size, available stock, feasible placements and declared constraints.
+- **Persistence:** no automatic or server-side mission save; retain exported JSON files to resume work.
 
 ## Documentation
 
-| Document | Contenu |
+The supporting documents are currently in **French**.
+
+| Document | Contents |
 | --- | --- |
-| [Démonstration](docs/DEMO.md) | Parcours de présentation et manipulations de la carte. |
-| [Exigences](docs/REQUIREMENTS.md) | Cahier des charges fonctionnel du prototype. |
-| [Architecture](docs/ARCHITECTURE.md) | Organisation des composants et des moteurs. |
-| [Contrats](docs/API_CONTRACT.md) | Interfaces et structures des moteurs. |
-| [Format JSON](docs/FORMAT_JSON.md) | Sauvegardes, validation et compatibilité. |
-| [Caractéristiques des drones](docs/DRONE_SPECS.md) | Capacités et sources constructeur. |
-| [Validation](docs/VALIDATION.md) | Scénarios de contrôle fonctionnel et visuel. |
-| [Intégration](docs/INTEGRATION.md) | Assemblage des composants du projet. |
-| [Historique des algorithmes](docs/ALGORITHMES.md) | Description de l’approche initiale du hackathon. |
-| [Identité visuelle](docs/LOGOS.md) | Sources et préparation des logos. |
+| [Demo walkthrough](docs/DEMO.md) | Presentation flow and map interactions. |
+| [Requirements](docs/REQUIREMENTS.md) | Functional requirements for the prototype. |
+| [Architecture](docs/ARCHITECTURE.md) | Application components and engines. |
+| [Engine contracts](docs/API_CONTRACT.md) | Interfaces and data structures. |
+| [JSON format](docs/FORMAT_JSON.md) | Mission files, validation and compatibility. |
+| [Drone specifications](docs/DRONE_SPECS.md) | Capabilities and manufacturer sources. |
+| [Validation](docs/VALIDATION.md) | Functional and visual check scenarios. |
+| [Integration](docs/INTEGRATION.md) | Component integration notes. |
+| [Algorithm history](docs/ALGORITHMES.md) | The original hackathon approach. |
+| [Visual identity](docs/LOGOS.md) | Logo sources and preparation. |
 
-Certains documents conservent l’état d’itérations antérieures du hackathon, notamment pour les seuils et l’approche gloutonne. La section [Moteur de planification](#moteur-de-planification) de ce README et les sources de `main` décrivent le moteur actuel.
+Some documents describe earlier hackathon iterations, including earlier thresholds and the greedy approach. The [Planning engine](#planning-engine) section above and the `main` sources describe the current implementation.
 
-## Équipe
+## Team
 
-Projet réalisé par l’équipe **UPSSITECH — Université de Toulouse**, lauréate du hackathon :
+Built by the **UPSSITECH — Université de Toulouse** team, winners of the hackathon:
 
 [Alec Bossard](https://www.linkedin.com/in/alec-bossard/) · [Arthus D.](https://www.linkedin.com/in/arthus-d-539497287/) · [Guilhem Carmouze](https://www.linkedin.com/in/guilhem-carmouze/) · [Marius Pinard](https://www.linkedin.com/in/marius-pinard-65a344241/) · [Théo Jeanmart](https://www.linkedin.com/in/th%C3%A9o-jeanmart-433717214/)
 
-Merci à la **Région de gendarmerie d’Occitanie** pour l’organisation et la mise en situation autour de la coordination de moyens aériens.
+Thank you to the **Occitanie regional command of the Gendarmerie Nationale** for organizing the event and providing a practical drone coordination challenge.
